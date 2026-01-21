@@ -1,0 +1,124 @@
+// Prisma schema for Dangi - Shared Expense App
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// =====================
+// MODELS
+// =====================
+
+// پروژه - هسته اصلی سیستم
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  template    String   @default("travel") // travel, building, party, custom
+  splitType   String   @default("EQUAL") // EQUAL, WEIGHTED, PERCENTAGE, MANUAL
+  currency    String   @default("IRR") // ISO 4217
+
+  // QR Code / Share link
+  shareCode   String   @unique @default(cuid())
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  participants Participant[]
+  expenses     Expense[]
+  categories   Category[]
+}
+
+// شرکت‌کننده در پروژه
+model Participant {
+  id        String  @id @default(cuid())
+  name      String
+  role      String  @default("MEMBER") // OWNER, MEMBER
+
+  // برای تقسیم وزنی (مثلاً متراژ واحد)
+  weight    Float   @default(1)
+
+  // برای تقسیم درصدی
+  percentage Float?
+
+  // Session token for Quick User (no auth)
+  sessionToken String @unique @default(cuid())
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  expensesPaid    Expense[]      @relation("PaidBy")
+  expenseShares   ExpenseShare[]
+}
+
+// دسته‌بندی هزینه‌ها
+model Category {
+  id        String  @id @default(cuid())
+  name      String
+  icon      String? // emoji or icon name
+  color     String? // hex color
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  expenses  Expense[]
+}
+
+// هزینه
+model Expense {
+  id          String   @id @default(cuid())
+  title       String
+  amount      Float    // مبلغ کل
+  description String?
+
+  // پرداخت‌کننده
+  paidById    String
+  paidBy      Participant @relation("PaidBy", fields: [paidById], references: [id])
+
+  // دسته‌بندی (اختیاری)
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
+
+  // تاریخ هزینه (ممکنه با تاریخ ثبت فرق کنه)
+  expenseDate DateTime @default(now())
+
+  // عکس رسید
+  receiptUrl  String?
+
+  projectId   String
+  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations - سهم هر نفر از این هزینه (Snapshot)
+  shares      ExpenseShare[]
+}
+
+// سهم هر شرکت‌کننده از هر هزینه (Snapshot)
+// این جدول برای حفظ تاریخچه صحیح ضروریه
+model ExpenseShare {
+  id            String @id @default(cuid())
+
+  // مبلغ سهم این شخص
+  amount        Float
+
+  // وزن در زمان ثبت (برای گزارش‌گیری)
+  weightAtTime  Float  @default(1)
+
+  participantId String
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  expenseId     String
+  expense       Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+
+  @@unique([expenseId, participantId])
+}

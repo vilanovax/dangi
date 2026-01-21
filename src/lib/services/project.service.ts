@@ -1,0 +1,149 @@
+// Project Service
+// Data access layer for projects
+
+import { prisma } from '@/lib/db/prisma'
+import { getTemplate } from '@/lib/domain/templates'
+import type { SplitType } from '@/lib/types/domain'
+
+interface CreateProjectInput {
+  name: string
+  description?: string
+  template?: string
+  ownerName: string
+}
+
+interface ProjectWithParticipants {
+  id: string
+  name: string
+  description: string | null
+  template: string
+  splitType: string
+  currency: string
+  shareCode: string
+  createdAt: Date
+  participants: {
+    id: string
+    name: string
+    role: string
+    sessionToken: string
+  }[]
+}
+
+/**
+ * Create a new project with owner and default categories
+ */
+export async function createProject(input: CreateProjectInput): Promise<{
+  project: ProjectWithParticipants
+  ownerToken: string
+}> {
+  const { name, description, template = 'travel', ownerName } = input
+
+  const templateDef = getTemplate(template)
+
+  const project = await prisma.project.create({
+    data: {
+      name,
+      description,
+      template,
+      splitType: templateDef.defaultSplitType as SplitType,
+      // Create owner participant
+      participants: {
+        create: {
+          name: ownerName,
+          role: 'OWNER',
+        },
+      },
+      // Create default categories from template
+      categories: {
+        create: templateDef.defaultCategories.map((cat) => ({
+          name: cat.nameFa,
+          icon: cat.icon,
+          color: cat.color,
+        })),
+      },
+    },
+    include: {
+      participants: true,
+    },
+  })
+
+  const owner = project.participants[0]
+
+  return {
+    project,
+    ownerToken: owner.sessionToken,
+  }
+}
+
+/**
+ * Get project by ID with all relations
+ */
+export async function getProjectById(projectId: string) {
+  return prisma.project.findUnique({
+    where: { id: projectId },
+    include: {
+      participants: true,
+      categories: true,
+      expenses: {
+        include: {
+          paidBy: true,
+          category: true,
+          shares: {
+            include: {
+              participant: true,
+            },
+          },
+        },
+        orderBy: {
+          expenseDate: 'desc',
+        },
+      },
+    },
+  })
+}
+
+/**
+ * Get project by share code (for join link)
+ */
+export async function getProjectByShareCode(shareCode: string) {
+  return prisma.project.findUnique({
+    where: { shareCode },
+    include: {
+      participants: true,
+    },
+  })
+}
+
+/**
+ * Update project settings
+ */
+export async function updateProject(
+  projectId: string,
+  data: {
+    name?: string
+    description?: string | null
+    splitType?: SplitType
+    currency?: string
+  }
+) {
+  // Filter out undefined values
+  const updateData: Record<string, unknown> = {}
+  if (data.name !== undefined) updateData.name = data.name
+  if (data.description !== undefined) updateData.description = data.description
+  if (data.splitType !== undefined) updateData.splitType = data.splitType
+  if (data.currency !== undefined) updateData.currency = data.currency
+
+  return prisma.project.update({
+    where: { id: projectId },
+    data: updateData,
+  })
+}
+
+/**
+ * Delete a project and all related data
+ */
+export async function deleteProject(projectId: string) {
+  return prisma.project.delete({
+    where: { id: projectId },
+  })
+}
