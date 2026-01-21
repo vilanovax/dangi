@@ -31,7 +31,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const { projectId } = await params
     const body = await request.json()
 
-    const { name, weight } = body
+    const { name, weight, avatar } = body
 
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
       return NextResponse.json({ error: 'نام عضو الزامی است' }, { status: 400 })
@@ -48,6 +48,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       projectId,
       name: name.trim(),
       weight: weight || 1,
+      avatar: avatar || null,
     })
 
     return NextResponse.json({ participant }, { status: 201 })

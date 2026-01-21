@@ -7,19 +7,21 @@ interface JoinProjectInput {
   projectId: string
   name: string
   weight?: number
+  avatar?: string | null
 }
 
 /**
  * Join a project as a new participant
  */
 export async function joinProject(input: JoinProjectInput) {
-  const { projectId, name, weight = 1 } = input
+  const { projectId, name, weight = 1, avatar } = input
 
   const participant = await prisma.participant.create({
     data: {
       name,
       weight,
       projectId,
+      avatar: avatar || null,
     },
   })
 

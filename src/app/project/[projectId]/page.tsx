@@ -2,14 +2,44 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Card, Button, FloatingButton, Input, BottomSheet } from '@/components/ui'
+import { Card, Button, FloatingButton, Input, BottomSheet, Avatar, AvatarPicker } from '@/components/ui'
+import { deserializeAvatar, serializeAvatar } from '@/lib/types/avatar'
+import type { Avatar as AvatarType } from '@/lib/types/avatar'
 import { formatMoney } from '@/lib/utils/money'
 import Link from 'next/link'
+
+// localStorage keys
+const PARTICIPANT_IDS_KEY = 'dangi_participant_ids'
+const USER_PROFILE_KEY = 'dangi_user_profile'
+
+// Helper to get participant IDs from localStorage
+function getStoredParticipantIds(): string[] {
+  if (typeof window === 'undefined') return []
+  const stored = localStorage.getItem(PARTICIPANT_IDS_KEY)
+  return stored ? JSON.parse(stored) : []
+}
+
+// Helper to add a participant ID to localStorage
+function addParticipantId(participantId: string) {
+  const ids = getStoredParticipantIds()
+  if (!ids.includes(participantId)) {
+    ids.push(participantId)
+    localStorage.setItem(PARTICIPANT_IDS_KEY, JSON.stringify(ids))
+  }
+}
+
+// Helper to get user profile
+function getUserProfile(): { name: string } | null {
+  if (typeof window === 'undefined') return null
+  const stored = localStorage.getItem(USER_PROFILE_KEY)
+  return stored ? JSON.parse(stored) : null
+}
 
 interface Participant {
   id: string
   name: string
   role: string
+  avatar?: string | null
 }
 
 interface Category {
@@ -52,6 +82,7 @@ export default function ProjectPage() {
   // Add member modal state
   const [showAddMember, setShowAddMember] = useState(false)
   const [newMemberName, setNewMemberName] = useState('')
+  const [newMemberAvatar, setNewMemberAvatar] = useState<AvatarType | null>(null)
   const [addingMember, setAddingMember] = useState(false)
 
   useEffect(() => {
@@ -80,7 +111,10 @@ export default function ProjectPage() {
       const res = await fetch(`/api/projects/${projectId}/participants`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newMemberName.trim() }),
+        body: JSON.stringify({
+          name: newMemberName.trim(),
+          avatar: newMemberAvatar ? serializeAvatar(newMemberAvatar) : null,
+        }),
       })
 
       if (!res.ok) throw new Error('خطا در افزودن عضو')
@@ -88,6 +122,7 @@ export default function ProjectPage() {
       // Refresh project data
       await fetchProject()
       setNewMemberName('')
+      setNewMemberAvatar(null)
       setShowAddMember(false)
     } catch {
       alert('خطا در افزودن عضو')
@@ -179,10 +214,12 @@ export default function ProjectPage() {
               key={p.id}
               className="flex-shrink-0 w-16 text-center"
             >
-              <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mx-auto mb-1">
-                <span className="text-lg font-medium text-blue-600 dark:text-blue-400">
-                  {p.name.charAt(0)}
-                </span>
+              <div className="mx-auto mb-1">
+                <Avatar
+                  avatar={deserializeAvatar(p.avatar || null, p.name)}
+                  name={p.name}
+                  size="lg"
+                />
               </div>
               <p className="text-xs truncate">{p.name}</p>
               {p.role === 'OWNER' && (
@@ -276,6 +313,15 @@ export default function ProjectPage() {
             onChange={(e) => setNewMemberName(e.target.value)}
             autoFocus
           />
+
+          {/* Avatar Picker - فقط وقتی نام وارد شده */}
+          {newMemberName.trim().length > 0 && (
+            <AvatarPicker
+              name={newMemberName}
+              value={newMemberAvatar}
+              onChange={setNewMemberAvatar}
+            />
+          )}
 
           <Button
             onClick={handleAddMember}

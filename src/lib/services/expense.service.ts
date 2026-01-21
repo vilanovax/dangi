@@ -155,6 +155,7 @@ export async function updateExpense(
           participants: true,
         },
       },
+      shares: true,
     },
   })
 
@@ -164,11 +165,27 @@ export async function updateExpense(
 
   const newAmount = input.amount ?? expense.amount
 
-  // Recalculate shares if amount changed
-  if (input.amount !== undefined) {
+  // Check if we need to recalculate shares
+  const shouldRecalculateShares =
+    input.amount !== undefined || input.includedParticipantIds !== undefined
+
+  if (shouldRecalculateShares) {
+    // Determine which participants to include
+    const participantsForSplit = input.includedParticipantIds
+      ? expense.project.participants.filter((p) =>
+          input.includedParticipantIds!.includes(p.id)
+        )
+      : expense.project.participants.filter((p) =>
+          expense.shares.some((s) => s.participantId === p.id)
+        )
+
+    if (participantsForSplit.length === 0) {
+      throw new Error('At least one participant must be included in the split')
+    }
+
     const shares = calculateSplit({
       amount: newAmount,
-      participants: expense.project.participants,
+      participants: participantsForSplit,
       splitType: expense.project.splitType as SplitType,
       customShares: input.customShares,
     })

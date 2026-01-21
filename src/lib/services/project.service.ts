@@ -10,6 +10,7 @@ interface CreateProjectInput {
   description?: string
   template?: string
   ownerName: string
+  userId?: string // اتصال به کاربر لاگین شده (اختیاری)
 }
 
 interface ProjectWithParticipants {
@@ -36,7 +37,7 @@ export async function createProject(input: CreateProjectInput): Promise<{
   project: ProjectWithParticipants
   ownerToken: string
 }> {
-  const { name, description, template = 'travel', ownerName } = input
+  const { name, description, template = 'travel', ownerName, userId } = input
 
   const templateDef = getTemplate(template)
 
@@ -46,11 +47,12 @@ export async function createProject(input: CreateProjectInput): Promise<{
       description,
       template,
       splitType: templateDef.defaultSplitType as SplitType,
-      // Create owner participant
+      // Create owner participant (linked to user if logged in)
       participants: {
         create: {
           name: ownerName,
           role: 'OWNER',
+          userId: userId || null, // اتصال به کاربر اگر لاگین کرده باشه
         },
       },
       // Create default categories from template

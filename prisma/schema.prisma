@@ -1,5 +1,3 @@
-// Prisma schema for Dangi - Shared Expense App
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,116 +7,86 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// =====================
-// MODELS
-// =====================
+// کاربر - احراز هویت ساده با موبایل و رمز عبور
+model User {
+  id           String        @id @default(cuid())
+  phone        String        @unique // شماره موبایل
+  password     String        // رمز عبور هش شده
+  name         String        // نام نمایشی
+  avatar       String?       // آواتار (JSON) - null یعنی auto
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  participants Participant[] // پروژه‌هایی که عضوشه
+}
 
-// پروژه - هسته اصلی سیستم
 model Project {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  template    String   @default("travel") // travel, building, party, custom
-  splitType   String   @default("EQUAL") // EQUAL, WEIGHTED, PERCENTAGE, MANUAL
-  currency    String   @default("IRR") // ISO 4217
-
-  // QR Code / Share link
-  shareCode   String   @unique @default(cuid())
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  participants Participant[]
-  expenses     Expense[]
+  id           String        @id @default(cuid())
+  name         String
+  description  String?
+  template     String        @default("travel")
+  splitType    String        @default("EQUAL")
+  currency     String        @default("IRR")
+  shareCode    String        @unique @default(cuid())
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   categories   Category[]
+  expenses     Expense[]
+  participants Participant[]
 }
 
-// شرکت‌کننده در پروژه
 model Participant {
-  id        String  @id @default(cuid())
-  name      String
-  role      String  @default("MEMBER") // OWNER, MEMBER
-
-  // برای تقسیم وزنی (مثلاً متراژ واحد)
-  weight    Float   @default(1)
-
-  // برای تقسیم درصدی
-  percentage Float?
-
-  // Session token for Quick User (no auth)
-  sessionToken String @unique @default(cuid())
-
-  projectId String
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-
-  // Relations
-  expensesPaid    Expense[]      @relation("PaidBy")
-  expenseShares   ExpenseShare[]
+  id            String         @id @default(cuid())
+  name          String
+  role          String         @default("MEMBER")
+  weight        Float          @default(1)
+  percentage    Float?
+  avatar        String?        // آواتار (JSON) - null یعنی auto
+  sessionToken  String         @unique @default(cuid())
+  projectId     String
+  userId        String?        // اتصال به کاربر (اختیاری - برای مهمان‌ها null)
+  createdAt     DateTime       @default(now())
+  expensesPaid  Expense[]      @relation("PaidBy")
+  expenseShares ExpenseShare[]
+  project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user          User?          @relation(fields: [userId], references: [id])
 }
 
-// دسته‌بندی هزینه‌ها
 model Category {
-  id        String  @id @default(cuid())
+  id        String    @id @default(cuid())
   name      String
-  icon      String? // emoji or icon name
-  color     String? // hex color
-
+  icon      String?
+  color     String?
   projectId String
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   expenses  Expense[]
 }
 
-// هزینه
 model Expense {
-  id          String   @id @default(cuid())
+  id          String         @id @default(cuid())
   title       String
-  amount      Float    // مبلغ کل
+  amount      Float
   description String?
-
-  // پرداخت‌کننده
   paidById    String
-  paidBy      Participant @relation("PaidBy", fields: [paidById], references: [id])
-
-  // دسته‌بندی (اختیاری)
   categoryId  String?
-  category    Category? @relation(fields: [categoryId], references: [id])
-
-  // تاریخ هزینه (ممکنه با تاریخ ثبت فرق کنه)
-  expenseDate DateTime @default(now())
-
-  // عکس رسید
+  expenseDate DateTime       @default(now())
   receiptUrl  String?
-
   projectId   String
-  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations - سهم هر نفر از این هزینه (Snapshot)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  project     Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  category    Category?      @relation(fields: [categoryId], references: [id])
+  paidBy      Participant    @relation("PaidBy", fields: [paidById], references: [id])
   shares      ExpenseShare[]
 }
 
-// سهم هر شرکت‌کننده از هر هزینه (Snapshot)
-// این جدول برای حفظ تاریخچه صحیح ضروریه
 model ExpenseShare {
-  id            String @id @default(cuid())
-
-  // مبلغ سهم این شخص
+  id            String      @id @default(cuid())
   amount        Float
-
-  // وزن در زمان ثبت (برای گزارش‌گیری)
-  weightAtTime  Float  @default(1)
-
+  weightAtTime  Float       @default(1)
   participantId String
-  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
-
   expenseId     String
-  expense       Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  expense       Expense     @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
 
   @@unique([expenseId, participantId])
 }
