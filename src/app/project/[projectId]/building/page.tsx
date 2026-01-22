@@ -234,7 +234,7 @@ export default function BuildingDashboard() {
               href={`/project/${projectId}/charge-dashboard`}
               className="text-xs bg-white/20 px-2 py-1 rounded-lg hover:bg-white/30 transition-colors"
             >
-              تاریخچه
+              مدیریت ماهیانه
             </Link>
           </div>
 
