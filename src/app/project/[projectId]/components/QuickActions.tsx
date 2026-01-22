@@ -2,18 +2,51 @@
 
 import Link from 'next/link'
 import { Card } from '@/components/ui'
+import { getTemplate } from '@/lib/domain/templates'
 
 interface QuickActionsProps {
   projectId: string
+  template?: string
 }
 
 /**
  * Quick action buttons card
  * Links to expenses, summary and add settlement
+ * Shows charge dashboard for building template
  */
-export function QuickActions({ projectId }: QuickActionsProps) {
+export function QuickActions({ projectId, template }: QuickActionsProps) {
+  const templateDef = template ? getTemplate(template) : null
+  const showChargeDashboard = templateDef?.supportsChargeRules
+
   return (
-    <div className="px-4 -mt-4">
+    <div className="px-4 -mt-4 space-y-2">
+      {/* Charge Dashboard - Only for building template */}
+      {showChargeDashboard && (
+        <Link
+          href={`/project/${projectId}/charge-dashboard`}
+          className="block"
+        >
+          <Card className="p-3 bg-gradient-to-l from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-emerald-100 dark:border-emerald-800">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="font-semibold text-emerald-800 dark:text-emerald-200">داشبورد شارژ</p>
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400">وضعیت پرداخت شارژ ماهیانه</p>
+                </div>
+              </div>
+              <svg className="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </div>
+          </Card>
+        </Link>
+      )}
+
       <Card className="flex gap-2 p-2">
         <Link
           href={`/project/${projectId}/expenses`}

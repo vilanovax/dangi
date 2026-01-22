@@ -154,7 +154,7 @@ export default function ProjectPage() {
       />
 
       {/* Quick Actions */}
-      <QuickActions projectId={projectId} />
+      <QuickActions projectId={projectId} template={project.template} />
 
       {/* Participants */}
       <ParticipantsRow
