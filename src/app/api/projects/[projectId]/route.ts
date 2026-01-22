@@ -38,7 +38,7 @@ export async function PATCH(
     const { projectId } = await context.params
     const body = await request.json()
 
-    const { name, description, currency, splitType } = body
+    const { name, description, currency, splitType, chargeYear } = body
 
     // Check if project exists
     const existingProject = await getProjectById(projectId)
@@ -75,11 +75,22 @@ export async function PATCH(
       )
     }
 
+    // Validate chargeYear if provided (Persian year)
+    if (chargeYear !== undefined && chargeYear !== null) {
+      if (typeof chargeYear !== 'number' || chargeYear < 1400 || chargeYear > 1450) {
+        return NextResponse.json(
+          { error: 'سال شارژ نامعتبر است' },
+          { status: 400 }
+        )
+      }
+    }
+
     const project = await updateProject(projectId, {
       name: name?.trim(),
       description: description !== undefined ? (description?.trim() || null) : undefined,
       currency,
       splitType,
+      chargeYear,
     })
 
     return NextResponse.json({ project })

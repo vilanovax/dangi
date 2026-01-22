@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
-import { getRecentPeriods } from '@/lib/utils/persian-date'
+import { PERSIAN_MONTHS, getCurrentPersianYear } from '@/lib/utils/persian-date'
 
 type RouteContext = {
   params: Promise<{ projectId: string }>
+}
+
+interface ChargeExpense {
+  id: string
+  title: string
+  amount: number
+  expenseDate: string
 }
 
 interface ChargeStatusByPeriod {
@@ -18,6 +25,7 @@ interface ChargeStatusByPeriod {
     paidAmount: number
     status: 'paid' | 'partial' | 'unpaid'
     paidDate?: string
+    expenses: ChargeExpense[]
   }[]
   totalExpected: number
   totalPaid: number
@@ -25,13 +33,21 @@ interface ChargeStatusByPeriod {
   unpaidCount: number
 }
 
+/**
+ * Generate all 12 months of a Persian year (Farvardin to Esfand)
+ */
+function getYearPeriods(year: number): { key: string; label: string }[] {
+  return PERSIAN_MONTHS.map((month) => ({
+    key: `${year}-${month.key}`,
+    label: `${month.name} ${year}`,
+  }))
+}
+
 // GET /api/projects/[projectId]/charge-status
 // Returns charge payment status for each participant by period
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { projectId } = await context.params
-    const { searchParams } = new URL(request.url)
-    const periodsCount = parseInt(searchParams.get('periods') || '6')
 
     // Get project with participants and charge rules
     const project = await prisma.project.findUnique({
@@ -55,15 +71,19 @@ export async function GET(request: NextRequest, context: RouteContext) {
     if (activeRules.length === 0) {
       return NextResponse.json({
         periods: [],
+        chargeYear: project.chargeYear,
         message: 'قاعده شارژی تعریف نشده است',
       })
     }
 
+    // Use project's chargeYear or default to current Persian year
+    const chargeYear = project.chargeYear || getCurrentPersianYear()
+
     // Calculate total charge per unit (fixed amount for each unit)
     const chargePerUnit = activeRules.reduce((sum, rule) => sum + rule.amount, 0)
 
-    // Get recent periods
-    const periods = getRecentPeriods(periodsCount)
+    // Get all 12 months of the year (Farvardin to Esfand)
+    const periods = getYearPeriods(chargeYear)
 
     // Get all expenses with periodKey for this project
     const expenses = await prisma.expense.findMany({
@@ -109,6 +129,12 @@ export async function GET(request: NextRequest, context: RouteContext) {
           paidDate: paidExpenses.length > 0
             ? paidExpenses[0].expenseDate.toISOString().split('T')[0]
             : undefined,
+          expenses: paidExpenses.map((e) => ({
+            id: e.id,
+            title: e.title,
+            amount: e.amount,
+            expenseDate: e.expenseDate.toISOString().split('T')[0],
+          })),
         }
       })
 
@@ -137,6 +163,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         amount: r.amount,
       })),
       chargePerUnit,
+      chargeYear,
       totalChargePerPeriod: chargePerUnit * project.participants.length,
       participantsCount: project.participants.length,
     })

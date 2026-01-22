@@ -126,6 +126,7 @@ export async function updateProject(
     description?: string | null
     splitType?: SplitType
     currency?: string
+    chargeYear?: number | null
   }
 ) {
   // Filter out undefined values
@@ -134,6 +135,7 @@ export async function updateProject(
   if (data.description !== undefined) updateData.description = data.description
   if (data.splitType !== undefined) updateData.splitType = data.splitType
   if (data.currency !== undefined) updateData.currency = data.currency
+  if (data.chargeYear !== undefined) updateData.chargeYear = data.chargeYear
 
   return prisma.project.update({
     where: { id: projectId },

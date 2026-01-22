@@ -26,6 +26,7 @@ model Project {
   template     String        @default("travel")
   splitType    String        @default("EQUAL")
   currency     String        @default("IRR")
+  chargeYear   Int?          // سال شارژ (شمسی) - برای template ساختمان
   shareCode    String        @unique @default(cuid())
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt

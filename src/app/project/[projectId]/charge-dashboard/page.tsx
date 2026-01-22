@@ -9,6 +9,13 @@ import { formatMoney } from '@/lib/utils/money'
 // Types
 // ─────────────────────────────────────────────────────────────
 
+interface ChargeExpense {
+  id: string
+  title: string
+  amount: number
+  expenseDate: string
+}
+
 interface ParticipantStatus {
   id: string
   name: string
@@ -17,6 +24,7 @@ interface ParticipantStatus {
   paidAmount: number
   status: 'paid' | 'partial' | 'unpaid'
   paidDate?: string
+  expenses: ChargeExpense[]
 }
 
 interface PeriodStatus {
@@ -67,6 +75,12 @@ export default function ChargeDashboardPage() {
   const [selectedUnit, setSelectedUnit] = useState<ParticipantStatus | null>(null)
   const [paymentAmount, setPaymentAmount] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  // Edit/Delete modal
+  const [editingExpense, setEditingExpense] = useState<ChargeExpense | null>(null)
+  const [editAmount, setEditAmount] = useState('')
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<ChargeExpense | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     fetchChargeStatus()
@@ -144,6 +158,83 @@ export default function ChargeDashboardPage() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const handleEditExpense = async () => {
+    if (!editingExpense || !editAmount) return
+
+    setSubmitting(true)
+    setError('')
+    try {
+      const res = await fetch(`/api/projects/${projectId}/expenses/${editingExpense.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: parseFloat(editAmount),
+        }),
+      })
+
+      if (!res.ok) throw new Error('خطا در ویرایش')
+
+      setEditingExpense(null)
+      setSuccess('مبلغ شارژ با موفقیت ویرایش شد')
+      setTimeout(() => setSuccess(''), 3000)
+
+      // Refresh data
+      await fetchChargeStatus()
+
+      // Update selected period with new data
+      if (selectedPeriod) {
+        const updatedData = await fetch(`/api/projects/${projectId}/charge-status?periods=12`).then(r => r.json())
+        const updatedPeriod = updatedData.periods?.find((p: PeriodStatus) => p.periodKey === selectedPeriod.periodKey)
+        if (updatedPeriod) {
+          setSelectedPeriod(updatedPeriod)
+        }
+      }
+    } catch {
+      setError('خطا در ویرایش شارژ')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleDeleteExpense = async () => {
+    if (!showDeleteConfirm) return
+
+    setDeleting(true)
+    setError('')
+    try {
+      const res = await fetch(`/api/projects/${projectId}/expenses/${showDeleteConfirm.id}`, {
+        method: 'DELETE',
+      })
+
+      if (!res.ok) throw new Error('خطا در حذف')
+
+      setShowDeleteConfirm(null)
+      setSuccess('پرداخت شارژ حذف شد')
+      setTimeout(() => setSuccess(''), 3000)
+
+      // Refresh data
+      await fetchChargeStatus()
+
+      // Update selected period with new data
+      if (selectedPeriod) {
+        const updatedData = await fetch(`/api/projects/${projectId}/charge-status?periods=12`).then(r => r.json())
+        const updatedPeriod = updatedData.periods?.find((p: PeriodStatus) => p.periodKey === selectedPeriod.periodKey)
+        if (updatedPeriod) {
+          setSelectedPeriod(updatedPeriod)
+        }
+      }
+    } catch {
+      setError('خطا در حذف شارژ')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const openEditModal = (expense: ChargeExpense) => {
+    setEditingExpense(expense)
+    setEditAmount(expense.amount.toString())
   }
 
   // ── Loading ─────────────────────────────────────────────────
@@ -346,33 +437,74 @@ export default function ChargeDashboardPage() {
                 {selectedPeriod.participants.map((unit) => (
                   <Card
                     key={unit.id}
-                    className="p-3 flex items-center justify-between"
+                    className="p-3"
                   >
-                    <div className="flex items-center gap-3">
-                      <UnitStatusIcon status={unit.status} />
-                      <div>
-                        <p className="font-medium">{unit.name}</p>
-                        <p className="text-xs text-gray-500">
-                          {formatMoney(unit.expectedAmount, 'IRR')}
-                        </p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <UnitStatusIcon status={unit.status} />
+                        <div>
+                          <p className="font-medium">{unit.name}</p>
+                          <p className="text-xs text-gray-500">
+                            {formatMoney(unit.expectedAmount, 'IRR')}
+                          </p>
+                        </div>
                       </div>
+
+                      {unit.status === 'paid' ? (
+                        <span className="text-green-600 text-sm font-medium flex items-center gap-1">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                          پرداخت شده
+                        </span>
+                      ) : (
+                        <Button
+                          size="sm"
+                          onClick={() => openPaymentModal(unit)}
+                          className="!bg-emerald-500 hover:!bg-emerald-600 !px-3 !py-1.5 !text-sm"
+                        >
+                          ثبت پرداخت
+                        </Button>
+                      )}
                     </div>
 
-                    {unit.status === 'paid' ? (
-                      <span className="text-green-600 text-sm font-medium flex items-center gap-1">
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        پرداخت شده
-                      </span>
-                    ) : (
-                      <Button
-                        size="sm"
-                        onClick={() => openPaymentModal(unit)}
-                        className="!bg-emerald-500 hover:!bg-emerald-600 !px-3 !py-1.5 !text-sm"
-                      >
-                        ثبت پرداخت
-                      </Button>
+                    {/* List of expenses for this unit */}
+                    {unit.expenses && unit.expenses.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 space-y-2">
+                        {unit.expenses.map((expense) => (
+                          <div
+                            key={expense.id}
+                            className="flex items-center justify-between bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2"
+                          >
+                            <div className="flex-1">
+                              <p className="text-sm text-gray-700 dark:text-gray-300">
+                                {formatMoney(expense.amount, 'IRR')}
+                              </p>
+                              <p className="text-xs text-gray-500">{expense.expenseDate}</p>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => openEditModal(expense)}
+                                className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                                title="ویرایش"
+                              >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => setShowDeleteConfirm(expense)}
+                                className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                                title="حذف"
+                              >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </Card>
                 ))}
@@ -428,6 +560,83 @@ export default function ChargeDashboardPage() {
             >
               ثبت پرداخت
             </Button>
+          </div>
+        )}
+      </BottomSheet>
+
+      {/* Edit Expense Modal */}
+      <BottomSheet
+        isOpen={!!editingExpense}
+        onClose={() => setEditingExpense(null)}
+        title="ویرایش مبلغ شارژ"
+      >
+        {editingExpense && (
+          <div className="space-y-4">
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+              <p className="text-blue-800 dark:text-blue-200 text-sm">
+                تاریخ پرداخت: {editingExpense.expenseDate}
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                مبلغ جدید (تومان)
+              </label>
+              <input
+                type="number"
+                value={editAmount}
+                onChange={(e) => setEditAmount(e.target.value)}
+                className="w-full p-4 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-900 text-2xl font-bold text-center"
+                dir="ltr"
+                placeholder="0"
+              />
+            </div>
+
+            <Button
+              onClick={handleEditExpense}
+              loading={submitting}
+              disabled={!editAmount || parseFloat(editAmount) <= 0}
+              className="w-full !bg-blue-500 hover:!bg-blue-600 !py-4 text-lg"
+            >
+              ذخیره تغییرات
+            </Button>
+          </div>
+        )}
+      </BottomSheet>
+
+      {/* Delete Confirmation Modal */}
+      <BottomSheet
+        isOpen={!!showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(null)}
+        title="حذف پرداخت"
+      >
+        {showDeleteConfirm && (
+          <div className="space-y-4">
+            <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-xl text-center">
+              <p className="text-red-800 dark:text-red-200">
+                آیا مطمئن هستید که می‌خواهید این پرداخت را حذف کنید؟
+              </p>
+              <p className="text-red-600 dark:text-red-400 text-lg font-bold mt-2">
+                {formatMoney(showDeleteConfirm.amount, 'IRR')}
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                variant="secondary"
+                onClick={() => setShowDeleteConfirm(null)}
+                className="flex-1"
+              >
+                انصراف
+              </Button>
+              <Button
+                onClick={handleDeleteExpense}
+                loading={deleting}
+                className="flex-1 !bg-red-500 hover:!bg-red-600"
+              >
+                حذف
+              </Button>
+            </div>
           </div>
         )}
       </BottomSheet>
