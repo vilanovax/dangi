@@ -118,29 +118,29 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     await deleteParticipant(participantId)
 
     return NextResponse.json({ success: true })
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error deleting participant:', error)
 
     // Handle specific errors
-    if (error instanceof Error) {
-      if (error.message === 'PARTICIPANT_HAS_EXPENSES') {
-        return NextResponse.json(
-          { error: 'این عضو هزینه‌هایی پرداخت کرده است و نمی‌توان حذفش کرد' },
-          { status: 400 }
-        )
-      }
-      if (error.message === 'PARTICIPANT_HAS_SHARES') {
-        return NextResponse.json(
-          { error: 'این عضو در تقسیم هزینه‌ها شرکت دارد و نمی‌توان حذفش کرد' },
-          { status: 400 }
-        )
-      }
-      if (error.message === 'PARTICIPANT_HAS_SETTLEMENTS') {
-        return NextResponse.json(
-          { error: 'این عضو تسویه‌حساب‌هایی دارد و نمی‌توان حذفش کرد' },
-          { status: 400 }
-        )
-      }
+    const errorMessage = error instanceof Error ? error.message : String(error)
+
+    if (errorMessage === 'PARTICIPANT_HAS_EXPENSES') {
+      return NextResponse.json(
+        { error: 'این عضو هزینه‌هایی پرداخت کرده است و نمی‌توان حذفش کرد' },
+        { status: 400 }
+      )
+    }
+    if (errorMessage === 'PARTICIPANT_HAS_SHARES') {
+      return NextResponse.json(
+        { error: 'این عضو در تقسیم هزینه‌ها شرکت دارد و نمی‌توان حذفش کرد' },
+        { status: 400 }
+      )
+    }
+    if (errorMessage === 'PARTICIPANT_HAS_SETTLEMENTS') {
+      return NextResponse.json(
+        { error: 'این عضو تسویه‌حساب‌هایی دارد و نمی‌توان حذفش کرد' },
+        { status: 400 }
+      )
     }
 
     return NextResponse.json({ error: 'خطا در حذف عضو' }, { status: 500 })
