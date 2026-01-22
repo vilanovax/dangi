@@ -39,6 +39,7 @@ interface ChargeRule {
 interface ChargeStatusData {
   periods: PeriodStatus[]
   chargeRules: ChargeRule[]
+  chargePerUnit: number
   totalChargePerPeriod: number
   participantsCount: number
   message?: string
@@ -205,12 +206,15 @@ export default function ChargeDashboardPage() {
             <div>
               <p className="text-emerald-100 text-sm">شارژ ماهیانه هر واحد</p>
               <p className="text-2xl font-bold mt-1">
-                {formatMoney(data.totalChargePerPeriod, 'IRR')}
+                {formatMoney(data.chargePerUnit, 'IRR')}
               </p>
             </div>
             <div className="text-left">
-              <p className="text-emerald-100 text-sm">تعداد واحدها</p>
-              <p className="text-2xl font-bold mt-1">{data.participantsCount}</p>
+              <p className="text-emerald-100 text-sm">کل دریافتی ماهیانه</p>
+              <p className="text-2xl font-bold mt-1">
+                {formatMoney(data.totalChargePerPeriod, 'IRR')}
+              </p>
+              <p className="text-emerald-200 text-xs">{data.participantsCount} واحد</p>
             </div>
           </div>
         </Card>

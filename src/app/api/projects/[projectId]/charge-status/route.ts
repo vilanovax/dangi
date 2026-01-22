@@ -59,11 +59,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
       })
     }
 
-    // Calculate total expected charge per period
-    const totalChargePerPeriod = activeRules.reduce((sum, rule) => sum + rule.amount, 0)
-
-    // Calculate total weight for weighted distribution
-    const totalWeight = project.participants.reduce((sum, p) => sum + p.weight, 0)
+    // Calculate total charge per unit (fixed amount for each unit)
+    const chargePerUnit = activeRules.reduce((sum, rule) => sum + rule.amount, 0)
 
     // Get recent periods
     const periods = getRecentPeriods(periodsCount)
@@ -85,10 +82,10 @@ export async function GET(request: NextRequest, context: RouteContext) {
       const periodExpenses = expenses.filter((e) => e.periodKey === period.key)
 
       // Calculate each participant's status
+      // Each unit pays the same fixed charge amount
       const participantStatuses = project.participants.map((participant) => {
-        // Calculate expected amount based on weight
-        const weightRatio = totalWeight > 0 ? participant.weight / totalWeight : 1 / project.participants.length
-        const expectedAmount = Math.round(totalChargePerPeriod * weightRatio)
+        // Fixed charge amount per unit (not weighted)
+        const expectedAmount = chargePerUnit
 
         // Calculate paid amount (expenses paid by this participant in this period)
         const paidExpenses = periodExpenses.filter((e) => e.paidById === participant.id)
@@ -123,7 +120,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return {
         periodKey: period.key,
         periodLabel: period.label,
-        expectedAmount: totalChargePerPeriod,
+        expectedAmount: chargePerUnit,
         participants: participantStatuses,
         totalExpected,
         totalPaid,
@@ -139,7 +136,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
         title: r.title,
         amount: r.amount,
       })),
-      totalChargePerPeriod,
+      chargePerUnit,
+      totalChargePerPeriod: chargePerUnit * project.participants.length,
       participantsCount: project.participants.length,
     })
   } catch (error) {
