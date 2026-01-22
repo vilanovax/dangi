@@ -112,6 +112,13 @@ export default function ProjectPage() {
     fetchSettlements()
   }, [fetchProject, fetchSettlements])
 
+  // Redirect to building dashboard for building template
+  useEffect(() => {
+    if (project?.template === 'building') {
+      router.replace(`/project/${projectId}/building`)
+    }
+  }, [project?.template, projectId, router])
+
   // ── Computed Values ─────────────────────────────────────────
 
   const totalExpenses = project?.expenses.reduce((sum, e) => sum + e.amount, 0) || 0
