@@ -23,7 +23,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
           where: { isActive: true },
         },
         expenses: {
-          where: { periodKey: { not: null } },
           include: { paidBy: true },
           orderBy: { expenseDate: 'desc' },
         },
@@ -38,10 +37,14 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const chargePerUnit = project.chargeRules.reduce((sum, rule) => sum + rule.amount, 0)
     const participantsCount = project.participants.length
 
+    // Separate charge expenses (with periodKey) from common expenses (without periodKey)
+    const chargeExpenses = project.expenses.filter((e) => e.periodKey !== null)
+    const commonExpenses = project.expenses.filter((e) => e.periodKey === null)
+
     // Calculate monthly stats for the year
     const monthlyStats = PERSIAN_MONTHS.map((month) => {
       const periodKey = `${chargeYear}-${month.key}`
-      const periodExpenses = project.expenses.filter((e) => e.periodKey === periodKey)
+      const periodExpenses = chargeExpenses.filter((e) => e.periodKey === periodKey)
 
       const paidParticipants = new Set(periodExpenses.map((e) => e.paidById))
       const totalPaid = periodExpenses.reduce((sum, e) => sum + e.amount, 0)
@@ -61,13 +64,16 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     // Calculate overall stats
     const totalExpectedYear = chargePerUnit * participantsCount * 12
-    const totalPaidYear = project.expenses
+    const totalPaidYear = chargeExpenses
       .filter((e) => e.periodKey?.startsWith(`${chargeYear}-`))
       .reduce((sum, e) => sum + e.amount, 0)
 
+    // Common expenses stats
+    const totalCommonExpenses = commonExpenses.reduce((sum, e) => sum + e.amount, 0)
+
     // Participant stats
     const participantStats = project.participants.map((participant) => {
-      const participantExpenses = project.expenses.filter(
+      const participantExpenses = chargeExpenses.filter(
         (e) => e.paidById === participant.id && e.periodKey?.startsWith(`${chargeYear}-`)
       )
       const paidMonths = new Set(participantExpenses.map((e) => e.periodKey))
@@ -86,13 +92,22 @@ export async function GET(request: NextRequest, context: RouteContext) {
       }
     })
 
-    // Recent payments (last 10)
-    const recentPayments = project.expenses.slice(0, 10).map((e) => ({
+    // Recent charge payments (last 10)
+    const recentPayments = chargeExpenses.slice(0, 10).map((e) => ({
       id: e.id,
       title: e.title,
       amount: e.amount,
       paidBy: e.paidBy.name,
       periodKey: e.periodKey,
+      date: e.expenseDate.toISOString().split('T')[0],
+    }))
+
+    // Recent common expenses (last 10)
+    const recentCommonExpenses = commonExpenses.slice(0, 10).map((e) => ({
+      id: e.id,
+      title: e.title,
+      amount: e.amount,
+      paidBy: e.paidBy.name,
       date: e.expenseDate.toISOString().split('T')[0],
     }))
 
@@ -117,6 +132,12 @@ export async function GET(request: NextRequest, context: RouteContext) {
       monthlyTrend,
       participantStats,
       recentPayments,
+      // Common expenses
+      commonExpenses: {
+        total: totalCommonExpenses,
+        count: commonExpenses.length,
+        recent: recentCommonExpenses,
+      },
     })
   } catch (error) {
     console.error('Error fetching building stats:', error)

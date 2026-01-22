@@ -41,11 +41,25 @@ interface RecentPayment {
   date: string
 }
 
+interface CommonExpense {
+  id: string
+  title: string
+  amount: number
+  paidBy: string
+  date: string
+}
+
 interface YearStats {
   totalExpected: number
   totalPaid: number
   percentage: number
   remaining: number
+}
+
+interface CommonExpensesStats {
+  total: number
+  count: number
+  recent: CommonExpense[]
 }
 
 interface BuildingStats {
@@ -56,6 +70,7 @@ interface BuildingStats {
   monthlyStats: MonthStat[]
   participantStats: ParticipantStat[]
   recentPayments: RecentPayment[]
+  commonExpenses?: CommonExpensesStats
 }
 
 interface Project {
@@ -64,7 +79,7 @@ interface Project {
   currency: string
 }
 
-type TabType = 'overview' | 'months' | 'units' | 'payments'
+type TabType = 'overview' | 'months' | 'units' | 'payments' | 'common'
 
 // ─────────────────────────────────────────────────────────────
 // Main Component
@@ -201,17 +216,18 @@ export default function BuildingDashboard() {
 
       {/* Tabs */}
       <div className="px-4 mt-3">
-        <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-1">
+        <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-1 overflow-x-auto">
           {[
             { key: 'overview', label: 'نمای کلی' },
             { key: 'months', label: 'ماه‌ها' },
             { key: 'units', label: 'واحدها' },
-            { key: 'payments', label: 'پرداخت‌ها' },
+            { key: 'payments', label: 'شارژ' },
+            { key: 'common', label: 'هزینه‌ها' },
           ].map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as TabType)}
-              className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
+              className={`flex-1 py-2 px-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
                 activeTab === tab.key
                   ? 'bg-white dark:bg-gray-700 text-emerald-600 dark:text-emerald-400 shadow-sm'
                   : 'text-gray-500'
@@ -245,6 +261,13 @@ export default function BuildingDashboard() {
         )}
         {activeTab === 'payments' && (
           <PaymentsTab payments={stats.recentPayments} currency={project.currency} />
+        )}
+        {activeTab === 'common' && (
+          <CommonExpensesTab
+            commonExpenses={stats.commonExpenses}
+            currency={project.currency}
+            projectId={projectId}
+          />
         )}
       </div>
 
@@ -296,6 +319,17 @@ export default function BuildingDashboard() {
                 </svg>
               </div>
               <p className="font-medium text-sm">تنظیم شارژ</p>
+            </Card>
+          </Link>
+
+          <Link href={`/project/${projectId}/add-common-expense`} onClick={() => setShowQuickActions(false)}>
+            <Card className="p-4 hover:shadow-md transition-shadow text-center">
+              <div className="w-12 h-12 mx-auto bg-amber-100 dark:bg-amber-900/30 rounded-xl flex items-center justify-center mb-2">
+                <svg className="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
+              <p className="font-medium text-sm">هزینه عمومی</p>
             </Card>
           </Link>
 
@@ -618,6 +652,80 @@ function PaymentsTab({
           </div>
         </Card>
       ))}
+    </div>
+  )
+}
+
+function CommonExpensesTab({
+  commonExpenses,
+  currency,
+  projectId,
+}: {
+  commonExpenses?: CommonExpensesStats
+  currency: string
+  projectId: string
+}) {
+  if (!commonExpenses || commonExpenses.count === 0) {
+    return (
+      <div className="text-center py-12">
+        <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg className="w-8 h-8 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
+        </div>
+        <p className="text-gray-500 mb-4">هزینه عمومی ثبت نشده است</p>
+        <Link href={`/project/${projectId}/add-common-expense`}>
+          <Button className="!bg-amber-500 hover:!bg-amber-600">
+            ثبت هزینه عمومی
+          </Button>
+        </Link>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Summary Card */}
+      <Card className="p-4 bg-gradient-to-l from-amber-500 to-orange-500 text-white border-0">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-amber-100 text-sm">مجموع هزینه‌های عمومی</p>
+            <p className="text-2xl font-bold">{formatMoney(commonExpenses.total, currency)}</p>
+          </div>
+          <div className="text-left">
+            <p className="text-amber-100 text-sm">{commonExpenses.count} هزینه</p>
+          </div>
+        </div>
+      </Card>
+
+      {/* Add Button */}
+      <Link href={`/project/${projectId}/add-common-expense`}>
+        <Button className="w-full !bg-amber-500 hover:!bg-amber-600">
+          + ثبت هزینه عمومی جدید
+        </Button>
+      </Link>
+
+      {/* Recent Common Expenses */}
+      <div className="space-y-2">
+        <h3 className="font-bold text-gray-900 dark:text-white">هزینه‌های اخیر</h3>
+        {commonExpenses.recent.map((expense) => (
+          <Card key={expense.id} className="p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-sm">{expense.title}</p>
+                <p className="text-xs text-gray-500">
+                  پرداخت: {expense.paidBy} • {expense.date}
+                </p>
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-medium text-amber-600">
+                  {formatMoney(expense.amount, currency)}
+                </p>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
     </div>
   )
 }
