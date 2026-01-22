@@ -4,14 +4,15 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Button, Input, BottomSheet } from '@/components/ui'
 import { parseMoney } from '@/lib/utils/money'
-import { getTemplateLabels } from '@/lib/domain/templates'
-import type { TemplateLabels } from '@/lib/types/domain'
+import { getTemplate } from '@/lib/domain/templates'
+import type { TemplateDefinition } from '@/lib/types/domain'
 import {
   ExpenseTitleInput,
   AmountInput,
   CategorySelector,
   PaidBySelector,
   ParticipantsSelector,
+  PeriodPicker,
 } from './components'
 
 interface Participant {
@@ -46,7 +47,7 @@ export default function AddExpensePage() {
   const projectId = params.projectId as string
 
   const [project, setProject] = useState<Project | null>(null)
-  const [labels, setLabels] = useState<TemplateLabels | null>(null)
+  const [template, setTemplate] = useState<TemplateDefinition | null>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -57,6 +58,7 @@ export default function AddExpensePage() {
   const [categoryId, setCategoryId] = useState<string | null>(null)
   const [paidById, setPaidById] = useState('')
   const [includedParticipantIds, setIncludedParticipantIds] = useState<string[]>([])
+  const [periodKey, setPeriodKey] = useState<string | null>(null)
 
   // Add category modal
   const [showAddCategory, setShowAddCategory] = useState(false)
@@ -76,9 +78,9 @@ export default function AddExpensePage() {
       const data = await res.json()
       setProject(data.project)
 
-      // Load template labels
-      const templateLabels = getTemplateLabels(data.project.template)
-      setLabels(templateLabels)
+      // Load template
+      const projectTemplate = getTemplate(data.project.template)
+      setTemplate(projectTemplate)
 
       // Set defaults
       if (data.project.participants.length > 0) {
@@ -93,7 +95,8 @@ export default function AddExpensePage() {
   }
 
   const handleSubmit = async () => {
-    if (!labels) return
+    if (!template) return
+    const labels = template.labels
 
     // Validation
     if (!title.trim()) {
@@ -117,6 +120,12 @@ export default function AddExpensePage() {
       return
     }
 
+    // Validate period for templates that require it
+    if (template.periodRequired && !periodKey) {
+      setError('انتخاب دوره زمانی الزامی است')
+      return
+    }
+
     setSubmitting(true)
     setError('')
 
@@ -129,6 +138,7 @@ export default function AddExpensePage() {
           amount: parsedAmount,
           paidById,
           categoryId: categoryId || undefined,
+          periodKey: periodKey || undefined,
           includedParticipantIds,
         }),
       })
@@ -147,7 +157,7 @@ export default function AddExpensePage() {
   }
 
   const handleAddCategory = async () => {
-    if (!newCategoryName.trim() || !labels) return
+    if (!newCategoryName.trim() || !template) return
 
     setAddingCategory(true)
     try {
@@ -211,7 +221,7 @@ export default function AddExpensePage() {
     )
   }
 
-  if (!project || !labels) {
+  if (!project || !template) {
     return (
       <div className="min-h-dvh flex flex-col items-center justify-center p-4 text-center">
         <p className="text-gray-500">{error || 'پروژه یافت نشد'}</p>
@@ -219,6 +229,7 @@ export default function AddExpensePage() {
     )
   }
 
+  const labels = template.labels
   const sharePreview = getSharePreview()
 
   return (
@@ -247,6 +258,16 @@ export default function AddExpensePage() {
           <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-xl text-sm">
             {error}
           </div>
+        )}
+
+        {/* Period Picker - Only for templates that require it (e.g., building) */}
+        {template.periodRequired && (
+          <PeriodPicker
+            value={periodKey}
+            onChange={setPeriodKey}
+            label="این شارژ مربوط به کدوم ماه‌ه؟"
+            required
+          />
         )}
 
         {/* 1. Title - Most prominent */}
@@ -311,7 +332,13 @@ export default function AddExpensePage() {
         <Button
           onClick={handleSubmit}
           loading={submitting}
-          disabled={!title.trim() || !amount || !paidById || includedParticipantIds.length === 0}
+          disabled={
+            !title.trim() ||
+            !amount ||
+            !paidById ||
+            includedParticipantIds.length === 0 ||
+            (template.periodRequired && !periodKey)
+          }
           className="w-full"
           size="lg"
         >

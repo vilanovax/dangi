@@ -13,6 +13,13 @@ interface ExpenseData {
   }[]
 }
 
+interface SettlementData {
+  id: string
+  amount: number
+  fromId: string
+  toId: string
+}
+
 interface ParticipantData {
   id: string
   name: string
@@ -24,21 +31,24 @@ interface CalculateInput {
   currency: string
   expenses: ExpenseData[]
   participants: ParticipantData[]
+  existingSettlements?: SettlementData[]
 }
 
 /**
  * محاسبه موجودی هر شرکت‌کننده
  * balance مثبت = طلبکار، منفی = بدهکار
+ * تسویه‌های انجام شده در محاسبات لحاظ می‌شوند
  */
 export function calculateBalances(
   expenses: ExpenseData[],
-  participants: ParticipantData[]
+  participants: ParticipantData[],
+  existingSettlements: SettlementData[] = []
 ): ParticipantBalance[] {
-  const balanceMap = new Map<string, { paid: number; share: number }>()
+  const balanceMap = new Map<string, { paid: number; share: number; settlementAdjust: number }>()
 
   // Initialize all participants
   participants.forEach((p) => {
-    balanceMap.set(p.id, { paid: 0, share: 0 })
+    balanceMap.set(p.id, { paid: 0, share: 0, settlementAdjust: 0 })
   })
 
   // Calculate totals from expenses
@@ -58,15 +68,31 @@ export function calculateBalances(
     })
   })
 
+  // Apply existing settlements
+  // Settlement: from (بدهکار) pays to (طلبکار)
+  // So: from's debt decreases (becomes less negative), to's credit decreases (gets paid)
+  existingSettlements.forEach((settlement) => {
+    const from = balanceMap.get(settlement.fromId)
+    const to = balanceMap.get(settlement.toId)
+    if (from && to) {
+      // from paid money to to, so from's balance increases (less debt)
+      from.settlementAdjust += settlement.amount
+      // to received money from from, so to's balance decreases (less credit)
+      to.settlementAdjust -= settlement.amount
+    }
+  })
+
   // Convert to result format
   return participants.map((p) => {
-    const data = balanceMap.get(p.id) || { paid: 0, share: 0 }
+    const data = balanceMap.get(p.id) || { paid: 0, share: 0, settlementAdjust: 0 }
+    const rawBalance = data.paid - data.share
+    const adjustedBalance = rawBalance + data.settlementAdjust
     return {
       participantId: p.id,
       participantName: p.name,
       totalPaid: data.paid,
       totalShare: data.share,
-      balance: data.paid - data.share, // مثبت = طلبکار
+      balance: adjustedBalance, // مثبت = طلبکار (با احتساب تسویه‌ها)
     }
   })
 }
@@ -124,10 +150,10 @@ export function calculateOptimalSettlements(
  * محاسبه خلاصه کامل پروژه
  */
 export function calculateProjectSummary(input: CalculateInput): ProjectSummary {
-  const { projectId, projectName, currency, expenses, participants } = input
+  const { projectId, projectName, currency, expenses, participants, existingSettlements = [] } = input
 
   const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0)
-  const participantBalances = calculateBalances(expenses, participants)
+  const participantBalances = calculateBalances(expenses, participants, existingSettlements)
   const settlements = calculateOptimalSettlements(participantBalances)
 
   return {

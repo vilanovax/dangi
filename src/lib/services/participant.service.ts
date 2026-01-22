@@ -77,6 +77,75 @@ export async function updateParticipantPercentage(
 }
 
 /**
+ * Get a single participant by ID
+ */
+export async function getParticipantById(participantId: string) {
+  return prisma.participant.findUnique({
+    where: { id: participantId },
+    include: {
+      project: true,
+    },
+  })
+}
+
+/**
+ * Update participant details
+ */
+export async function updateParticipant(
+  participantId: string,
+  data: {
+    name?: string
+    weight?: number
+    percentage?: number
+    avatar?: string | null
+  }
+) {
+  return prisma.participant.update({
+    where: { id: participantId },
+    data,
+  })
+}
+
+/**
+ * Delete a participant
+ * Note: Will fail if participant has expenses paid or shares (referential integrity)
+ */
+export async function deleteParticipant(participantId: string) {
+  // Check if participant has any expenses paid
+  const expensesPaid = await prisma.expense.count({
+    where: { paidById: participantId },
+  })
+
+  if (expensesPaid > 0) {
+    throw new Error('PARTICIPANT_HAS_EXPENSES')
+  }
+
+  // Check if participant has any expense shares
+  const expenseShares = await prisma.expenseShare.count({
+    where: { participantId },
+  })
+
+  if (expenseShares > 0) {
+    throw new Error('PARTICIPANT_HAS_SHARES')
+  }
+
+  // Check if participant has any settlements
+  const settlements = await prisma.settlement.count({
+    where: {
+      OR: [{ fromId: participantId }, { toId: participantId }],
+    },
+  })
+
+  if (settlements > 0) {
+    throw new Error('PARTICIPANT_HAS_SETTLEMENTS')
+  }
+
+  return prisma.participant.delete({
+    where: { id: participantId },
+  })
+}
+
+/**
  * Check if participant belongs to project
  */
 export async function validateParticipantAccess(

@@ -9,6 +9,10 @@ export const buildingTemplate: TemplateDefinition = {
   nameFa: 'ساختمان',
   defaultSplitType: 'WEIGHTED',
   icon: '🏢',
+  // Period settings - ساختمان دوره‌ای است
+  periodRequired: true,
+  periodType: 'monthly',
+  supportsChargeRules: true,
   defaultCategories: [
     {
       name: 'Maintenance',

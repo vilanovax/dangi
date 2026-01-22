@@ -9,6 +9,9 @@ export const travelTemplate: TemplateDefinition = {
   nameFa: 'سفر',
   defaultSplitType: 'EQUAL',
   icon: '✈️',
+  // Period settings - سفر رویداد‌محور است، نه دوره‌ای
+  periodRequired: false,
+  supportsChargeRules: false,
   defaultCategories: [
     {
       name: 'Transport',

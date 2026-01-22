@@ -24,6 +24,7 @@ export async function createExpense(projectId: string, input: ExpenseInput) {
     paidById,
     categoryId,
     expenseDate,
+    periodKey,
     customShares,
     includedParticipantIds
   } = input
@@ -69,6 +70,7 @@ export async function createExpense(projectId: string, input: ExpenseInput) {
       paidById,
       categoryId,
       expenseDate: expenseDate || new Date(),
+      periodKey,  // دوره زمانی (اختیاری)
       projectId,
       shares: {
         create: shares.map((share) => ({

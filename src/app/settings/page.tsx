@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button, Input, Card, BottomSheet, Avatar, AvatarPicker } from '@/components/ui'
+import { Button, Input, Card, BottomSheet, Avatar, AvatarPicker, SettingsPageSkeleton } from '@/components/ui'
 import type { Avatar as AvatarType } from '@/lib/types/avatar'
 import { deserializeAvatar, serializeAvatar } from '@/lib/types/avatar'
 
@@ -48,37 +48,40 @@ export default function SettingsPage() {
   const [currentTheme, setCurrentTheme] = useState<Theme>('system')
   const [showThemeSheet, setShowThemeSheet] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
-  const [success, setSuccess] = useState('')
-  const [error, setError] = useState('')
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+
+  const showToast = useCallback((type: 'success' | 'error', message: string) => {
+    setToast({ type, message })
+    setTimeout(() => setToast(null), 3000)
+  }, [])
 
   useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch('/api/auth/me')
+        if (res.ok) {
+          const data = await res.json()
+          setUser(data.user)
+          setNewName(data.user?.name || '')
+          if (data.user?.avatar) {
+            setNewAvatar(deserializeAvatar(data.user.avatar, data.user.name))
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching user:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
     fetchUser()
     setCurrentTheme(getTheme())
   }, [])
 
-  const fetchUser = async () => {
-    try {
-      const res = await fetch('/api/auth/me')
-      if (res.ok) {
-        const data = await res.json()
-        setUser(data.user)
-        setNewName(data.user?.name || '')
-        if (data.user?.avatar) {
-          setNewAvatar(deserializeAvatar(data.user.avatar, data.user.name))
-        }
-      }
-    } catch (err) {
-      console.error('Error fetching user:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleSaveProfile = async () => {
+  const handleSaveProfile = useCallback(async () => {
     if (!newName.trim()) return
 
     setSaving(true)
-    setError('')
     try {
       const res = await fetch('/api/auth/me', {
         method: 'PATCH',
@@ -97,16 +100,15 @@ export default function SettingsPage() {
       const data = await res.json()
       setUser(data.user)
       setEditingProfile(false)
-      setSuccess('پروفایل با موفقیت ذخیره شد')
-      setTimeout(() => setSuccess(''), 3000)
+      showToast('success', 'پروفایل با موفقیت ذخیره شد')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'خطا در ذخیره')
+      showToast('error', err instanceof Error ? err.message : 'خطا در ذخیره')
     } finally {
       setSaving(false)
     }
-  }
+  }, [newName, newAvatar, showToast])
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' })
       router.push('/')
@@ -114,13 +116,13 @@ export default function SettingsPage() {
     } catch (err) {
       console.error('Logout error:', err)
     }
-  }
+  }, [router])
 
-  const handleThemeChange = (theme: Theme) => {
+  const handleThemeChange = useCallback((theme: Theme) => {
     setThemeStorage(theme)
     setCurrentTheme(theme)
     setShowThemeSheet(false)
-  }
+  }, [])
 
   const getThemeLabel = (theme: Theme) => {
     switch (theme) {
@@ -145,52 +147,58 @@ export default function SettingsPage() {
   }
 
   if (loading) {
-    return (
-      <div className="min-h-dvh flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full" />
-      </div>
-    )
+    return <SettingsPageSkeleton />
   }
 
   return (
-    <main className="min-h-dvh p-4">
+    <main className="min-h-dvh bg-gray-50 dark:bg-gray-950">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <button
-          onClick={() => router.back()}
-          className="p-2 -mr-2 text-gray-500 hover:text-gray-700"
-        >
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-        <h1 className="text-xl font-bold">تنظیمات</h1>
+      <div className="bg-white dark:bg-gray-900 sticky top-0 z-10 px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.back()}
+            className="p-2 -mr-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+          <h1 className="text-xl font-bold">تنظیمات</h1>
+        </div>
       </div>
 
-      {/* Success Message */}
-      {success && (
-        <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-xl text-sm text-center">
-          {success}
+      {/* Toast Notification */}
+      {toast && (
+        <div
+          className={`fixed top-4 left-4 right-4 z-50 p-4 rounded-xl shadow-lg transition-all animate-in fade-in slide-in-from-top-2 ${
+            toast.type === 'success'
+              ? 'bg-green-500 text-white'
+              : 'bg-red-500 text-white'
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            {toast.type === 'success' ? (
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            )}
+            <span className="text-sm font-medium">{toast.message}</span>
+          </div>
         </div>
       )}
 
-      {/* Error Message */}
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl text-sm text-center">
-          {error}
-        </div>
-      )}
-
-      <div className="space-y-6">
+      <div className="p-4 space-y-6">
         {/* Profile Section */}
         <section>
-          <h2 className="text-sm font-semibold text-gray-500 mb-3">پروفایل</h2>
-          <Card>
+          <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-3 px-1">پروفایل</h2>
+          <Card className="!p-0 overflow-hidden">
             {user ? (
-              // کاربر لاگین کرده
               editingProfile ? (
-                <div className="space-y-4">
-                  {/* Avatar در حالت ویرایش */}
+                <div className="p-4 space-y-4">
                   <div className="flex justify-center">
                     <Avatar
                       avatar={newAvatar || deserializeAvatar(user.avatar || null, newName || user.name)}
@@ -206,7 +214,6 @@ export default function SettingsPage() {
                     placeholder="نام شما"
                   />
 
-                  {/* Avatar Picker */}
                   {newName.trim().length > 0 && (
                     <AvatarPicker
                       name={newName}
@@ -215,7 +222,7 @@ export default function SettingsPage() {
                     />
                   )}
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 pt-2">
                     <Button
                       onClick={handleSaveProfile}
                       loading={saving}
@@ -238,33 +245,37 @@ export default function SettingsPage() {
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setEditingProfile(true)}
+                  className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                >
                   <Avatar
                     avatar={deserializeAvatar(user.avatar || null, user.name)}
                     name={user.name}
-                    size="xl"
+                    size="lg"
                   />
-                  <div className="flex-1">
-                    <p className="font-semibold text-lg">{user.name}</p>
-                    <p className="text-sm text-gray-500 dir-ltr text-right">{user.phone}</p>
+                  <div className="flex-1 text-right">
+                    <p className="font-semibold">{user.name}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 dir-ltr text-right">{user.phone}</p>
                   </div>
-                  <button
-                    onClick={() => setEditingProfile(true)}
-                    className="text-blue-500 text-sm"
-                  >
-                    ویرایش
-                  </button>
-                </div>
+                  <div className="flex items-center gap-2 text-blue-500">
+                    <span className="text-sm">ویرایش</span>
+                    <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </div>
+                </button>
               )
             ) : (
-              // کاربر مهمان
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-400 text-xl">
-                  👤
+              <div className="flex items-center gap-4 p-4">
+                <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                  <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
                 </div>
                 <div className="flex-1">
                   <p className="font-semibold">کاربر مهمان</p>
-                  <p className="text-xs text-gray-500">برای ذخیره اطلاعات وارد شوید</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">برای ذخیره اطلاعات وارد شوید</p>
                 </div>
                 <Button
                   size="sm"
@@ -279,18 +290,30 @@ export default function SettingsPage() {
 
         {/* Appearance Section */}
         <section>
-          <h2 className="text-sm font-semibold text-gray-500 mb-3">ظاهر</h2>
-          <Card>
+          <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-3 px-1">ظاهر</h2>
+          <Card className="!p-0 overflow-hidden">
             <button
               onClick={() => setShowThemeSheet(true)}
-              className="w-full flex items-center justify-between"
+              className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
             >
-              <div className="flex items-center gap-3">
-                <span className="text-xl">{getThemeIcon(currentTheme)}</span>
-                <div className="text-right">
-                  <p className="font-medium">تم</p>
-                  <p className="text-xs text-gray-500">{getThemeLabel(currentTheme)}</p>
-                </div>
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 flex items-center justify-center">
+                {currentTheme === 'dark' ? (
+                  <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                  </svg>
+                ) : currentTheme === 'light' ? (
+                  <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                )}
+              </div>
+              <div className="flex-1 text-right">
+                <p className="font-medium">تم برنامه</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{getThemeLabel(currentTheme)}</p>
               </div>
               <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -299,23 +322,25 @@ export default function SettingsPage() {
           </Card>
         </section>
 
-        {/* Account Section - فقط برای کاربر لاگین کرده */}
+        {/* Account Section */}
         {user && (
           <section>
-            <h2 className="text-sm font-semibold text-gray-500 mb-3">حساب کاربری</h2>
-            <Card>
+            <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-3 px-1">حساب کاربری</h2>
+            <Card className="!p-0 overflow-hidden">
               <button
                 onClick={() => setShowLogoutConfirm(true)}
-                className="w-full flex items-center justify-between text-red-500"
+                className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
               >
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">🚪</span>
-                  <div className="text-right">
-                    <p className="font-medium">خروج از حساب</p>
-                    <p className="text-xs text-gray-500">از حساب کاربری خارج شوید</p>
-                  </div>
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-800/30 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
                 </div>
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="flex-1 text-right">
+                  <p className="font-medium text-red-500">خروج از حساب</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">از حساب کاربری خارج شوید</p>
+                </div>
+                <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
@@ -325,15 +350,31 @@ export default function SettingsPage() {
 
         {/* About Section */}
         <section>
-          <h2 className="text-sm font-semibold text-gray-500 mb-3">درباره</h2>
-          <Card className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-500">نسخه</span>
-              <span className="font-mono text-sm">1.0.0-beta</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-500">سازنده</span>
-              <span className="text-sm">دنگی</span>
+          <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-3 px-1">درباره</h2>
+          <Card className="!p-0 overflow-hidden">
+            <div className="divide-y divide-gray-100 dark:divide-gray-800">
+              <div className="flex items-center gap-4 p-4">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">نسخه</p>
+                </div>
+                <span className="font-mono text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-lg">1.0.0-beta</span>
+              </div>
+              <div className="flex items-center gap-4 p-4">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">سازنده</p>
+                </div>
+                <span className="text-sm font-medium">دنگی</span>
+              </div>
             </div>
           </Card>
         </section>
@@ -345,24 +386,43 @@ export default function SettingsPage() {
         onClose={() => setShowThemeSheet(false)}
         title="انتخاب تم"
       >
-        <div className="space-y-2">
+        <div className="grid grid-cols-3 gap-3">
           {(['light', 'dark', 'system'] as Theme[]).map((theme) => (
             <button
               key={theme}
               onClick={() => handleThemeChange(theme)}
-              className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${
+              className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${
                 currentTheme === theme
-                  ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                  : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
               }`}
             >
-              <span className="text-xl">{getThemeIcon(theme)}</span>
-              <span className="font-medium">{getThemeLabel(theme)}</span>
-              {currentTheme === theme && (
-                <svg className="w-5 h-5 mr-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              )}
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                currentTheme === theme
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-500'
+              }`}>
+                {theme === 'light' && (
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                )}
+                {theme === 'dark' && (
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                  </svg>
+                )}
+                {theme === 'system' && (
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                )}
+              </div>
+              <span className={`text-sm font-medium ${
+                currentTheme === theme ? 'text-blue-600 dark:text-blue-400' : ''
+              }`}>
+                {getThemeLabel(theme)}
+              </span>
             </button>
           ))}
         </div>
@@ -374,10 +434,17 @@ export default function SettingsPage() {
         onClose={() => setShowLogoutConfirm(false)}
         title="خروج از حساب"
       >
-        <div className="space-y-4">
-          <p className="text-gray-600 dark:text-gray-400">
-            آیا مطمئن هستید که می‌خواهید از حساب کاربری خارج شوید؟
-          </p>
+        <div className="space-y-6">
+          <div className="flex flex-col items-center gap-4 py-4">
+            <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+              <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400 text-center">
+              آیا مطمئن هستید که می‌خواهید از حساب کاربری خارج شوید؟
+            </p>
+          </div>
           <div className="flex gap-3">
             <Button
               variant="secondary"

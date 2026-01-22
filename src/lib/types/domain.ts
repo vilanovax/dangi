@@ -36,6 +36,7 @@ export interface ExpenseInput {
   paidById: string
   categoryId?: string
   expenseDate?: Date
+  periodKey?: string  // دوره زمانی: "1403-10" برای دی‌ماه (برای template ساختمان)
   // شرکت‌کننده‌های شامل در تقسیم (اگر خالی باشه همه شامل میشن)
   includedParticipantIds?: string[]
   // برای تقسیم Manual
@@ -57,6 +58,10 @@ export interface TemplateDefinition {
   defaultSplitType: SplitType
   icon: string
   labels: TemplateLabels
+  // Period settings (برای template های دوره‌ای مثل ساختمان)
+  periodRequired: boolean          // آیا دوره زمانی الزامی است
+  periodType?: 'monthly' | 'yearly' // نوع دوره
+  supportsChargeRules: boolean     // پشتیبانی از قواعد شارژ
 }
 
 export interface CategoryDefinition {

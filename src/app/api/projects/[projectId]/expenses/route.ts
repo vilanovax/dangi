@@ -39,6 +39,7 @@ export async function POST(
       paidById,
       categoryId,
       expenseDate,
+      periodKey,
       includedParticipantIds
     } = body
 
@@ -107,14 +108,16 @@ export async function POST(
       paidById,
       categoryId: categoryId || undefined,
       expenseDate: expenseDate ? new Date(expenseDate) : undefined,
+      periodKey: periodKey || undefined,
       includedParticipantIds: includedParticipantIds || undefined,
     })
 
     return NextResponse.json({ expense }, { status: 201 })
   } catch (error) {
     console.error('Error creating expense:', error)
+    const errorMessage = error instanceof Error ? error.message : 'خطا در ثبت هزینه'
     return NextResponse.json(
-      { error: 'خطا در ثبت هزینه' },
+      { error: errorMessage, details: String(error) },
       { status: 500 }
     )
   }

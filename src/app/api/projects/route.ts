@@ -3,6 +3,7 @@ import { createProject } from '@/lib/services/project.service'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/db/prisma'
 import { verifyToken } from '@/lib/utils/auth'
+import { calculateBalances } from '@/lib/domain/summaryCalculator'
 
 // Get projects for logged-in user
 export async function GET() {
@@ -26,6 +27,7 @@ export async function GET() {
         id: true,
         name: true,
         phone: true,
+        avatar: true,
       },
     })
 
@@ -33,7 +35,7 @@ export async function GET() {
       return NextResponse.json({ projects: [], user: null })
     }
 
-    // Find all projects where user is a participant
+    // Find all projects where user is a participant with full expense data
     const participants = await prisma.participant.findMany({
       where: {
         userId: userId,
@@ -48,6 +50,27 @@ export async function GET() {
                 role: true,
               },
             },
+            expenses: {
+              select: {
+                id: true,
+                amount: true,
+                paidById: true,
+                shares: {
+                  select: {
+                    participantId: true,
+                    amount: true,
+                  },
+                },
+              },
+            },
+            settlements: {
+              select: {
+                id: true,
+                amount: true,
+                fromId: true,
+                toId: true,
+              },
+            },
             _count: {
               select: {
                 expenses: true,
@@ -58,19 +81,34 @@ export async function GET() {
       },
     })
 
-    // Build projects list with user info
-    const projects = participants.map((p) => ({
-      id: p.project.id,
-      name: p.project.name,
-      template: p.project.template,
-      currency: p.project.currency,
-      participantCount: p.project.participants.length,
-      expenseCount: p.project._count.expenses,
-      myParticipantId: p.id,
-      myName: p.name,
-      myRole: p.role,
-      createdAt: p.project.createdAt,
-    }))
+    // Build projects list with balance info
+    const projects = participants.map((p) => {
+      // Calculate total expenses
+      const totalExpenses = p.project.expenses.reduce((sum, e) => sum + e.amount, 0)
+
+      // Calculate user's balance in this project
+      const balances = calculateBalances(
+        p.project.expenses,
+        p.project.participants,
+        p.project.settlements
+      )
+      const myBalance = balances.find((b) => b.participantId === p.id)?.balance || 0
+
+      return {
+        id: p.project.id,
+        name: p.project.name,
+        template: p.project.template,
+        currency: p.project.currency,
+        participantCount: p.project.participants.length,
+        expenseCount: p.project._count.expenses,
+        totalExpenses,
+        myBalance: Math.round(myBalance), // مثبت = طلبکار، منفی = بدهکار
+        myParticipantId: p.id,
+        myName: p.name,
+        myRole: p.role,
+        createdAt: p.project.createdAt,
+      }
+    })
 
     // Remove duplicates and sort by creation date
     const uniqueProjects = Array.from(

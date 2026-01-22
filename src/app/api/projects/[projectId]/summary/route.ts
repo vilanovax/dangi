@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getProjectById } from '@/lib/services/project.service'
+import { getProjectSettlements } from '@/lib/services/settlement.service'
 import { calculateProjectSummary } from '@/lib/domain/summaryCalculator'
 
 type RouteContext = {
@@ -12,7 +13,10 @@ export async function GET(
 ) {
   try {
     const { projectId } = await context.params
-    const project = await getProjectById(projectId)
+    const [project, settlements] = await Promise.all([
+      getProjectById(projectId),
+      getProjectSettlements(projectId),
+    ])
 
     if (!project) {
       return NextResponse.json(
@@ -37,6 +41,12 @@ export async function GET(
           participantId: s.participantId,
           amount: s.amount,
         })),
+      })),
+      existingSettlements: settlements.map((s) => ({
+        id: s.id,
+        amount: s.amount,
+        fromId: s.fromId,
+        toId: s.toId,
       })),
     })
 

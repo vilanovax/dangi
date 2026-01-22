@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Button, Input, Card, BottomSheet } from '@/components/ui'
 import { getCurrencyLabel } from '@/lib/utils/money'
+import { getTemplate } from '@/lib/domain/templates'
 
 interface Participant {
   id: string
@@ -327,6 +328,53 @@ export default function SettingsPage() {
                 <span className="text-gray-500">
                   {SPLIT_TYPES.find((s) => s.code === splitType)?.label}
                 </span>
+                <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </div>
+            </button>
+          </Card>
+        </section>
+
+        {/* Charge Rules - Only for templates that support it */}
+        {getTemplate(project.template).supportsChargeRules && (
+          <section>
+            <h2 className="text-sm font-semibold text-gray-500 mb-3">قواعد شارژ</h2>
+            <Card>
+              <button
+                onClick={() => router.push(`/project/${projectId}/charge-rules`)}
+                className="w-full flex items-center justify-between"
+              >
+                <div>
+                  <p className="font-medium">مدیریت قواعد شارژ</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    تعریف پرداخت‌های دوره‌ای مورد انتظار
+                  </p>
+                </div>
+                <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+            </Card>
+          </section>
+        )}
+
+        {/* Participants Management */}
+        <section>
+          <h2 className="text-sm font-semibold text-gray-500 mb-3">اعضا</h2>
+          <Card>
+            <button
+              onClick={() => router.push(`/project/${projectId}/participants`)}
+              className="w-full flex items-center justify-between"
+            >
+              <div>
+                <p className="font-medium">مدیریت اعضا</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  افزودن، ویرایش یا حذف اعضای پروژه
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-400">{project.participants.length} نفر</span>
                 <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>

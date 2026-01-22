@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -30,25 +30,29 @@ model Project {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   categories   Category[]
+  chargeRules  ChargeRule[]
   expenses     Expense[]
   participants Participant[]
+  settlements  Settlement[]
 }
 
 model Participant {
-  id            String         @id @default(cuid())
-  name          String
-  role          String         @default("MEMBER")
-  weight        Float          @default(1)
-  percentage    Float?
-  avatar        String?        // آواتار (JSON) - null یعنی auto
-  sessionToken  String         @unique @default(cuid())
-  projectId     String
-  userId        String?        // اتصال به کاربر (اختیاری - برای مهمان‌ها null)
-  createdAt     DateTime       @default(now())
-  expensesPaid  Expense[]      @relation("PaidBy")
-  expenseShares ExpenseShare[]
-  project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user          User?          @relation(fields: [userId], references: [id])
+  id              String         @id @default(cuid())
+  name            String
+  role            String         @default("MEMBER")
+  weight          Float          @default(1)
+  percentage      Float?
+  avatar          String?        // آواتار (JSON) - null یعنی auto
+  sessionToken    String         @unique @default(cuid())
+  projectId       String
+  userId          String?        // اتصال به کاربر (اختیاری - برای مهمان‌ها null)
+  createdAt       DateTime       @default(now())
+  expensesPaid    Expense[]      @relation("PaidBy")
+  expenseShares   ExpenseShare[]
+  settlementsFrom Settlement[]   @relation("SettlementFrom")
+  settlementsTo   Settlement[]   @relation("SettlementTo")
+  project         Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user            User?          @relation(fields: [userId], references: [id])
 }
 
 model Category {
@@ -69,6 +73,7 @@ model Expense {
   paidById    String
   categoryId  String?
   expenseDate DateTime       @default(now())
+  periodKey   String?        // دوره زمانی: "1403-10" برای دی‌ماه (اختیاری - برای template ساختمان)
   receiptUrl  String?
   projectId   String
   createdAt   DateTime       @default(now())
@@ -89,4 +94,34 @@ model ExpenseShare {
   participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
 
   @@unique([expenseId, participantId])
+}
+
+// تسویه حساب - پرداخت بین اعضا
+model Settlement {
+  id          String      @id @default(cuid())
+  amount      Float       // مبلغ پرداخت شده
+  fromId      String      // کسی که پول داده
+  toId        String      // کسی که پول گرفته
+  projectId   String
+  note        String?     // توضیحات
+  receiptUrl  String?     // تصویر رسید (اختیاری)
+  settledAt   DateTime    @default(now()) // تاریخ تسویه
+  createdAt   DateTime    @default(now())
+  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  from        Participant @relation("SettlementFrom", fields: [fromId], references: [id])
+  to          Participant @relation("SettlementTo", fields: [toId], references: [id])
+}
+
+// قاعده شارژ - تعریف پرداخت‌های دوره‌ای مورد انتظار (برای template ساختمان)
+model ChargeRule {
+  id          String   @id @default(cuid())
+  title       String   // عنوان: "شارژ ماهیانه"، "آب‌بها"
+  amount      Float    // مبلغ ثابت مورد انتظار
+  frequency   String   @default("monthly") // monthly | yearly
+  splitType   String   @default("WEIGHTED") // نوع تقسیم: EQUAL | WEIGHTED | PERCENTAGE
+  isActive    Boolean  @default(true)
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

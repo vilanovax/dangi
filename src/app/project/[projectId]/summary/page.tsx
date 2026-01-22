@@ -1,9 +1,25 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Card, Button } from '@/components/ui'
-import { formatMoney } from '@/lib/utils/money'
+import { Button } from '@/components/ui'
+import { deserializeAvatar } from '@/lib/types/avatar'
+import {
+  SummaryHeader,
+  MemberBalanceCard,
+  SettlementSuggestionCard,
+  QuickSettleSheet,
+} from './components'
+
+// ─────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────
+
+interface Participant {
+  id: string
+  name: string
+  avatar?: string | null
+}
 
 interface ParticipantBalance {
   participantId: string
@@ -30,172 +46,277 @@ interface ProjectSummary {
   settlements: Settlement[]
 }
 
+interface Project {
+  id: string
+  participants: Participant[]
+}
+
+// ─────────────────────────────────────────────────────────────
+// Main Component
+// ─────────────────────────────────────────────────────────────
+
 export default function SummaryPage() {
   const params = useParams()
   const router = useRouter()
   const projectId = params.projectId as string
 
+  // ── Data State ──────────────────────────────────────────────
   const [summary, setSummary] = useState<ProjectSummary | null>(null)
+  const [project, setProject] = useState<Project | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchSummary()
-  }, [projectId])
+  // ── Quick Settlement State ──────────────────────────────────
+  const [showQuickSettle, setShowQuickSettle] = useState(false)
+  const [selectedSettlement, setSelectedSettlement] = useState<Settlement | null>(null)
+  const [submitting, setSubmitting] = useState(false)
 
-  const fetchSummary = async () => {
+  // ── Fetch Data ──────────────────────────────────────────────
+
+  const fetchData = useCallback(async () => {
     try {
-      const res = await fetch(`/api/projects/${projectId}/summary`)
-      if (!res.ok) throw new Error('خطا در دریافت خلاصه')
+      const [summaryRes, projectRes] = await Promise.all([
+        fetch(`/api/projects/${projectId}/summary`),
+        fetch(`/api/projects/${projectId}`),
+      ])
 
-      const data = await res.json()
-      setSummary(data.summary)
+      if (summaryRes.ok) {
+        const data = await summaryRes.json()
+        setSummary(data.summary)
+      }
+
+      if (projectRes.ok) {
+        const data = await projectRes.json()
+        setProject(data.project)
+      }
     } catch (error) {
-      console.error('Error fetching summary:', error)
+      console.error('Error fetching data:', error)
     } finally {
       setLoading(false)
     }
-  }
+  }, [projectId])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
+
+  // ── Handlers ────────────────────────────────────────────────
+
+  const handleBack = useCallback(() => {
+    router.back()
+  }, [router])
+
+  const handleQuickSettle = useCallback((settlement: Settlement) => {
+    setSelectedSettlement(settlement)
+    setShowQuickSettle(true)
+  }, [])
+
+  const handleCloseQuickSettle = useCallback(() => {
+    setShowQuickSettle(false)
+    setSelectedSettlement(null)
+  }, [])
+
+  const confirmQuickSettle = useCallback(async () => {
+    if (!selectedSettlement) return
+
+    setSubmitting(true)
+    try {
+      const res = await fetch(`/api/projects/${projectId}/settlements`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fromId: selectedSettlement.fromId,
+          toId: selectedSettlement.toId,
+          amount: selectedSettlement.amount,
+          note: 'تسویه سریع از صفحه خلاصه',
+        }),
+      })
+
+      if (res.ok) {
+        handleCloseQuickSettle()
+        fetchData()
+      }
+    } catch (error) {
+      console.error('Error creating settlement:', error)
+    } finally {
+      setSubmitting(false)
+    }
+  }, [selectedSettlement, projectId, handleCloseQuickSettle, fetchData])
+
+  // ── Helper: Get Participant Avatar ──────────────────────────
+
+  const getParticipantAvatar = useCallback(
+    (participantId: string) => {
+      const participant = project?.participants.find((p) => p.id === participantId)
+      if (participant) {
+        return deserializeAvatar(participant.avatar || null, participant.name)
+      }
+      return null
+    },
+    [project]
+  )
+
+  // ── Loading State ───────────────────────────────────────────
 
   if (loading) {
     return (
-      <div className="min-h-dvh flex items-center justify-center">
+      <div className="min-h-dvh flex items-center justify-center bg-gray-50 dark:bg-gray-950">
         <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full" />
       </div>
     )
   }
 
+  // ── Error State ─────────────────────────────────────────────
+
   if (!summary) {
     return (
-      <div className="min-h-dvh flex flex-col items-center justify-center p-4">
-        <p className="text-gray-500">خطا در بارگذاری</p>
+      <div className="min-h-dvh flex flex-col items-center justify-center p-4 bg-gray-50 dark:bg-gray-950">
+        <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+          <span className="text-3xl">😕</span>
+        </div>
+        <p className="text-gray-500 dark:text-gray-400">خطا در بارگذاری</p>
+        <button onClick={handleBack} className="mt-4 px-4 py-2 text-blue-500 hover:underline">
+          بازگشت
+        </button>
       </div>
     )
   }
 
+  // ── Computed Values ─────────────────────────────────────────
+
+  const hasDebt = summary.settlements.length > 0
+  const hasExpenses = summary.totalExpenses > 0
+
+  // Sort balances: creditors first, then debtors, then settled
+  const sortedBalances = [...summary.participantBalances].sort((a, b) => {
+    if (a.balance > 0 && b.balance <= 0) return -1
+    if (a.balance <= 0 && b.balance > 0) return 1
+    if (a.balance < 0 && b.balance >= 0) return 1
+    if (a.balance >= 0 && b.balance < 0) return -1
+    return b.balance - a.balance
+  })
+
+  // ── Main Render ─────────────────────────────────────────────
+
   return (
-    <main className="min-h-dvh pb-8">
+    <main className="min-h-dvh bg-gray-50 dark:bg-gray-950 pb-8">
       {/* Header */}
-      <div className="sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-lg z-10 px-4 py-3 border-b border-gray-100 dark:border-gray-800">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => router.back()}
-            className="p-2 -mr-2 text-gray-500 hover:text-gray-700"
-          >
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-          <h1 className="text-xl font-bold">تسویه حساب</h1>
-        </div>
-      </div>
+      <SummaryHeader
+        projectName={summary.projectName}
+        projectId={projectId}
+        totalExpenses={summary.totalExpenses}
+        participantCount={summary.participantBalances.length}
+        currency={summary.currency}
+        onBack={handleBack}
+      />
 
-      <div className="px-4 py-4 space-y-6">
-        {/* Total */}
-        <Card className="text-center py-6 bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-          <p className="text-blue-100 text-sm mb-1">مجموع هزینه‌ها</p>
-          <p className="text-3xl font-bold">
-            {formatMoney(summary.totalExpenses, summary.currency)}
-          </p>
-          <p className="text-blue-100 text-sm mt-2">
-            سهم هر نفر: {formatMoney(summary.totalExpenses / summary.participantBalances.length, summary.currency)}
-          </p>
-        </Card>
-
-        {/* Balances */}
-        <div>
-          <h2 className="text-lg font-semibold mb-3">وضعیت اعضا</h2>
+      <div className="px-4 py-5 space-y-6">
+        {/* Member Balances */}
+        <section>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-3">وضعیت اعضا</h2>
           <div className="space-y-2">
-            {summary.participantBalances.map((p) => (
-              <Card key={p.participantId} className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                  <span className="font-medium">{p.participantName.charAt(0)}</span>
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium">{p.participantName}</p>
-                  <p className="text-xs text-gray-500">
-                    پرداخت: {formatMoney(p.totalPaid, summary.currency)}
-                  </p>
-                </div>
-                <div className="text-left">
-                  <p
-                    className={`font-semibold ${
-                      p.balance > 0
-                        ? 'text-green-600'
-                        : p.balance < 0
-                        ? 'text-red-500'
-                        : 'text-gray-500'
-                    }`}
-                  >
-                    {p.balance > 0 ? '+' : ''}
-                    {formatMoney(p.balance, summary.currency)}
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    {p.balance > 0 ? 'طلبکار' : p.balance < 0 ? 'بدهکار' : 'تسویه'}
-                  </p>
-                </div>
-              </Card>
+            {sortedBalances.map((p) => (
+              <MemberBalanceCard
+                key={p.participantId}
+                name={p.participantName}
+                avatar={getParticipantAvatar(p.participantId)}
+                totalPaid={p.totalPaid}
+                totalShare={p.totalShare}
+                balance={p.balance}
+                currency={summary.currency}
+              />
             ))}
           </div>
-        </div>
+        </section>
 
-        {/* Settlements */}
-        {summary.settlements.length > 0 && (
-          <div>
-            <h2 className="text-lg font-semibold mb-3">برای تسویه</h2>
-            <Card className="divide-y divide-gray-100 dark:divide-gray-800">
+        {/* Settlement Suggestions */}
+        {hasDebt && (
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">پیشنهاد تسویه</h2>
+              <span className="text-xs text-gray-500 bg-gray-100 dark:bg-gray-800 px-2.5 py-1 rounded-full font-medium">
+                {summary.settlements.length} تراکنش
+              </span>
+            </div>
+            <div className="space-y-2">
               {summary.settlements.map((s, index) => (
-                <div key={index} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                  <div className="flex-1 flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                      <span className="text-sm font-medium text-red-600 dark:text-red-400">
-                        {s.fromName.charAt(0)}
-                      </span>
-                    </div>
-                    <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                    </svg>
-                    <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                      <span className="text-sm font-medium text-green-600 dark:text-green-400">
-                        {s.toName.charAt(0)}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="text-left">
-                    <p className="font-semibold">{formatMoney(s.amount, summary.currency)}</p>
-                    <p className="text-xs text-gray-500">
-                      {s.fromName} به {s.toName}
-                    </p>
-                  </div>
-                </div>
+                <SettlementSuggestionCard
+                  key={index}
+                  fromName={s.fromName}
+                  fromAvatar={getParticipantAvatar(s.fromId)}
+                  toName={s.toName}
+                  toAvatar={getParticipantAvatar(s.toId)}
+                  amount={s.amount}
+                  currency={summary.currency}
+                  onSettle={() => handleQuickSettle(s)}
+                />
               ))}
-            </Card>
+            </div>
+            <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-4">
+              با انجام این تراکنش‌ها همه تسویه می‌شوند
+            </p>
+          </section>
+        )}
 
-            <p className="text-center text-sm text-gray-500 mt-4">
-              با {summary.settlements.length} تراکنش همه تسویه می‌شوند
+        {/* All Settled State */}
+        {!hasDebt && hasExpenses && (
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 text-center shadow-sm">
+            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg
+                className="w-8 h-8 text-green-600 dark:text-green-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.5}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+            <p className="text-green-600 dark:text-green-400 font-bold text-lg">
+              همه تسویه هستند!
+            </p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+              هیچ بدهی باقی نمانده
             </p>
           </div>
         )}
 
-        {summary.settlements.length === 0 && summary.totalExpenses > 0 && (
-          <Card className="text-center py-8">
-            <div className="text-4xl mb-3">✅</div>
-            <p className="text-green-600 font-medium">همه تسویه هستند!</p>
-          </Card>
-        )}
-
-        {summary.totalExpenses === 0 && (
-          <Card className="text-center py-8">
-            <div className="text-4xl mb-3">📝</div>
-            <p className="text-gray-500">هنوز هزینه‌ای ثبت نشده</p>
+        {/* No Expenses State */}
+        {!hasExpenses && (
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 text-center shadow-sm">
+            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-3xl">📝</span>
+            </div>
+            <p className="text-gray-600 dark:text-gray-300 font-semibold">
+              هنوز خرجی ثبت نشده
+            </p>
+            <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">
+              اولین خرج رو ثبت کنید
+            </p>
             <Button
               onClick={() => router.push(`/project/${projectId}/add-expense`)}
               className="mt-4"
             >
-              ثبت اولین هزینه
+              ثبت اولین خرج
             </Button>
-          </Card>
+          </div>
         )}
       </div>
+
+      {/* Quick Settlement Confirmation Sheet */}
+      <QuickSettleSheet
+        isOpen={showQuickSettle}
+        onClose={handleCloseQuickSettle}
+        onConfirm={confirmQuickSettle}
+        settlement={selectedSettlement}
+        fromAvatar={selectedSettlement ? getParticipantAvatar(selectedSettlement.fromId) : null}
+        toAvatar={selectedSettlement ? getParticipantAvatar(selectedSettlement.toId) : null}
+        currency={summary.currency}
+        submitting={submitting}
+      />
     </main>
   )
 }
