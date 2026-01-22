@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Button, Card, BottomSheet } from '@/components/ui'
 import { formatMoney } from '@/lib/utils/money'
@@ -85,6 +85,15 @@ export default function ChargeDashboardPage() {
       setLoading(false)
     }
   }
+
+  // Sort periods from oldest to newest (reverse the API order)
+  const sortedPeriods = useMemo(() => {
+    if (!data?.periods) return []
+    return [...data.periods].reverse()
+  }, [data?.periods])
+
+  // Get current period key (first item in original data = current month)
+  const currentPeriodKey = data?.periods?.[0]?.periodKey
 
   const openPeriodDetail = (period: PeriodStatus) => {
     setSelectedPeriod(period)
@@ -186,31 +195,36 @@ export default function ChargeDashboardPage() {
       <Header onBack={() => router.back()} title="مدیریت شارژ ماهیانه" />
 
       {/* Messages */}
-      <div className="px-4 space-y-2">
-        {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 text-red-600 p-3 rounded-xl text-sm">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="bg-green-50 dark:bg-green-900/20 text-green-600 p-3 rounded-xl text-sm">
-            {success}
-          </div>
-        )}
-      </div>
+      {(error || success) && (
+        <div className="px-4 pt-4 space-y-2">
+          {error && (
+            <div className="bg-red-50 dark:bg-red-900/20 text-red-600 p-3 rounded-xl text-sm">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="bg-green-50 dark:bg-green-900/20 text-green-600 p-3 rounded-xl text-sm flex items-center gap-2">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              {success}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Summary */}
-      <div className="px-4 mt-4">
+      <div className="px-4 pt-4">
         <Card className="p-4 bg-gradient-to-l from-emerald-500 to-teal-600 text-white border-0">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-emerald-100 text-sm">شارژ ماهیانه هر واحد</p>
+              <p className="text-emerald-100 text-sm">شارژ هر واحد</p>
               <p className="text-2xl font-bold mt-1">
                 {formatMoney(data.chargePerUnit, 'IRR')}
               </p>
             </div>
             <div className="text-left">
-              <p className="text-emerald-100 text-sm">کل دریافتی ماهیانه</p>
+              <p className="text-emerald-100 text-sm">کل ماهیانه</p>
               <p className="text-2xl font-bold mt-1">
                 {formatMoney(data.totalChargePerPeriod, 'IRR')}
               </p>
@@ -220,75 +234,68 @@ export default function ChargeDashboardPage() {
         </Card>
       </div>
 
-      {/* Instruction */}
-      <div className="px-4 mt-6">
-        <p className="text-sm text-gray-500 mb-3">
-          برای ثبت پرداخت، روی ماه مورد نظر کلیک کنید
-        </p>
+      {/* Section Title */}
+      <div className="px-4 mt-6 mb-3 flex items-center justify-between">
+        <h2 className="font-bold text-gray-800 dark:text-gray-200">وضعیت ماه‌ها</h2>
+        <div className="flex items-center gap-3 text-xs">
+          <span className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-green-500"></span>
+            تکمیل
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+            ناقص
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-red-500"></span>
+            نشده
+          </span>
+        </div>
       </div>
 
-      {/* Months Grid */}
-      <div className="px-4 mt-2">
-        <div className="grid grid-cols-3 gap-3">
-          {data.periods.map((period) => {
+      {/* Months Grid - Sorted from oldest to newest */}
+      <div className="px-4">
+        <div className="grid grid-cols-4 gap-2">
+          {sortedPeriods.map((period) => {
             const allPaid = period.paidCount === data.participantsCount
             const nonePaid = period.paidCount === 0
-            const somePaid = !allPaid && !nonePaid
+            const isCurrent = period.periodKey === currentPeriodKey
+
+            // Extract month name without year for compact display
+            const monthName = period.periodLabel.split(' ')[0]
+            const year = period.periodLabel.split(' ')[1]
 
             return (
               <button
                 key={period.periodKey}
                 onClick={() => openPeriodDetail(period)}
-                className={`p-4 rounded-2xl text-center transition-all active:scale-95 ${
+                className={`relative p-3 rounded-xl text-center transition-all active:scale-95 ${
                   allPaid
-                    ? 'bg-green-100 dark:bg-green-900/30 border-2 border-green-300 dark:border-green-700'
+                    ? 'bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-800'
                     : nonePaid
-                    ? 'bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800'
-                    : 'bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-200 dark:border-yellow-700'
-                }`}
+                    ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+                    : 'bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800'
+                } ${isCurrent ? 'ring-2 ring-emerald-500 ring-offset-2' : ''}`}
               >
-                <p className="font-bold text-gray-800 dark:text-gray-200">
-                  {period.periodLabel}
+                {isCurrent && (
+                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full"></span>
+                )}
+                <p className="font-bold text-sm text-gray-800 dark:text-gray-200">
+                  {monthName}
                 </p>
-                <div className="mt-2 flex items-center justify-center gap-1">
-                  <span className={`text-lg font-bold ${
-                    allPaid ? 'text-green-600' : somePaid ? 'text-yellow-600' : 'text-red-500'
+                <p className="text-[10px] text-gray-500">{year}</p>
+                <div className="mt-1 flex items-center justify-center gap-0.5">
+                  <span className={`text-sm font-bold ${
+                    allPaid ? 'text-green-600' : nonePaid ? 'text-red-500' : 'text-yellow-600'
                   }`}>
                     {period.paidCount}
                   </span>
-                  <span className="text-gray-400">/</span>
-                  <span className="text-gray-500">{data.participantsCount}</span>
+                  <span className="text-gray-400 text-xs">/</span>
+                  <span className="text-gray-500 text-xs">{data.participantsCount}</span>
                 </div>
-                <p className={`text-xs mt-1 ${
-                  allPaid
-                    ? 'text-green-600'
-                    : nonePaid
-                    ? 'text-red-500'
-                    : 'text-yellow-600'
-                }`}>
-                  {allPaid ? 'تکمیل ✓' : nonePaid ? 'پرداخت نشده' : 'ناقص'}
-                </p>
               </button>
             )
           })}
-        </div>
-      </div>
-
-      {/* Legend */}
-      <div className="px-4 mt-6">
-        <div className="flex items-center justify-center gap-4 text-xs text-gray-500">
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded-full bg-green-500" />
-            <span>تکمیل</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded-full bg-yellow-500" />
-            <span>ناقص</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded-full bg-red-500" />
-            <span>پرداخت نشده</span>
-          </div>
         </div>
       </div>
 
@@ -313,7 +320,7 @@ export default function ChargeDashboardPage() {
               </div>
 
               {/* Progress Bar */}
-              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+              <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-l from-green-500 to-emerald-500 transition-all duration-500"
                   style={{
@@ -335,7 +342,7 @@ export default function ChargeDashboardPage() {
             {/* Units List */}
             <div>
               <h3 className="font-semibold mb-3">وضعیت واحدها</h3>
-              <div className="space-y-2">
+              <div className="space-y-2 max-h-[40vh] overflow-y-auto">
                 {selectedPeriod.participants.map((unit) => (
                   <Card
                     key={unit.id}
@@ -346,23 +353,23 @@ export default function ChargeDashboardPage() {
                       <div>
                         <p className="font-medium">{unit.name}</p>
                         <p className="text-xs text-gray-500">
-                          سهم: {formatMoney(unit.expectedAmount, 'IRR')}
+                          {formatMoney(unit.expectedAmount, 'IRR')}
                         </p>
                       </div>
                     </div>
 
                     {unit.status === 'paid' ? (
-                      <div className="flex items-center gap-1 text-green-600">
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      <span className="text-green-600 text-sm font-medium flex items-center gap-1">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
-                        <span className="text-sm font-medium">پرداخت شده</span>
-                      </div>
+                        پرداخت شده
+                      </span>
                     ) : (
                       <Button
                         size="sm"
                         onClick={() => openPaymentModal(unit)}
-                        className="!bg-emerald-500 hover:!bg-emerald-600 !px-4"
+                        className="!bg-emerald-500 hover:!bg-emerald-600 !px-3 !py-1.5 !text-sm"
                       >
                         ثبت پرداخت
                       </Button>
@@ -394,7 +401,7 @@ export default function ChargeDashboardPage() {
                 </span>
               </div>
               <p className="text-emerald-600 dark:text-emerald-400 text-sm mt-1">
-                سهم این واحد: {formatMoney(selectedUnit.expectedAmount, 'IRR')}
+                مبلغ شارژ: {formatMoney(selectedUnit.expectedAmount, 'IRR')}
               </p>
             </div>
 
@@ -434,17 +441,17 @@ export default function ChargeDashboardPage() {
 
 function Header({ onBack, title }: { onBack: () => void; title: string }) {
   return (
-    <div className="bg-white dark:bg-gray-900 px-4 py-4 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-10">
+    <div className="bg-white dark:bg-gray-900 px-4 py-3 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-10">
       <div className="flex items-center gap-3">
         <button
           onClick={onBack}
-          className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
         >
           <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </button>
-        <h1 className="text-xl font-bold">{title}</h1>
+        <h1 className="text-lg font-bold">{title}</h1>
       </div>
     </div>
   )
@@ -453,7 +460,7 @@ function Header({ onBack, title }: { onBack: () => void; title: string }) {
 function UnitStatusIcon({ status }: { status: 'paid' | 'partial' | 'unpaid' }) {
   if (status === 'paid') {
     return (
-      <div className="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+      <div className="w-9 h-9 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
         <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
         </svg>
@@ -463,7 +470,7 @@ function UnitStatusIcon({ status }: { status: 'paid' | 'partial' | 'unpaid' }) {
 
   if (status === 'partial') {
     return (
-      <div className="w-10 h-10 rounded-xl bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
+      <div className="w-9 h-9 rounded-lg bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
         <svg className="w-5 h-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
@@ -472,7 +479,7 @@ function UnitStatusIcon({ status }: { status: 'paid' | 'partial' | 'unpaid' }) {
   }
 
   return (
-    <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+    <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
       <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
