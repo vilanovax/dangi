@@ -1,0 +1,206 @@
+'use client'
+
+import { BottomSheet, Avatar, Button } from '@/components/ui'
+import { formatMoney } from '@/lib/utils/money'
+import { deserializeAvatar } from '@/lib/types/avatar'
+
+interface Participant {
+  id: string
+  name: string
+  role: string
+  avatar?: string | null
+}
+
+interface ParticipantBalance {
+  participantId: string
+  participantName: string
+  totalPaid: number
+  totalShare: number
+  balance: number
+}
+
+interface ParticipantProfileSheetProps {
+  isOpen: boolean
+  onClose: () => void
+  participant: Participant | null
+  balance: ParticipantBalance | null
+  currency: string
+  settlementCount: number
+  onEdit: () => void
+  onDelete: () => void
+  onTransferBalance: () => void
+}
+
+/**
+ * Bottom sheet showing participant profile with balance summary and quick actions
+ */
+export function ParticipantProfileSheet({
+  isOpen,
+  onClose,
+  participant,
+  balance,
+  currency,
+  settlementCount,
+  onEdit,
+  onDelete,
+  onTransferBalance,
+}: ParticipantProfileSheetProps) {
+  if (!participant) return null
+
+  const isOwner = participant.role === 'OWNER'
+  const balanceAmount = balance?.balance || 0
+  const isCreditor = balanceAmount > 0
+  const isDebtor = balanceAmount < 0
+  const isSettled = Math.abs(balanceAmount) < 1
+
+  // Determine balance color and label
+  const getBalanceStyle = () => {
+    if (isSettled) {
+      return {
+        bg: 'bg-gray-100 dark:bg-gray-800',
+        text: 'text-gray-600 dark:text-gray-400',
+        label: 'تسویه شده',
+        icon: '⚖️',
+      }
+    }
+    if (isCreditor) {
+      return {
+        bg: 'bg-green-50 dark:bg-green-900/20',
+        text: 'text-green-600 dark:text-green-400',
+        label: 'طلبکار',
+        icon: '📈',
+      }
+    }
+    return {
+      bg: 'bg-red-50 dark:bg-red-900/20',
+      text: 'text-red-600 dark:text-red-400',
+      label: 'بدهکار',
+      icon: '📉',
+    }
+  }
+
+  const balanceStyle = getBalanceStyle()
+
+  // Check if participant can be deleted directly (no activity)
+  const hasActivity = (balance?.totalPaid || 0) > 0 || (balance?.totalShare || 0) > 0 || settlementCount > 0
+  const canDeleteDirectly = !hasActivity && !isOwner
+
+  return (
+    <BottomSheet isOpen={isOpen} onClose={onClose}>
+      <div className="space-y-5">
+        {/* Profile Header */}
+        <div className="text-center">
+          <div className="relative inline-block">
+            {isOwner && (
+              <div className="absolute -inset-1.5 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full opacity-75 blur-sm" />
+            )}
+            <div className={`relative ${isOwner ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-white dark:ring-offset-gray-900' : ''} rounded-full`}>
+              <Avatar
+                avatar={deserializeAvatar(participant.avatar || null, participant.name)}
+                name={participant.name}
+                size="xl"
+                className="w-20 h-20"
+              />
+            </div>
+            {isOwner && (
+              <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white dark:ring-gray-900">
+                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                </svg>
+              </div>
+            )}
+          </div>
+          <h2 className="text-xl font-bold mt-3">{participant.name}</h2>
+          {isOwner && (
+            <span className="inline-block px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-medium rounded-full mt-1">
+              مدیر پروژه
+            </span>
+          )}
+        </div>
+
+        {/* Balance Card */}
+        <div className={`${balanceStyle.bg} rounded-2xl p-4`}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-gray-500 dark:text-gray-400">مانده حساب</span>
+            <span className="text-lg">{balanceStyle.icon}</span>
+          </div>
+          <div className="text-center">
+            <p className={`text-2xl font-bold ${balanceStyle.text}`}>
+              {isSettled ? '۰' : (isCreditor ? '+' : '') + formatMoney(Math.abs(balanceAmount), currency)}
+            </p>
+            <p className={`text-sm ${balanceStyle.text} mt-1`}>{balanceStyle.label}</p>
+          </div>
+        </div>
+
+        {/* Activity Summary */}
+        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4">
+          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">خلاصه فعالیت</h3>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+              <span className="text-gray-600 dark:text-gray-400">کل پرداخت‌ها</span>
+              <span className="font-medium">{formatMoney(balance?.totalPaid || 0, currency)}</span>
+            </div>
+            <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+              <span className="text-gray-600 dark:text-gray-400">سهم از هزینه‌ها</span>
+              <span className="font-medium">{formatMoney(balance?.totalShare || 0, currency)}</span>
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <span className="text-gray-600 dark:text-gray-400">تعداد تسویه</span>
+              <span className="font-medium">{settlementCount} مورد</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-2">
+          {/* Edit Button */}
+          <button
+            onClick={onEdit}
+            className="flex-1 flex flex-col items-center gap-1 py-3 px-4 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            <span className="text-xs font-medium">ویرایش</span>
+          </button>
+
+          {/* Transfer Balance Button - Only show if has balance */}
+          {!isSettled && (
+            <button
+              onClick={onTransferBalance}
+              className="flex-1 flex flex-col items-center gap-1 py-3 px-4 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 rounded-xl hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+              </svg>
+              <span className="text-xs font-medium">انتقال</span>
+            </button>
+          )}
+
+          {/* Delete Button - Disabled for owner */}
+          <button
+            onClick={onDelete}
+            disabled={isOwner}
+            className={`flex-1 flex flex-col items-center gap-1 py-3 px-4 rounded-xl transition-colors ${
+              isOwner
+                ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
+                : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30'
+            }`}
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            <span className="text-xs font-medium">{canDeleteDirectly ? 'حذف' : 'حذف'}</span>
+          </button>
+        </div>
+
+        {/* Owner Warning */}
+        {isOwner && (
+          <p className="text-xs text-center text-gray-400">
+            مدیر پروژه قابل حذف نیست
+          </p>
+        )}
+      </div>
+    </BottomSheet>
+  )
+}

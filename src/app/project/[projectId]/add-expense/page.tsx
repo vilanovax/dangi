@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Button, Input, BottomSheet } from '@/components/ui'
+import { Button, Input, BottomSheet, ImageUpload } from '@/components/ui'
 import { parseMoney } from '@/lib/utils/money'
 import { getTemplate } from '@/lib/domain/templates'
 import type { TemplateDefinition } from '@/lib/types/domain'
@@ -55,10 +55,14 @@ export default function AddExpensePage() {
   // Form state
   const [title, setTitle] = useState('')
   const [amount, setAmount] = useState('')
+  const [description, setDescription] = useState('')
   const [categoryId, setCategoryId] = useState<string | null>(null)
   const [paidById, setPaidById] = useState('')
   const [includedParticipantIds, setIncludedParticipantIds] = useState<string[]>([])
   const [periodKey, setPeriodKey] = useState<string | null>(null)
+  const [splitMode, setSplitMode] = useState<'EQUAL' | 'MANUAL'>('EQUAL')
+  const [customAmounts, setCustomAmounts] = useState<Record<string, string>>({})
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(null)
 
   // Add category modal
   const [showAddCategory, setShowAddCategory] = useState(false)
@@ -120,6 +124,17 @@ export default function AddExpensePage() {
       return
     }
 
+    // Validate custom amounts in MANUAL mode
+    if (splitMode === 'MANUAL') {
+      const customTotal = includedParticipantIds.reduce((sum, id) => {
+        return sum + (parseMoney(customAmounts[id] || '0') || 0)
+      }, 0)
+      if (Math.abs(customTotal - parsedAmount) > 1) {
+        setError('مجموع مبالغ باید برابر با کل هزینه باشد')
+        return
+      }
+    }
+
     // Validate period for templates that require it
     if (template.periodRequired && !periodKey) {
       setError('انتخاب دوره زمانی الزامی است')
@@ -130,16 +145,27 @@ export default function AddExpensePage() {
     setError('')
 
     try {
+      // Build customShares for MANUAL mode
+      const customShares = splitMode === 'MANUAL'
+        ? includedParticipantIds.map(id => ({
+            participantId: id,
+            amount: parseMoney(customAmounts[id] || '0') || 0,
+          }))
+        : undefined
+
       const res = await fetch(`/api/projects/${projectId}/expenses`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: title.trim(),
           amount: parsedAmount,
+          description: description.trim() || undefined,
           paidById,
           categoryId: categoryId || undefined,
           periodKey: periodKey || undefined,
+          receiptUrl: receiptUrl || undefined,
           includedParticipantIds,
+          customShares,
         }),
       })
 
@@ -213,6 +239,21 @@ export default function AddExpensePage() {
     return parsedAmount / includedParticipantIds.length
   }
 
+  // Calculate custom amounts total and validation
+  const getCustomAmountsInfo = () => {
+    const parsedAmount = parseMoney(amount) || 0
+    const customTotal = includedParticipantIds.reduce((sum, id) => {
+      return sum + (parseMoney(customAmounts[id] || '0') || 0)
+    }, 0)
+    const isValid = parsedAmount > 0 && Math.abs(customTotal - parsedAmount) <= 1
+    const remaining = parsedAmount - customTotal
+    return { customTotal, isValid, remaining }
+  }
+
+  const handleCustomAmountChange = (participantId: string, value: string) => {
+    setCustomAmounts(prev => ({ ...prev, [participantId]: value }))
+  }
+
   if (loading) {
     return (
       <div className="min-h-dvh flex items-center justify-center">
@@ -234,20 +275,20 @@ export default function AddExpensePage() {
 
   return (
     <main className="min-h-dvh pb-32">
-      {/* Header */}
-      <div className="sticky top-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 px-4 py-3 z-10">
+      {/* Header - Lighter, friendlier */}
+      <div className="sticky top-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-b border-gray-100/50 dark:border-gray-800/50 px-4 py-3 z-10">
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.back()}
-            className="p-2 -mr-2 text-gray-500 hover:text-gray-700"
+            className="p-2 -mr-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
           <div>
-            <h1 className="text-lg font-bold">{labels.addExpenseTitle}</h1>
-            <p className="text-xs text-gray-500">{labels.addExpenseSubtitle}</p>
+            <h1 className="text-base font-semibold text-gray-800 dark:text-gray-100">{labels.addExpenseTitle}</h1>
+            <p className="text-xs text-gray-400 dark:text-gray-500">یه خرج داشتی؟ سریع ثبتش کن ⚡</p>
           </div>
         </div>
       </div>
@@ -301,6 +342,30 @@ export default function AddExpensePage() {
           helper={labels.categoryHelper}
         />
 
+        {/* Note - Optional, collapsible feel */}
+        <div>
+          <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
+            یادداشت
+            <span className="text-gray-400 dark:text-gray-500 font-normal mr-1.5 text-xs">(اختیاری)</span>
+          </label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="یه توضیح کوچیک؟ شماره فاکتور؟"
+            rows={2}
+            className="w-full px-4 py-3 text-base border border-gray-100 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-300 dark:focus:border-blue-700 resize-none bg-gray-50/50 dark:bg-gray-800/30 placeholder-gray-400 dark:placeholder-gray-600 transition-all"
+          />
+        </div>
+
+        {/* Receipt - Optional, friendly */}
+        <ImageUpload
+          value={receiptUrl}
+          onChange={setReceiptUrl}
+          folder="receipts"
+          label="عکس رسید"
+          placeholder="رسید داری؟ بنداز اینجا 📸"
+        />
+
         {/* 4. Paid By */}
         <PaidBySelector
           participants={project.participants}
@@ -311,7 +376,38 @@ export default function AddExpensePage() {
           helper={labels.paidByHelper}
         />
 
-        {/* 5. Split Between */}
+        {/* Split Mode - Friendly toggle */}
+        <div>
+          <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
+            چطور تقسیم بشه؟
+          </label>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setSplitMode('EQUAL')}
+              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-all active:scale-[0.98] ${
+                splitMode === 'EQUAL'
+                  ? 'bg-blue-500 text-white shadow-md shadow-blue-500/25'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
+            >
+              مساوی ⚖️
+            </button>
+            <button
+              type="button"
+              onClick={() => setSplitMode('MANUAL')}
+              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-all active:scale-[0.98] ${
+                splitMode === 'MANUAL'
+                  ? 'bg-blue-500 text-white shadow-md shadow-blue-500/25'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
+            >
+              دستی ✏️
+            </button>
+          </div>
+        </div>
+
+        {/* 6. Split Between */}
         <ParticipantsSelector
           participants={project.participants}
           selectedIds={includedParticipantIds}
@@ -324,11 +420,15 @@ export default function AddExpensePage() {
           helper={labels.splitBetweenHelper}
           participantTerm={labels.participantTerm}
           onlyForYouMessage={labels.onlyForYouMessage}
+          splitMode={splitMode}
+          customAmounts={customAmounts}
+          onCustomAmountChange={handleCustomAmountChange}
+          totalAmount={parseMoney(amount) || 0}
         />
       </div>
 
-      {/* Fixed Submit Button */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-t border-gray-100 dark:border-gray-800">
+      {/* Fixed Submit Button - Friendly and inviting */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-t border-gray-100/50 dark:border-gray-800/50 safe-bottom">
         <Button
           onClick={handleSubmit}
           loading={submitting}
@@ -337,12 +437,13 @@ export default function AddExpensePage() {
             !amount ||
             !paidById ||
             includedParticipantIds.length === 0 ||
-            (template.periodRequired && !periodKey)
+            (template.periodRequired && !periodKey) ||
+            (splitMode === 'MANUAL' && !getCustomAmountsInfo().isValid)
           }
-          className="w-full"
+          className="w-full shadow-lg shadow-blue-500/20"
           size="lg"
         >
-          {submitting ? labels.submittingButton : labels.submitButton}
+          {submitting ? 'در حال ثبت...' : 'ثبت خرج ✓'}
         </Button>
       </div>
 

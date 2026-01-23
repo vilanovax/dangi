@@ -32,7 +32,11 @@ interface ExpensesListProps {
 
 /**
  * Timeline list of expenses grouped by date
- * Clean, scrollable, comfortable to browse
+ *
+ * UX Intent:
+ * - Breathable spacing, not dense
+ * - Comfortable to scroll and scan
+ * - Extra top padding for visual separation from search
  */
 export function ExpensesList({
   expenses,
@@ -48,12 +52,13 @@ export function ExpensesList({
   }
 
   return (
-    <div className="px-4 py-4 space-y-4">
+    <div className="px-4 pt-5 pb-4 space-y-5">
       {Object.entries(groupedExpenses).map(([date, dateExpenses]) => (
-        <div key={date} className="space-y-2">
+        <div key={date} className="space-y-2.5">
           <DateSeparator date={date} />
 
-          <div className="space-y-2">
+          {/* Cards with slightly more spacing for better rhythm */}
+          <div className="space-y-2.5">
             {dateExpenses.map((expense) => (
               <ExpenseItem
                 key={expense.id}

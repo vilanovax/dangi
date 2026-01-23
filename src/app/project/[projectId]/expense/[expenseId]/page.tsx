@@ -40,6 +40,7 @@ interface Expense {
   title: string
   amount: number
   description?: string
+  receiptUrl?: string
   expenseDate: string
   paidById: string
   paidBy: Participant
@@ -372,6 +373,8 @@ export default function ExpenseDetailPage() {
         <ExpenseView
           title={expense.title}
           amount={expense.amount}
+          description={expense.description}
+          receiptUrl={expense.receiptUrl}
           currency={project.currency}
           expenseDate={expense.expenseDate}
           paidBy={expense.paidBy}

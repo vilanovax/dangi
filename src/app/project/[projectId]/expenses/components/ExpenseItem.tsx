@@ -24,9 +24,12 @@ interface ExpenseItemProps {
 
 /**
  * Single expense item in the timeline
- * Clear hierarchy: Title > Amount > Payer > Category
- * Minimal design - no avatar to keep it clean
- * Tappable with subtle hover feedback
+ *
+ * UX Intent:
+ * - Entire card clearly tappable
+ * - Title > Amount > Meta hierarchy
+ * - Press feedback makes tap action obvious
+ * - Chevron slightly more visible as affordance
  */
 export function ExpenseItem({
   id,
@@ -39,21 +42,22 @@ export function ExpenseItem({
   periodKey,
   showPeriod = false,
 }: ExpenseItemProps) {
-  // Category background with subtle opacity
+  // Category background - slightly more vibrant
   const categoryBgColor = category?.color
-    ? `${category.color}12`
-    : 'rgba(107, 114, 128, 0.08)'
+    ? `${category.color}18`
+    : 'rgba(107, 114, 128, 0.1)'
 
   return (
     <Link
       href={`/project/${projectId}/expense/${id}`}
       className="block group"
     >
-      <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm group-hover:shadow-md group-active:scale-[0.99] transition-all duration-150">
+      {/* Card with clear tap affordance and feedback */}
+      <div className="bg-white dark:bg-gray-900/80 rounded-xl p-3.5 border border-gray-100/80 dark:border-gray-800/50 group-hover:bg-gray-50 dark:group-hover:bg-gray-900 group-active:scale-[0.98] group-active:bg-gray-100 dark:group-active:bg-gray-800 transition-all duration-150">
         <div className="flex items-center gap-3">
-          {/* Category Icon - secondary visual element */}
+          {/* Category Icon - more vibrant background */}
           <div
-            className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+            className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105"
             style={{ backgroundColor: categoryBgColor }}
           >
             <span className="text-xl">{category?.icon || '📝'}</span>
@@ -61,37 +65,35 @@ export function ExpenseItem({
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            {/* Title - primary element */}
-            <h3 className="font-semibold text-gray-900 dark:text-white truncate text-[15px]">
+            {/* Title - primary, slightly bolder */}
+            <h3 className="font-bold text-gray-800 dark:text-gray-100 truncate text-[15px]">
               {title}
             </h3>
 
-            {/* Payer & Category & Period info - clean text only, no avatar */}
-            <p className="text-[13px] text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+            {/* Payer & Category - secondary, smaller */}
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 truncate">
               {payer.name}
               {category && (
-                <span className="text-gray-400 dark:text-gray-500">
-                  {' '}
-                  • {category.name}
+                <span className="text-gray-400/80 dark:text-gray-600">
+                  {' '}• {category.name}
                 </span>
               )}
               {showPeriod && periodKey && (
-                <span className="text-blue-500 dark:text-blue-400 font-medium">
-                  {' '}
-                  • {formatPeriodKeyShort(periodKey)}
+                <span className="text-blue-500/80 dark:text-blue-400/80 font-medium">
+                  {' '}• {formatPeriodKeyShort(periodKey)}
                 </span>
               )}
             </p>
           </div>
 
-          {/* Amount - clearly visible but not screaming */}
+          {/* Amount - lighter weight, readable */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            <p className="font-bold text-gray-800 dark:text-gray-100 text-[15px]">
+            <p className="font-semibold text-gray-700 dark:text-gray-200 text-[15px]">
               {formatMoney(amount, currency)}
             </p>
-            {/* Subtle chevron as tap affordance */}
+            {/* Chevron - more visible tap affordance */}
             <svg
-              className="w-4 h-4 text-gray-300 dark:text-gray-600 group-hover:text-gray-400 transition-colors"
+              className="w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-gray-500 dark:group-hover:text-gray-400 transition-colors"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"

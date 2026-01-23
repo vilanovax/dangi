@@ -38,7 +38,7 @@ export async function PATCH(
     const { projectId } = await context.params
     const body = await request.json()
 
-    const { name, description, currency, splitType, chargeYear } = body
+    const { name, description, currency, splitType, chargeYear, isArchived } = body
 
     // Check if project exists
     const existingProject = await getProjectById(projectId)
@@ -91,6 +91,8 @@ export async function PATCH(
       currency,
       splitType,
       chargeYear,
+      isArchived,
+      archivedAt: isArchived === true ? new Date() : (isArchived === false ? null : undefined),
     })
 
     return NextResponse.json({ project })

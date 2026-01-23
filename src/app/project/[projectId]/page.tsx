@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Button, FloatingButton, Card } from '@/components/ui'
+import { Button, FloatingButton } from '@/components/ui'
 import Link from 'next/link'
 import {
   DashboardHeader,
@@ -11,6 +11,8 @@ import {
   RecentExpenseCard,
   RecentSettlementCard,
   AddMemberSheet,
+  ParticipantProfileSheet,
+  TransferBalanceSheet,
 } from './components'
 
 // ─────────────────────────────────────────────────────────────
@@ -61,6 +63,18 @@ interface Project {
   categories: Category[]
 }
 
+interface ParticipantBalance {
+  participantId: string
+  participantName: string
+  totalPaid: number
+  totalShare: number
+  balance: number
+}
+
+interface Summary {
+  participantBalances: ParticipantBalance[]
+}
+
 // ─────────────────────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────────────────────
@@ -73,11 +87,15 @@ export default function ProjectPage() {
   // ── Data State ──────────────────────────────────────────────
   const [project, setProject] = useState<Project | null>(null)
   const [settlements, setSettlements] = useState<Settlement[]>([])
+  const [summary, setSummary] = useState<Summary | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   // ── Modal State ─────────────────────────────────────────────
   const [showAddMember, setShowAddMember] = useState(false)
+  const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null)
+  const [showProfileSheet, setShowProfileSheet] = useState(false)
+  const [showTransferSheet, setShowTransferSheet] = useState(false)
 
   // ── Fetch Data ──────────────────────────────────────────────
 
@@ -107,10 +125,70 @@ export default function ProjectPage() {
     }
   }, [projectId])
 
+  const fetchSummary = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}/summary`)
+      if (res.ok) {
+        const data = await res.json()
+        setSummary(data.summary)
+      }
+    } catch {
+      // Silently fail for summary
+    }
+  }, [projectId])
+
   useEffect(() => {
     fetchProject()
     fetchSettlements()
-  }, [fetchProject, fetchSettlements])
+    fetchSummary()
+  }, [fetchProject, fetchSettlements, fetchSummary])
+
+  // ── Participant Handlers ──────────────────────────────────────
+
+  const handleParticipantClick = useCallback((participant: Participant) => {
+    setSelectedParticipant(participant)
+    setShowProfileSheet(true)
+  }, [])
+
+  const handleEditParticipant = useCallback(() => {
+    setShowProfileSheet(false)
+    // Navigate to participants page for editing
+    router.push(`/project/${projectId}/participants`)
+  }, [router, projectId])
+
+  const handleDeleteParticipant = useCallback(() => {
+    setShowProfileSheet(false)
+    // Navigate to participants page for deletion
+    router.push(`/project/${projectId}/participants`)
+  }, [router, projectId])
+
+  const handleTransferBalance = useCallback(() => {
+    setShowProfileSheet(false)
+    setShowTransferSheet(true)
+  }, [])
+
+  const handleRefreshData = useCallback(() => {
+    fetchProject()
+    fetchSettlements()
+    fetchSummary()
+    setSelectedParticipant(null)
+  }, [fetchProject, fetchSettlements, fetchSummary])
+
+  // Get balance for selected participant
+  const getSelectedBalance = useCallback(() => {
+    if (!selectedParticipant || !summary) return null
+    return summary.participantBalances.find(
+      (b) => b.participantId === selectedParticipant.id
+    ) || null
+  }, [selectedParticipant, summary])
+
+  // Get settlement count for selected participant
+  const getSettlementCount = useCallback(() => {
+    if (!selectedParticipant) return 0
+    return settlements.filter(
+      (s) => s.from.id === selectedParticipant.id || s.to.id === selectedParticipant.id
+    ).length
+  }, [selectedParticipant, settlements])
 
   // Redirect to building dashboard for building template
   useEffect(() => {
@@ -123,12 +201,19 @@ export default function ProjectPage() {
 
   const totalExpenses = project?.expenses.reduce((sum, e) => sum + e.amount, 0) || 0
 
-  // ── Loading State ───────────────────────────────────────────
+  // Check if all balances are settled (all balances near zero)
+  const isAllSettled = summary?.participantBalances.every(
+    (b) => Math.abs(b.balance) < 1
+  ) ?? false
 
-  if (loading) {
+  // ── Loading State ───────────────────────────────────────────
+  // For building template, show emerald loading to prevent flash
+  const isBuilding = project?.template === 'building'
+
+  if (loading || isBuilding) {
     return (
       <div className="min-h-dvh flex items-center justify-center bg-gray-50 dark:bg-gray-950">
-        <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full" />
+        <div className={`animate-spin w-8 h-8 border-2 ${isBuilding ? 'border-emerald-500' : 'border-blue-500'} border-t-transparent rounded-full`} />
       </div>
     )
   }
@@ -161,36 +246,45 @@ export default function ProjectPage() {
       />
 
       {/* Quick Actions */}
-      <QuickActions projectId={projectId} template={project.template} />
+      <QuickActions projectId={projectId} template={project.template} isSettled={isAllSettled} />
 
       {/* Participants */}
       <ParticipantsRow
         participants={project.participants}
         onAddMember={() => setShowAddMember(true)}
+        onParticipantClick={handleParticipantClick}
       />
 
-      {/* Recent Expenses */}
-      <div className="px-4 mt-6">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold">هزینه‌های اخیر</h2>
+      {/* ─── Recent Expenses Section ─────────────────────────────── */}
+      <section className="px-4 mt-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100">
+            هزینه‌های اخیر
+          </h2>
           {project.expenses.length > 0 && (
-            <Link href={`/project/${projectId}/expenses`} className="text-sm text-blue-500">
-              مشاهده همه
+            <Link
+              href={`/project/${projectId}/expenses`}
+              className="text-sm text-blue-500 hover:text-blue-600 transition-colors"
+            >
+              همه →
             </Link>
           )}
         </div>
 
         {project.expenses.length === 0 ? (
-          <Card className="text-center py-8">
-            <div className="text-4xl mb-3">📝</div>
-            <p className="text-gray-500 dark:text-gray-400 text-sm">هنوز هزینه‌ای ثبت نشده</p>
-            <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">
-              اولین هزینه را اضافه کنید
+          /* Empty state - friendly, encouraging */
+          <div className="bg-white dark:bg-gray-900/80 rounded-2xl p-6 text-center border border-gray-100 dark:border-gray-800/50">
+            <div className="w-14 h-14 bg-blue-50 dark:bg-blue-950/30 rounded-full flex items-center justify-center mx-auto mb-3">
+              <span className="text-2xl">✨</span>
+            </div>
+            <p className="text-gray-600 dark:text-gray-300 font-medium">هنوز خرجی ثبت نشده</p>
+            <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">
+              اولیش با تو 😉
             </p>
-          </Card>
+          </div>
         ) : (
-          <div className="space-y-2">
-            {project.expenses.slice(0, 5).map((expense) => (
+          <div className="space-y-2.5">
+            {project.expenses.slice(0, 4).map((expense) => (
               <RecentExpenseCard
                 key={expense.id}
                 id={expense.id}
@@ -205,18 +299,23 @@ export default function ProjectPage() {
             ))}
           </div>
         )}
-      </div>
+      </section>
 
-      {/* Recent Settlements */}
+      {/* ─── Recent Settlements Section ───────────────────────────── */}
       {settlements.length > 0 && (
-        <div className="px-4 mt-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold">تسویه‌های اخیر</h2>
-            <Link href={`/project/${projectId}/settlements`} className="text-sm text-green-500">
-              مشاهده همه
+        <section className="px-4 mt-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100">
+              تسویه‌های اخیر
+            </h2>
+            <Link
+              href={`/project/${projectId}/settlements`}
+              className="text-sm text-green-500 hover:text-green-600 transition-colors"
+            >
+              همه →
             </Link>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {settlements.slice(0, 3).map((settlement) => (
               <RecentSettlementCard
                 key={settlement.id}
@@ -230,20 +329,29 @@ export default function ProjectPage() {
               />
             ))}
           </div>
-        </div>
+        </section>
       )}
 
-      {/* Floating Add Button */}
-      <FloatingButton
-        onClick={() => router.push(`/project/${projectId}/add-expense`)}
-        icon={
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-        }
-      >
-        ثبت هزینه
-      </FloatingButton>
+      {/* Floating Add Button - Primary CTA */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-10 safe-bottom flex flex-col items-center gap-1.5">
+        {/* Hint text - only show when few expenses to encourage first action */}
+        {project.expenses.length < 3 && (
+          <span className="text-[10px] text-gray-400 dark:text-gray-500 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-sm border border-gray-100 dark:border-gray-800">
+            سریع و راحت ⚡
+          </span>
+        )}
+        <FloatingButton
+          onClick={() => router.push(`/project/${projectId}/add-expense`)}
+          className="!static !translate-x-0"
+          icon={
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+          }
+        >
+          ثبت هزینه
+        </FloatingButton>
+      </div>
 
       {/* Add Member Bottom Sheet */}
       <AddMemberSheet
@@ -252,6 +360,37 @@ export default function ProjectPage() {
         projectId={projectId}
         shareCode={project.shareCode}
         onMemberAdded={fetchProject}
+      />
+
+      {/* Participant Profile Sheet */}
+      <ParticipantProfileSheet
+        isOpen={showProfileSheet}
+        onClose={() => {
+          setShowProfileSheet(false)
+          setSelectedParticipant(null)
+        }}
+        participant={selectedParticipant}
+        balance={getSelectedBalance()}
+        currency={project.currency}
+        settlementCount={getSettlementCount()}
+        onEdit={handleEditParticipant}
+        onDelete={handleDeleteParticipant}
+        onTransferBalance={handleTransferBalance}
+      />
+
+      {/* Transfer Balance Sheet */}
+      <TransferBalanceSheet
+        isOpen={showTransferSheet}
+        onClose={() => {
+          setShowTransferSheet(false)
+          setSelectedParticipant(null)
+        }}
+        participant={selectedParticipant}
+        participants={project.participants}
+        balance={getSelectedBalance()?.balance || 0}
+        currency={project.currency}
+        projectId={projectId}
+        onSuccess={handleRefreshData}
       />
     </main>
   )

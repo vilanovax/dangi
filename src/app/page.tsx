@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button, Card, HomeHeaderSkeleton, ProjectCardSkeleton } from '@/components/ui'
+import { Button, HomeHeaderSkeleton, ProjectCardSkeleton } from '@/components/ui'
 import { getAllTemplates } from '@/lib/domain/templates'
 import { useProjects } from '@/lib/hooks'
 import {
@@ -31,6 +31,7 @@ interface Project {
   expenseCount: number
   totalExpenses: number
   myBalance: number
+  isArchived: boolean
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -46,6 +47,7 @@ export default function HomePage() {
 
   // ── Modal State ─────────────────────────────────────────────
   const [showCreate, setShowCreate] = useState(false)
+  const [showArchived, setShowArchived] = useState(false)
 
   // ── Drag & Drop State ─────────────────────────────────────
   const [orderedProjects, setOrderedProjects] = useState<Project[]>([])
@@ -87,6 +89,10 @@ export default function HomePage() {
     const orderIds = newOrder.map((p) => p.id)
     localStorage.setItem(PROJECT_ORDER_KEY, JSON.stringify(orderIds))
   }, [])
+
+  // ── Filter Active & Archived Projects ───────────────────────
+  const activeProjects = orderedProjects.filter((p) => !p.isArchived)
+  const archivedProjects = orderedProjects.filter((p) => p.isArchived)
 
   // ── Handlers ────────────────────────────────────────────────
 
@@ -168,13 +174,22 @@ export default function HomePage() {
 
   if (isLoading) {
     return (
-      <main className="min-h-dvh bg-gray-50 dark:bg-gray-950 p-4">
-        <HomeHeaderSkeleton />
-        <div className="h-4 w-24 bg-gray-200 dark:bg-gray-800 rounded mb-3 animate-pulse" />
-        <div className="space-y-3">
-          <ProjectCardSkeleton />
-          <ProjectCardSkeleton />
-          <ProjectCardSkeleton />
+      <main className="min-h-dvh bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 p-5 overflow-hidden">
+        {/* Background Decorations */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-500/20 rounded-full blur-3xl" />
+          <div className="absolute top-1/3 -left-20 w-60 h-60 bg-gradient-to-br from-emerald-400/15 to-cyan-500/15 rounded-full blur-3xl" />
+          <div className="absolute bottom-20 right-10 w-40 h-40 bg-gradient-to-br from-orange-400/10 to-amber-500/10 rounded-full blur-3xl" />
+        </div>
+
+        <div className="relative">
+          <HomeHeaderSkeleton />
+          <div className="h-6 w-28 bg-gray-200/50 dark:bg-gray-800/50 rounded-xl mb-4 animate-pulse" />
+          <div className="space-y-4">
+            <ProjectCardSkeleton />
+            <ProjectCardSkeleton />
+            <ProjectCardSkeleton />
+          </div>
         </div>
       </main>
     )
@@ -183,155 +198,246 @@ export default function HomePage() {
   // ── Main Render ─────────────────────────────────────────────
 
   return (
-    <main className="min-h-dvh bg-gray-50 dark:bg-gray-950 p-4 flex flex-col">
-      {/* Header */}
-      <HomeHeader user={user} onLogout={handleLogout} />
+    <main className="min-h-dvh bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 p-5 flex flex-col overflow-hidden">
+      {/* Background Decorations */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-500/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute top-1/3 -left-20 w-60 h-60 bg-gradient-to-br from-emerald-400/15 to-cyan-500/15 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-10 w-40 h-40 bg-gradient-to-br from-orange-400/10 to-amber-500/10 rounded-full blur-3xl" />
+      </div>
 
-      {/* Content */}
-      {!user ? (
-        // Guest State
-        <EmptyState type="guest" />
-      ) : orderedProjects.length === 0 ? (
-        // No Projects State
-        <EmptyState type="no-projects" />
-      ) : (
-        // Projects List
-        <div className="flex-1">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400">
-              پروژه‌های شما
-            </h2>
-            {orderedProjects.length > 1 && (
-              <button
-                onClick={() => setIsReordering(!isReordering)}
-                className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${
-                  isReordering
-                    ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
-                }`}
-              >
-                {isReordering ? 'تمام' : 'ترتیب'}
-              </button>
-            )}
-          </div>
-          <div
-            className="space-y-3"
-            onTouchMove={handleDragMove}
-            onMouseMove={handleDragMove}
-            onTouchEnd={handleDragEnd}
-            onMouseUp={handleDragEnd}
-            onMouseLeave={handleDragEnd}
-          >
-            {orderedProjects.map((project, index) => (
-              <div
-                key={project.id}
-                data-project-index={index}
-                className={`relative transition-all duration-200 ${
-                  draggedIndex === index
-                    ? 'opacity-50 scale-[0.98]'
-                    : dragOverIndex === index
-                    ? 'translate-y-2'
-                    : ''
-                }`}
-              >
-                {/* Reorder Controls */}
-                {isReordering && (
-                  <div className="absolute -right-2 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-1">
-                    <button
-                      onClick={() => moveProject(index, 'up')}
-                      disabled={index === 0}
-                      className={`w-8 h-8 rounded-lg bg-white dark:bg-gray-800 shadow-md flex items-center justify-center transition-opacity ${
-                        index === 0 ? 'opacity-30' : 'hover:bg-gray-50 dark:hover:bg-gray-700'
-                      }`}
-                    >
-                      <svg className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => moveProject(index, 'down')}
-                      disabled={index === orderedProjects.length - 1}
-                      className={`w-8 h-8 rounded-lg bg-white dark:bg-gray-800 shadow-md flex items-center justify-center transition-opacity ${
-                        index === orderedProjects.length - 1 ? 'opacity-30' : 'hover:bg-gray-50 dark:hover:bg-gray-700'
-                      }`}
-                    >
-                      <svg className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
-                  </div>
-                )}
+      <div className="relative flex flex-col flex-1">
+        {/* Header */}
+        <HomeHeader user={user} onLogout={handleLogout} />
 
-                {/* Drag Handle (for touch) */}
-                {isReordering && (
-                  <div
-                    className="absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center cursor-grab active:cursor-grabbing z-10 touch-none"
-                    onTouchStart={(e) => handleDragStart(index, e)}
-                    onMouseDown={(e) => handleDragStart(index, e)}
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                      <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm8-12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0z" />
+        {/* Content */}
+        {!user ? (
+          // Guest State
+          <EmptyState type="guest" />
+        ) : activeProjects.length === 0 && archivedProjects.length === 0 ? (
+          // No Projects State
+          <EmptyState type="no-projects" />
+        ) : (
+          // Projects List
+          <div className="flex-1">
+            {/* Section Header */}
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-3">
+                <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-purple-600 rounded-full" />
+                <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">
+                  پروژه‌های شما
+                </h2>
+                <span className="px-2.5 py-1 text-xs font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full">
+                  {activeProjects.length}
+                </span>
+              </div>
+
+              {activeProjects.length > 1 && (
+                <button
+                  onClick={() => setIsReordering(!isReordering)}
+                  className={`flex items-center gap-2 text-sm px-4 py-2 rounded-xl transition-all duration-300 ${
+                    isReordering
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25'
+                      : 'bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl text-gray-600 dark:text-gray-400 hover:shadow-md'
+                  }`}
+                >
+                  {isReordering ? (
+                    <>
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
+                      تمام
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                      </svg>
+                      ترتیب
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+
+            {/* Active Projects Grid */}
+            <div
+              className="space-y-4"
+              onTouchMove={handleDragMove}
+              onMouseMove={handleDragMove}
+              onTouchEnd={handleDragEnd}
+              onMouseUp={handleDragEnd}
+              onMouseLeave={handleDragEnd}
+            >
+              {activeProjects.map((project, index) => (
+                <div
+                  key={project.id}
+                  data-project-index={index}
+                  className={`relative transition-all duration-300 ${
+                    draggedIndex === index
+                      ? 'opacity-60 scale-[0.98] z-50'
+                      : dragOverIndex === index
+                      ? 'translate-y-3'
+                      : ''
+                  }`}
+                >
+                  {/* Reorder Controls */}
+                  {isReordering && (
+                    <div className="absolute -right-1 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-1">
+                      <button
+                        onClick={() => moveProject(index, 'up')}
+                        disabled={index === 0}
+                        className={`w-9 h-9 rounded-xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl shadow-lg flex items-center justify-center transition-all ${
+                          index === 0 ? 'opacity-30 cursor-not-allowed' : 'hover:scale-110 hover:shadow-xl active:scale-95'
+                        }`}
+                      >
+                        <svg className="w-4 h-4 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => moveProject(index, 'down')}
+                        disabled={index === activeProjects.length - 1}
+                        className={`w-9 h-9 rounded-xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl shadow-lg flex items-center justify-center transition-all ${
+                          index === activeProjects.length - 1 ? 'opacity-30 cursor-not-allowed' : 'hover:scale-110 hover:shadow-xl active:scale-95'
+                        }`}
+                      >
+                        <svg className="w-4 h-4 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
                     </div>
+                  )}
+
+                  {/* Drag Handle (for touch) */}
+                  {isReordering && (
+                    <div
+                      className="absolute left-1 top-1/2 -translate-y-1/2 z-10 touch-none"
+                      onTouchStart={(e) => handleDragStart(index, e)}
+                      onMouseDown={(e) => handleDragStart(index, e)}
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl shadow-lg flex items-center justify-center cursor-grab active:cursor-grabbing hover:scale-110 transition-transform">
+                        <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M8 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm8-12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0z" />
+                        </svg>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className={isReordering ? 'mr-10 ml-12' : ''}>
+                    <ProjectCard
+                      id={project.id}
+                      name={project.name}
+                      templateIcon={getTemplateIcon(project.template)}
+                      participantCount={project.participantCount}
+                      expenseCount={project.expenseCount}
+                      totalExpenses={project.totalExpenses}
+                      myBalance={project.myBalance}
+                      currency={project.currency}
+                      onDelete={handleProjectDelete}
+                      isDragging={draggedIndex === index}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Archived Projects Section */}
+            {archivedProjects.length > 0 && (
+              <div className="mt-8">
+                <button
+                  onClick={() => setShowArchived(!showArchived)}
+                  className="flex items-center gap-3 mb-4 group"
+                >
+                  <div className="w-1 h-6 bg-gradient-to-b from-amber-400 to-orange-500 rounded-full" />
+                  <h2 className="text-base font-bold text-gray-500 dark:text-gray-400">
+                    پروژه‌های آرشیو شده
+                  </h2>
+                  <span className="px-2.5 py-1 text-xs font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-full">
+                    {archivedProjects.length}
+                  </span>
+                  <svg
+                    className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${showArchived ? 'rotate-180' : ''}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {showArchived && (
+                  <div className="space-y-4 pb-28">
+                    {archivedProjects.map((project) => (
+                      <div key={project.id} className="relative opacity-75">
+                        {/* Archive Badge */}
+                        <div className="absolute -top-2 right-4 z-10 px-2 py-0.5 bg-amber-500 text-white text-xs font-medium rounded-full shadow-sm">
+                          📦 آرشیو شده
+                        </div>
+                        <ProjectCard
+                          id={project.id}
+                          name={project.name}
+                          templateIcon={getTemplateIcon(project.template)}
+                          participantCount={project.participantCount}
+                          expenseCount={project.expenseCount}
+                          totalExpenses={project.totalExpenses}
+                          myBalance={project.myBalance}
+                          currency={project.currency}
+                          onDelete={handleProjectDelete}
+                          isDragging={false}
+                        />
+                      </div>
+                    ))}
                   </div>
                 )}
+              </div>
+            )}
 
-                <div className={isReordering ? 'mr-8 ml-10' : ''}>
-                  <ProjectCard
-                    id={project.id}
-                    name={project.name}
-                    templateIcon={getTemplateIcon(project.template)}
-                    participantCount={project.participantCount}
-                    expenseCount={project.expenseCount}
-                    totalExpenses={project.totalExpenses}
-                    myBalance={project.myBalance}
-                    currency={project.currency}
-                    onDelete={handleProjectDelete}
-                    isDragging={draggedIndex === index}
-                  />
+            {/* Spacer for fixed button */}
+            {!showArchived && <div className="pb-28" />}
+          </div>
+        )}
+
+        {/* Bottom Actions (for logged in users) */}
+        {user && (
+          <>
+            {/* Create Button - Fixed at bottom */}
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white/95 to-transparent dark:from-gray-900 dark:via-gray-900/95 dark:to-transparent pt-10">
+              <Button
+                onClick={() => setShowCreate(true)}
+                className="w-full !bg-gradient-to-r !from-blue-500 !to-purple-600 hover:!from-blue-600 hover:!to-purple-700 !shadow-xl !shadow-blue-500/25 hover:!shadow-2xl hover:!shadow-blue-500/30 transition-all duration-300"
+                size="lg"
+              >
+                <span className="flex items-center justify-center gap-3">
+                  <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                    </svg>
+                  </div>
+                  <span className="font-bold">شروع پروژه جدید</span>
+                </span>
+              </Button>
+            </div>
+
+            {/* Join hint for new users */}
+            {activeProjects.length === 0 && archivedProjects.length === 0 && (
+              <div className="fixed bottom-24 left-4 right-4">
+                <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl p-4 text-center shadow-lg border border-white/50 dark:border-gray-700/50">
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    </svg>
+                    <p className="font-semibold text-gray-700 dark:text-gray-200">لینک دعوت دارید؟</p>
+                  </div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    برای پیوستن به پروژه، لینک را باز کنید
+                  </p>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Bottom Actions (for logged in users) */}
-      {user && (
-        <div className="mt-4 space-y-3">
-          {/* Create Button - Fixed at bottom */}
-          <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-t border-gray-100 dark:border-gray-800">
-            <Button
-              onClick={() => setShowCreate(true)}
-              className="w-full"
-              size="lg"
-            >
-              <span className="flex items-center justify-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-                  </svg>
-                </div>
-                شروع پروژه جدید
-              </span>
-            </Button>
-          </div>
-
-          {/* Spacer for fixed button */}
-          <div className="h-20" />
-
-          {/* Join hint for new users */}
-          {orderedProjects.length === 0 && (
-            <Card variant="bordered" className="text-center mb-20">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">لینک دعوت دارید؟</p>
-              <p className="text-xs text-gray-400 dark:text-gray-500">
-                برای پیوستن به پروژه، لینک را باز کنید
-              </p>
-            </Card>
-          )}
-        </div>
-      )}
+            )}
+          </>
+        )}
+      </div>
 
       {/* Create Project Sheet */}
       <CreateProjectSheet

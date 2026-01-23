@@ -49,7 +49,12 @@ interface Project {
   categories: Category[]
 }
 
-type FilterType = 'all' | 'category' | 'payer' | 'period'
+type FilterType = 'all' | 'category' | 'payer' | 'period' | 'dateRange'
+
+interface DateRange {
+  startDate: string | null // ISO date string
+  endDate: string | null
+}
 
 // ============================================
 // Helper Functions
@@ -85,7 +90,8 @@ function filterExpenses(
   filterType: FilterType,
   selectedCategoryId: string | null,
   selectedPayerId: string | null,
-  selectedPeriodKey: string | null
+  selectedPeriodKey: string | null,
+  dateRange: DateRange
 ): Expense[] {
   return expenses.filter((expense) => {
     // Search filter - matches title, payer name, or category
@@ -118,6 +124,21 @@ function filterExpenses(
       if (expense.periodKey !== selectedPeriodKey) return false
     }
 
+    // Date range filter
+    if (filterType === 'dateRange') {
+      const expenseDate = new Date(expense.expenseDate)
+      if (dateRange.startDate) {
+        const start = new Date(dateRange.startDate)
+        start.setHours(0, 0, 0, 0)
+        if (expenseDate < start) return false
+      }
+      if (dateRange.endDate) {
+        const end = new Date(dateRange.endDate)
+        end.setHours(23, 59, 59, 999)
+        if (expenseDate > end) return false
+      }
+    }
+
     return true
   })
 }
@@ -130,6 +151,7 @@ function getFilterLabel(
   selectedCategoryId: string | null,
   selectedPayerId: string | null,
   selectedPeriodKey: string | null,
+  dateRange: DateRange,
   categories: Category[],
   participants: Participant[]
 ): string {
@@ -144,6 +166,14 @@ function getFilterLabel(
   }
   if (filterType === 'period' && selectedPeriodKey !== null) {
     return formatPeriodKey(selectedPeriodKey)
+  }
+  if (filterType === 'dateRange') {
+    const formatDate = (d: string) => new Date(d).toLocaleDateString('fa-IR', { month: 'short', day: 'numeric' })
+    if (dateRange.startDate && dateRange.endDate) {
+      return `${formatDate(dateRange.startDate)} تا ${formatDate(dateRange.endDate)}`
+    }
+    if (dateRange.startDate) return `از ${formatDate(dateRange.startDate)}`
+    if (dateRange.endDate) return `تا ${formatDate(dateRange.endDate)}`
   }
   return ''
 }
@@ -182,6 +212,7 @@ export default function ExpensesPage() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
   const [selectedPayerId, setSelectedPayerId] = useState<string | null>(null)
   const [selectedPeriodKey, setSelectedPeriodKey] = useState<string | null>(null)
+  const [dateRange, setDateRange] = useState<DateRange>({ startDate: null, endDate: null })
 
   // Fetch data on mount
   useEffect(() => {
@@ -218,8 +249,8 @@ export default function ExpensesPage() {
 
   // Computed values
   const filteredExpenses = useMemo(
-    () => filterExpenses(expenses, searchQuery, filterType, selectedCategoryId, selectedPayerId, selectedPeriodKey),
-    [expenses, searchQuery, filterType, selectedCategoryId, selectedPayerId, selectedPeriodKey]
+    () => filterExpenses(expenses, searchQuery, filterType, selectedCategoryId, selectedPayerId, selectedPeriodKey, dateRange),
+    [expenses, searchQuery, filterType, selectedCategoryId, selectedPayerId, selectedPeriodKey, dateRange]
   )
 
   const groupedExpenses = useMemo(
@@ -241,10 +272,11 @@ export default function ExpensesPage() {
       selectedCategoryId,
       selectedPayerId,
       selectedPeriodKey,
+      dateRange,
       project?.categories || [],
       project?.participants || []
     ),
-    [filterType, selectedCategoryId, selectedPayerId, selectedPeriodKey, project]
+    [filterType, selectedCategoryId, selectedPayerId, selectedPeriodKey, dateRange, project]
   )
 
   // Handlers
@@ -256,15 +288,27 @@ export default function ExpensesPage() {
       setSelectedCategoryId(id)
       setSelectedPayerId(null)
       setSelectedPeriodKey(null)
+      setDateRange({ startDate: null, endDate: null })
     } else if (type === 'payer') {
       setSelectedPayerId(id)
       setSelectedCategoryId(null)
       setSelectedPeriodKey(null)
+      setDateRange({ startDate: null, endDate: null })
     } else if (type === 'period') {
       setSelectedPeriodKey(id)
       setSelectedCategoryId(null)
       setSelectedPayerId(null)
+      setDateRange({ startDate: null, endDate: null })
     }
+    setShowFilters(false)
+  }, [])
+
+  const handleApplyDateRange = useCallback((start: string | null, end: string | null) => {
+    setFilterType('dateRange')
+    setDateRange({ startDate: start, endDate: end })
+    setSelectedCategoryId(null)
+    setSelectedPayerId(null)
+    setSelectedPeriodKey(null)
     setShowFilters(false)
   }, [])
 
@@ -273,6 +317,7 @@ export default function ExpensesPage() {
     setSelectedCategoryId(null)
     setSelectedPayerId(null)
     setSelectedPeriodKey(null)
+    setDateRange({ startDate: null, endDate: null })
     setSearchQuery('')
     setShowFilters(false)
   }, [])
@@ -322,9 +367,17 @@ export default function ExpensesPage() {
         showPeriod={supportsPeriod}
       />
 
-      {/* Floating Add Button - action-first text */}
-      <FloatingButton onClick={handleAddExpense}>
-        + ثبت خرج
+      {/* Floating Add Button - secondary to list items, clear action */}
+      <FloatingButton
+        onClick={handleAddExpense}
+        className="shadow-lg shadow-blue-500/25"
+        icon={
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+        }
+      >
+        ثبت خرج
       </FloatingButton>
 
       {/* Filter Bottom Sheet */}
@@ -337,7 +390,9 @@ export default function ExpensesPage() {
         selectedCategoryId={selectedCategoryId}
         selectedPayerId={selectedPayerId}
         selectedPeriodKey={selectedPeriodKey}
+        dateRange={dateRange}
         onApplyFilter={handleApplyFilter}
+        onApplyDateRange={handleApplyDateRange}
         onClearFilters={handleClearFilters}
         supportsPeriod={supportsPeriod}
         availablePeriods={availablePeriods}

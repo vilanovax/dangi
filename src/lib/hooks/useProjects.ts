@@ -21,6 +21,7 @@ interface Project {
   myParticipantId: string
   myName: string
   myRole: string
+  isArchived: boolean
   createdAt: string
 }
 

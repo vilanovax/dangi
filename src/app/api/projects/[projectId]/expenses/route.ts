@@ -41,7 +41,8 @@ export async function POST(
       expenseDate,
       periodKey,
       receiptUrl,
-      includedParticipantIds
+      includedParticipantIds,
+      customShares,
     } = body
 
     // Validation
@@ -112,6 +113,7 @@ export async function POST(
       periodKey: periodKey || undefined,
       receiptUrl: receiptUrl || undefined,
       includedParticipantIds: includedParticipantIds || undefined,
+      customShares: customShares || undefined,
     })
 
     return NextResponse.json({ expense }, { status: 201 })

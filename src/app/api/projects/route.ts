@@ -106,6 +106,7 @@ export async function GET() {
         myParticipantId: p.id,
         myName: p.name,
         myRole: p.role,
+        isArchived: p.project.isArchived,
         createdAt: p.project.createdAt,
       }
     })

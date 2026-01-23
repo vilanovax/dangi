@@ -26,6 +26,8 @@ interface ExpenseShare {
 interface ExpenseViewProps {
   title: string
   amount: number
+  description?: string | null
+  receiptUrl?: string | null
   currency: string
   expenseDate: string
   paidBy: Participant
@@ -40,6 +42,8 @@ interface ExpenseViewProps {
 export function ExpenseView({
   title,
   amount,
+  description,
+  receiptUrl,
   currency,
   expenseDate,
   paidBy,
@@ -65,7 +69,28 @@ export function ExpenseView({
         {category && (
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{category.name}</p>
         )}
+        {description && (
+          <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+            <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{description}</p>
+          </div>
+        )}
       </Card>
+
+      {/* Receipt Image */}
+      {receiptUrl && (
+        <Card className="overflow-hidden">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">تصویر رسید</p>
+          <a href={receiptUrl} target="_blank" rel="noopener noreferrer" className="block">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={receiptUrl}
+              alt="رسید"
+              className="w-full rounded-xl object-cover max-h-64"
+            />
+            <p className="text-xs text-blue-500 mt-2 text-center">برای مشاهده کامل کلیک کنید</p>
+          </a>
+        </Card>
+      )}
 
       {/* Paid By */}
       <Card>

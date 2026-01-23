@@ -1,6 +1,7 @@
 'use client'
 
-import { BottomSheet, Avatar } from '@/components/ui'
+import { useState } from 'react'
+import { BottomSheet, Avatar, Button } from '@/components/ui'
 import { deserializeAvatar } from '@/lib/types/avatar'
 
 interface Category {
@@ -16,11 +17,16 @@ interface Participant {
   avatar?: string | null
 }
 
-type FilterType = 'all' | 'category' | 'payer' | 'period'
+type FilterType = 'all' | 'category' | 'payer' | 'period' | 'dateRange'
 
 interface Period {
   key: string
   label: string
+}
+
+interface DateRange {
+  startDate: string | null
+  endDate: string | null
 }
 
 interface FilterSheetProps {
@@ -32,7 +38,9 @@ interface FilterSheetProps {
   selectedCategoryId: string | null
   selectedPayerId: string | null
   selectedPeriodKey: string | null
+  dateRange?: DateRange
   onApplyFilter: (type: FilterType, id: string | null) => void
+  onApplyDateRange?: (startDate: string | null, endDate: string | null) => void
   onClearFilters: () => void
   supportsPeriod?: boolean
   availablePeriods?: Period[]
@@ -51,12 +59,34 @@ export function FilterSheet({
   selectedCategoryId,
   selectedPayerId,
   selectedPeriodKey,
+  dateRange,
   onApplyFilter,
+  onApplyDateRange,
   onClearFilters,
   supportsPeriod = false,
   availablePeriods = [],
 }: FilterSheetProps) {
   const hasActiveFilter = filterType !== 'all'
+
+  // Local state for date range inputs
+  const [localStartDate, setLocalStartDate] = useState(dateRange?.startDate || '')
+  const [localEndDate, setLocalEndDate] = useState(dateRange?.endDate || '')
+
+  const handleApplyDateRange = () => {
+    if (onApplyDateRange && (localStartDate || localEndDate)) {
+      onApplyDateRange(localStartDate || null, localEndDate || null)
+    }
+  }
+
+  // Quick date range presets
+  const handleQuickRange = (days: number) => {
+    const end = new Date()
+    const start = new Date()
+    start.setDate(start.getDate() - days)
+    if (onApplyDateRange) {
+      onApplyDateRange(start.toISOString().split('T')[0], end.toISOString().split('T')[0])
+    }
+  }
 
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title="فیلتر خرج‌ها">
@@ -131,6 +161,65 @@ export function FilterSheet({
             </div>
           </div>
         )}
+
+        {/* Date Range Filter */}
+        <div>
+          <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">
+            بازه تاریخی
+          </h3>
+
+          {/* Quick presets */}
+          <div className="flex flex-wrap gap-2 mb-3">
+            <FilterChip
+              label="هفته اخیر"
+              isActive={false}
+              onClick={() => handleQuickRange(7)}
+            />
+            <FilterChip
+              label="ماه اخیر"
+              isActive={false}
+              onClick={() => handleQuickRange(30)}
+            />
+            <FilterChip
+              label="۳ ماه اخیر"
+              isActive={false}
+              onClick={() => handleQuickRange(90)}
+            />
+          </div>
+
+          {/* Custom date inputs */}
+          <div className="flex items-center gap-2">
+            <div className="flex-1">
+              <label className="block text-xs text-gray-500 mb-1">از تاریخ</label>
+              <input
+                type="date"
+                value={localStartDate}
+                onChange={(e) => setLocalStartDate(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-xs text-gray-500 mb-1">تا تاریخ</label>
+              <input
+                type="date"
+                value={localEndDate}
+                onChange={(e) => setLocalEndDate(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              />
+            </div>
+          </div>
+
+          {/* Apply button */}
+          {(localStartDate || localEndDate) && (
+            <Button
+              onClick={handleApplyDateRange}
+              size="sm"
+              className="w-full mt-3"
+            >
+              اعمال بازه تاریخی
+            </Button>
+          )}
+        </div>
 
         {/* Clear Button */}
         {hasActiveFilter && (

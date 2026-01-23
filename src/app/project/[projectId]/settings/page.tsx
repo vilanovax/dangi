@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { Button, Input, Card, BottomSheet } from '@/components/ui'
 import { getCurrencyLabel } from '@/lib/utils/money'
 import { getTemplate } from '@/lib/domain/templates'
+import { getCurrentPersianYear } from '@/lib/utils/persian-date'
 
 interface Participant {
   id: string
@@ -28,6 +29,9 @@ interface Project {
   splitType: string
   currency: string
   shareCode: string
+  chargeYear?: number | null
+  isArchived: boolean
+  archivedAt?: string | null
   participants: Participant[]
   categories: Category[]
 }
@@ -63,10 +67,16 @@ export default function SettingsPage() {
   const [currency, setCurrency] = useState('IRR')
   const [splitType, setSplitType] = useState('EQUAL')
 
+  // Charge year state (only for building template)
+  const [chargeYear, setChargeYear] = useState<number>(getCurrentPersianYear())
+
   // Modal states
   const [showCurrencySheet, setShowCurrencySheet] = useState(false)
   const [showSplitTypeSheet, setShowSplitTypeSheet] = useState(false)
+  const [showYearSheet, setShowYearSheet] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false)
+  const [archiving, setArchiving] = useState(false)
   const [showAddCategory, setShowAddCategory] = useState(false)
   const [showEditCategory, setShowEditCategory] = useState<Category | null>(null)
 
@@ -93,6 +103,9 @@ export default function SettingsPage() {
       setDescription(data.project.description || '')
       setCurrency(data.project.currency)
       setSplitType(data.project.splitType)
+      if (data.project.chargeYear) {
+        setChargeYear(data.project.chargeYear)
+      }
     } catch {
       setError('خطا در بارگذاری پروژه')
     } finally {
@@ -119,6 +132,7 @@ export default function SettingsPage() {
           description: description.trim() || null,
           currency,
           splitType,
+          ...(project && getTemplate(project.template).supportsChargeRules && { chargeYear }),
         }),
       })
 
@@ -173,6 +187,31 @@ export default function SettingsPage() {
     } catch {
       setError('خطا در حذف پروژه')
       setShowDeleteConfirm(false)
+    }
+  }
+
+  const handleArchive = async () => {
+    setArchiving(true)
+    try {
+      const res = await fetch(`/api/projects/${projectId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          isArchived: !project?.isArchived,
+        }),
+      })
+
+      if (!res.ok) throw new Error('خطا در آرشیو پروژه')
+
+      const data = await res.json()
+      setProject(data.project)
+      setShowArchiveConfirm(false)
+      setSuccess(data.project.isArchived ? 'پروژه آرشیو شد' : 'پروژه از آرشیو خارج شد')
+      setTimeout(() => setSuccess(''), 3000)
+    } catch {
+      setError('خطا در آرشیو پروژه')
+    } finally {
+      setArchiving(false)
     }
   }
 
@@ -340,10 +379,23 @@ export default function SettingsPage() {
         {getTemplate(project.template).supportsChargeRules && (
           <section>
             <h2 className="text-sm font-semibold text-gray-500 mb-3">قواعد شارژ</h2>
-            <Card>
+            <Card className="divide-y divide-gray-100 dark:divide-gray-800">
+              <button
+                onClick={() => setShowYearSheet(true)}
+                className="w-full flex items-center justify-between py-3 first:pt-0 last:pb-0"
+              >
+                <span className="text-gray-700 dark:text-gray-300">سال شمسی</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-500">{chargeYear}</span>
+                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </div>
+              </button>
+
               <button
                 onClick={() => router.push(`/project/${projectId}/charge-rules`)}
-                className="w-full flex items-center justify-between"
+                className="w-full flex items-center justify-between py-3 first:pt-0 last:pb-0"
               >
                 <div>
                   <p className="font-medium">مدیریت قواعد شارژ</p>
@@ -438,15 +490,30 @@ export default function SettingsPage() {
           </Card>
         </section>
 
-        {/* Backup */}
+        {/* Export */}
         <section>
-          <h2 className="text-sm font-semibold text-gray-500 mb-3">پشتیبان‌گیری</h2>
-          <Card>
-            <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-gray-500 mb-3">خروجی‌گیری</h2>
+          <Card className="divide-y divide-gray-100 dark:divide-gray-800">
+            <div className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
               <div>
-                <p className="font-medium">خروجی JSON</p>
+                <p className="font-medium">خروجی Excel (CSV)</p>
                 <p className="text-xs text-gray-500 mt-1">
-                  دانلود تمام اطلاعات پروژه
+                  لیست هزینه‌ها برای Excel
+                </p>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => window.open(`/api/projects/${projectId}/export?format=csv`, '_blank')}
+              >
+                دانلود
+              </Button>
+            </div>
+            <div className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+              <div>
+                <p className="font-medium">پشتیبان کامل (JSON)</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  تمام اطلاعات پروژه
                 </p>
               </div>
               <Button variant="secondary" size="sm" onClick={handleExportData}>
@@ -460,6 +527,43 @@ export default function SettingsPage() {
         <Button onClick={handleSave} loading={saving} className="w-full">
           ذخیره تغییرات
         </Button>
+
+        {/* Archive Section */}
+        <section>
+          <h2 className="text-sm font-semibold text-gray-500 mb-3">وضعیت پروژه</h2>
+          <Card className={project.isArchived ? 'border-amber-200 dark:border-amber-900 bg-amber-50/50 dark:bg-amber-900/10' : ''}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium flex items-center gap-2">
+                  {project.isArchived ? (
+                    <>
+                      <span className="text-amber-600">📦</span>
+                      <span className="text-amber-700 dark:text-amber-400">پروژه آرشیو شده</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>✅</span>
+                      <span>پروژه فعال</span>
+                    </>
+                  )}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {project.isArchived
+                    ? 'پروژه بسته شده و فقط قابل مشاهده است'
+                    : 'پروژه فعال است و می‌توان هزینه ثبت کرد'}
+                </p>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowArchiveConfirm(true)}
+                className={project.isArchived ? '!text-green-600 !border-green-200 hover:!bg-green-50' : '!text-amber-600 !border-amber-200 hover:!bg-amber-50'}
+              >
+                {project.isArchived ? 'فعال‌سازی' : 'آرشیو'}
+              </Button>
+            </div>
+          </Card>
+        </section>
 
         {/* Danger Zone */}
         <section>
@@ -552,6 +656,101 @@ export default function SettingsPage() {
               </div>
             </button>
           ))}
+        </div>
+      </BottomSheet>
+
+      {/* Year Selection Bottom Sheet */}
+      <BottomSheet
+        isOpen={showYearSheet}
+        onClose={() => setShowYearSheet(false)}
+        title="انتخاب سال شمسی"
+      >
+        <div className="space-y-2">
+          {[...Array(5)].map((_, i) => {
+            const year = getCurrentPersianYear() - 2 + i
+            return (
+              <button
+                key={year}
+                onClick={() => {
+                  setChargeYear(year)
+                  setShowYearSheet(false)
+                }}
+                className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${
+                  chargeYear === year
+                    ? 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500'
+                    : 'bg-gray-50 dark:bg-gray-800 border-2 border-transparent'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-lg">📅</span>
+                  <span className="font-medium">{year}</span>
+                  {year === getCurrentPersianYear() && (
+                    <span className="text-xs px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full">
+                      سال جاری
+                    </span>
+                  )}
+                </div>
+                {chargeYear === year && (
+                  <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </button>
+            )
+          })}
+        </div>
+        <p className="text-xs text-gray-400 mt-4 text-center">
+          سال شمسی برای محاسبه شارژ ماهانه استفاده می‌شود
+        </p>
+      </BottomSheet>
+
+      {/* Archive Confirmation */}
+      <BottomSheet
+        isOpen={showArchiveConfirm}
+        onClose={() => setShowArchiveConfirm(false)}
+        title={project.isArchived ? 'فعال‌سازی پروژه' : 'آرشیو پروژه'}
+      >
+        <div className="space-y-4">
+          {project.isArchived ? (
+            <>
+              <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl">
+                <span className="text-2xl">✅</span>
+                <p className="text-green-700 dark:text-green-400">
+                  با فعال‌سازی، می‌توانید مجدداً هزینه ثبت کنید
+                </p>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl">
+                <span className="text-2xl">📦</span>
+                <p className="text-amber-700 dark:text-amber-400">
+                  پروژه بسته می‌شود ولی اطلاعات حفظ می‌شود
+                </p>
+              </div>
+              <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2 pr-4">
+                <li>• امکان ثبت هزینه جدید غیرفعال می‌شود</li>
+                <li>• اطلاعات و گزارشات قابل مشاهده هستند</li>
+                <li>• هر زمان می‌توانید پروژه را فعال کنید</li>
+              </ul>
+            </>
+          )}
+          <div className="flex gap-3">
+            <Button
+              variant="secondary"
+              onClick={() => setShowArchiveConfirm(false)}
+              className="flex-1"
+            >
+              انصراف
+            </Button>
+            <Button
+              onClick={handleArchive}
+              loading={archiving}
+              className={`flex-1 ${project.isArchived ? '!bg-green-500 hover:!bg-green-600' : '!bg-amber-500 hover:!bg-amber-600'}`}
+            >
+              {project.isArchived ? 'فعال‌سازی' : 'آرشیو کردن'}
+            </Button>
+          </div>
         </div>
       </BottomSheet>
 

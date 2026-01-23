@@ -10,8 +10,11 @@ interface SearchBarProps {
 
 /**
  * Search and filter bar
- * Minimal UI - doesn't visually dominate the list
- * Clear placeholder for user guidance
+ *
+ * UX Intent:
+ * - Minimal UI that doesn't dominate the list
+ * - Casual placeholder feels friendly
+ * - Filter button clear but not prominent
  */
 export function SearchBar({
   value,
@@ -21,12 +24,12 @@ export function SearchBar({
   onFilterClick,
 }: SearchBarProps) {
   return (
-    <div className="bg-white dark:bg-gray-900 px-4 py-3 shadow-sm">
+    <div className="bg-white dark:bg-gray-900 px-4 py-3 border-b border-gray-100/50 dark:border-gray-800/50">
       <div className="flex gap-2">
-        {/* Search Input */}
+        {/* Search Input - casual placeholder */}
         <div className="flex-1 relative">
           <svg
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -40,18 +43,18 @@ export function SearchBar({
           </svg>
           <input
             type="text"
-            placeholder="جستجو تو خرج‌ها..."
+            placeholder="تو خرج‌ها بگرد…"
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="w-full pr-10 pl-10 py-2.5 bg-gray-100 dark:bg-gray-800 rounded-xl border-none outline-none focus:ring-2 focus:ring-blue-400 text-sm placeholder:text-gray-400"
+            className="w-full pr-9 pl-9 py-2.5 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-800 outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-300 dark:focus:border-blue-700 text-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 transition-all"
           />
           {value && (
             <button
               onClick={() => onChange('')}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors active:scale-95"
               aria-label="پاک کردن جستجو"
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -61,10 +64,10 @@ export function SearchBar({
         {/* Filter Button - simple, not advanced looking */}
         <button
           onClick={onFilterClick}
-          className={`px-3 py-2.5 rounded-xl flex items-center gap-2 text-sm font-medium transition-all ${
+          className={`px-3 py-2.5 rounded-xl flex items-center gap-2 text-sm font-medium transition-all active:scale-95 ${
             hasActiveFilter
-              ? 'bg-blue-500 text-white shadow-sm'
-              : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+              ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/25'
+              : 'bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
           }`}
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

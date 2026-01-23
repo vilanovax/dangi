@@ -14,8 +14,13 @@ interface AmountInputProps {
 }
 
 /**
- * ورودی مبلغ - با اندازه متناسب و خوانا
- * سهم هر نفر به صورت ثانویه نمایش داده می‌شود
+ * ورودی مبلغ - Hero Input
+ *
+ * UX Intent:
+ * - Biggest, boldest element on the form
+ * - Feels like typing into a calculator
+ * - Currency softly displayed, not dominant
+ * - Share preview is secondary and friendly
  */
 export function AmountInput({
   value,
@@ -28,30 +33,35 @@ export function AmountInput({
   participantTerm,
 }: AmountInputProps) {
   return (
-    <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-5 text-center">
-      <label className="block text-sm text-gray-500 mb-2">{label}</label>
+    <div className="bg-gradient-to-br from-blue-50/80 to-indigo-50/50 dark:from-blue-950/30 dark:to-indigo-950/20 rounded-3xl p-6 text-center border border-blue-100/50 dark:border-blue-900/30">
+      {/* Friendly label */}
+      <label className="block text-sm text-blue-600/70 dark:text-blue-400/70 mb-3 font-medium">
+        چقدر شد؟ 💰
+      </label>
 
-      <div className="flex items-center justify-center gap-2">
+      {/* Hero amount input */}
+      <div className="flex items-baseline justify-center gap-2">
         <input
           type="text"
           inputMode="numeric"
-          placeholder={placeholder}
+          placeholder="۰"
           value={value}
           onChange={(e) => onChange(formatInputAmount(e.target.value))}
-          className="text-3xl font-bold text-center w-full bg-transparent border-none outline-none placeholder:text-gray-300 dark:placeholder:text-gray-600"
+          className="text-5xl font-bold text-center w-full bg-transparent border-none outline-none text-gray-800 dark:text-gray-100 placeholder:text-gray-300 dark:placeholder:text-gray-700"
         />
-        <span className="text-base text-gray-400 font-medium">
+        <span className="text-lg text-gray-400 dark:text-gray-500 font-medium flex-shrink-0">
           {getCurrencyLabel(currency)}
         </span>
       </div>
 
-      {/* سهم هر نفر - نمایش ثانویه و قابل تغییر */}
+      {/* Share preview - friendly and secondary */}
       {sharePerPerson !== null && participantCount > 0 && (
-        <p className="text-xs text-gray-400 mt-3">
-          فعلاً سهم هر {participantTerm}:{' '}
-          <span className="text-gray-500">{formatMoney(sharePerPerson, currency)}</span>
-          <span className="text-gray-300 mr-1">(قابل تغییر)</span>
-        </p>
+        <div className="mt-4 pt-3 border-t border-blue-100/50 dark:border-blue-900/30">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            سهم هر {participantTerm}:{' '}
+            <span className="font-semibold text-gray-700 dark:text-gray-300">{formatMoney(sharePerPerson, currency)}</span>
+          </p>
+        </div>
       )}
     </div>
   )

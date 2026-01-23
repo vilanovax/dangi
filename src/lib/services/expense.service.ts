@@ -52,12 +52,13 @@ export async function createExpense(projectId: string, input: ExpenseInput) {
     throw new Error('At least one participant must be included in the split')
   }
 
-  // Calculate shares based on project split type
-  // Future: This is where WEIGHTED, PERCENTAGE splits would be handled
+  // Calculate shares based on split type
+  // If customShares provided, use MANUAL mode; otherwise use project's default
+  const effectiveSplitType: SplitType = customShares ? 'MANUAL' : (project.splitType as SplitType)
   const shares = calculateSplit({
     amount,
     participants: participantsForSplit,
-    splitType: project.splitType as SplitType,
+    splitType: effectiveSplitType,
     customShares,
   })
 

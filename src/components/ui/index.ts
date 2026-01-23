@@ -5,6 +5,7 @@ export { BottomSheet } from './BottomSheet'
 export { FloatingButton } from './FloatingButton'
 export { Avatar } from './Avatar'
 export { AvatarPicker } from './AvatarPicker'
+export { ImageUpload } from './ImageUpload'
 export {
   Skeleton,
   ProjectCardSkeleton,

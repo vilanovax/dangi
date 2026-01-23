@@ -27,6 +27,8 @@ model Project {
   currency     String        @default("IRR")
   chargeYear   Int?          // سال شارژ (شمسی) - برای template ساختمان
   shareCode    String        @unique @default(cuid())
+  isArchived   Boolean       @default(false) // آرشیو شده / بسته شده
+  archivedAt   DateTime?     // تاریخ آرشیو
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   categories   Category[]

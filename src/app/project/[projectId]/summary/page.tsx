@@ -334,6 +334,13 @@ export default function SummaryPage() {
         {/* Balance Tab */}
         {activeTab === 'balance' && (
           <>
+            {/* Balance Chart */}
+            {hasExpenses && summary.participantBalances.length > 1 && (
+              <section>
+                <BalanceChart balances={summary.participantBalances} currency={summary.currency} />
+              </section>
+            )}
+
             {/* Member Balances */}
             <section>
               <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-3">وضعیت اعضا</h2>
@@ -607,6 +614,108 @@ export default function SummaryPage() {
 // ─────────────────────────────────────────────────────────────
 // Sub Components
 // ─────────────────────────────────────────────────────────────
+
+/**
+ * Balance Chart - Visual bar chart showing each person's balance
+ */
+function BalanceChart({
+  balances,
+  currency,
+}: {
+  balances: ParticipantBalance[]
+  currency: string
+}) {
+  // Find max absolute balance for scaling
+  const maxBalance = Math.max(
+    ...balances.map((b) => Math.abs(b.balance)),
+    1 // Prevent division by zero
+  )
+
+  // Separate creditors and debtors
+  const creditors = balances.filter((b) => b.balance > 0).sort((a, b) => b.balance - a.balance)
+  const debtors = balances.filter((b) => b.balance < 0).sort((a, b) => a.balance - b.balance)
+  const settled = balances.filter((b) => b.balance === 0)
+
+  if (balances.length === 0 || maxBalance === 0) {
+    return null
+  }
+
+  return (
+    <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm">
+      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">نمودار تراز</h3>
+
+      <div className="space-y-3">
+        {/* Creditors (positive) */}
+        {creditors.map((b) => {
+          const percentage = (b.balance / maxBalance) * 100
+          return (
+            <div key={b.participantId} className="flex items-center gap-3">
+              <span className="w-16 text-xs text-right truncate text-gray-600 dark:text-gray-400">
+                {b.participantName}
+              </span>
+              <div className="flex-1 h-6 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden relative">
+                <div
+                  className="absolute inset-y-0 right-0 bg-gradient-to-l from-green-500 to-green-400 rounded-full transition-all duration-500"
+                  style={{ width: `${percentage}%` }}
+                />
+                <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-gray-700 dark:text-gray-300">
+                  +{formatMoney(b.balance, currency)}
+                </span>
+              </div>
+            </div>
+          )
+        })}
+
+        {/* Settled (zero) */}
+        {settled.map((b) => (
+          <div key={b.participantId} className="flex items-center gap-3">
+            <span className="w-16 text-xs text-right truncate text-gray-600 dark:text-gray-400">
+              {b.participantName}
+            </span>
+            <div className="flex-1 h-6 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden relative">
+              <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-gray-500">
+                تسویه
+              </span>
+            </div>
+          </div>
+        ))}
+
+        {/* Debtors (negative) */}
+        {debtors.map((b) => {
+          const percentage = (Math.abs(b.balance) / maxBalance) * 100
+          return (
+            <div key={b.participantId} className="flex items-center gap-3">
+              <span className="w-16 text-xs text-right truncate text-gray-600 dark:text-gray-400">
+                {b.participantName}
+              </span>
+              <div className="flex-1 h-6 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden relative">
+                <div
+                  className="absolute inset-y-0 right-0 bg-gradient-to-l from-red-500 to-red-400 rounded-full transition-all duration-500"
+                  style={{ width: `${percentage}%` }}
+                />
+                <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-gray-700 dark:text-gray-300">
+                  {formatMoney(b.balance, currency)}
+                </span>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Legend */}
+      <div className="flex items-center justify-center gap-6 mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-green-500" />
+          <span className="text-xs text-gray-500">طلبکار</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-red-500" />
+          <span className="text-xs text-gray-500">بدهکار</span>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function MemberBalanceCard({
   name,
