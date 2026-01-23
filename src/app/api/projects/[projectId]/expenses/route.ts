@@ -40,6 +40,7 @@ export async function POST(
       categoryId,
       expenseDate,
       periodKey,
+      receiptUrl,
       includedParticipantIds
     } = body
 
@@ -109,6 +110,7 @@ export async function POST(
       categoryId: categoryId || undefined,
       expenseDate: expenseDate ? new Date(expenseDate) : undefined,
       periodKey: periodKey || undefined,
+      receiptUrl: receiptUrl || undefined,
       includedParticipantIds: includedParticipantIds || undefined,
     })
 

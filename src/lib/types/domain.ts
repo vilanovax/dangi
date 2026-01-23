@@ -37,6 +37,7 @@ export interface ExpenseInput {
   categoryId?: string
   expenseDate?: Date
   periodKey?: string  // دوره زمانی: "1403-10" برای دی‌ماه (برای template ساختمان)
+  receiptUrl?: string  // تصویر رسید یا فاکتور (اختیاری)
   // شرکت‌کننده‌های شامل در تقسیم (اگر خالی باشه همه شامل میشن)
   includedParticipantIds?: string[]
   // برای تقسیم Manual

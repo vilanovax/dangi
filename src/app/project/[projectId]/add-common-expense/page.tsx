@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Button, Card, BottomSheet, Input } from '@/components/ui'
 import { formatMoney, parseMoney } from '@/lib/utils/money'
@@ -12,22 +12,31 @@ interface Participant {
   avatar?: string | null
 }
 
-interface Category {
-  id: string
-  name: string
-  icon: string
-  color: string
-}
-
 interface Project {
   id: string
   name: string
   currency: string
   splitType: string
   template: string
+  chargeYear?: number
   participants: Participant[]
-  categories: Category[]
 }
+
+// Persian months
+const PERSIAN_MONTHS = [
+  { key: '01', name: 'فروردین' },
+  { key: '02', name: 'اردیبهشت' },
+  { key: '03', name: 'خرداد' },
+  { key: '04', name: 'تیر' },
+  { key: '05', name: 'مرداد' },
+  { key: '06', name: 'شهریور' },
+  { key: '07', name: 'مهر' },
+  { key: '08', name: 'آبان' },
+  { key: '09', name: 'آذر' },
+  { key: '10', name: 'دی' },
+  { key: '11', name: 'بهمن' },
+  { key: '12', name: 'اسفند' },
+]
 
 // Common expense categories for buildings
 const COMMON_EXPENSE_TYPES = [
@@ -43,10 +52,14 @@ const COMMON_EXPENSE_TYPES = [
   { id: 'other', icon: '📝', name: 'سایر', color: '#6B7280' },
 ]
 
+// LocalStorage key for last selected period
+const LAST_PERIOD_KEY = 'dangi_last_common_expense_period'
+
 export default function AddCommonExpensePage() {
   const params = useParams()
   const router = useRouter()
   const projectId = params.projectId as string
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [project, setProject] = useState<Project | null>(null)
   const [loading, setLoading] = useState(true)
@@ -60,13 +73,64 @@ export default function AddCommonExpensePage() {
   const [amount, setAmount] = useState('')
   const [description, setDescription] = useState('')
   const [paidById, setPaidById] = useState('')
+  const [periodKey, setPeriodKey] = useState<string | null>(null)
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
 
-  // Payer selection modal
+  // Modals
   const [showPayerSheet, setShowPayerSheet] = useState(false)
+  const [showPeriodSheet, setShowPeriodSheet] = useState(false)
+
+  // Current Persian year (approximate)
+  const currentPersianYear = useMemo(() => {
+    const now = new Date()
+    const year = now.getFullYear() - 621
+    const month = now.getMonth()
+    if (month < 2 || (month === 2 && now.getDate() < 21)) {
+      return year - 1
+    }
+    return year
+  }, [])
+
+  // Available years
+  const availableYears = useMemo(() => {
+    const years = []
+    for (let y = currentPersianYear; y >= currentPersianYear - 3; y--) {
+      years.push(y)
+    }
+    return years
+  }, [currentPersianYear])
+
+  // Period picker state
+  const [selectedYear, setSelectedYear] = useState(currentPersianYear)
+  const [selectedMonth, setSelectedMonth] = useState('01')
 
   useEffect(() => {
     fetchProject()
+    loadLastPeriod()
   }, [projectId])
+
+  const loadLastPeriod = () => {
+    try {
+      const saved = localStorage.getItem(LAST_PERIOD_KEY)
+      if (saved) {
+        const [year, month] = saved.split('-')
+        setSelectedYear(parseInt(year))
+        setSelectedMonth(month)
+        setPeriodKey(saved)
+      }
+    } catch {
+      // Ignore localStorage errors
+    }
+  }
+
+  const savePeriod = (period: string) => {
+    try {
+      localStorage.setItem(LAST_PERIOD_KEY, period)
+    } catch {
+      // Ignore localStorage errors
+    }
+  }
 
   const fetchProject = async () => {
     try {
@@ -80,6 +144,11 @@ export default function AddCommonExpensePage() {
       if (data.project.participants.length > 0) {
         setPaidById(data.project.participants[0].id)
       }
+
+      // Set year from project if available
+      if (data.project.chargeYear) {
+        setSelectedYear(data.project.chargeYear)
+      }
     } catch {
       setError('خطا در بارگذاری پروژه')
     } finally {
@@ -92,6 +161,43 @@ export default function AddCommonExpensePage() {
     const type = COMMON_EXPENSE_TYPES.find(t => t.id === typeId)
     if (type && !title) {
       setTitle(type.name)
+    }
+  }
+
+  const handlePeriodConfirm = () => {
+    const newPeriod = `${selectedYear}-${selectedMonth}`
+    setPeriodKey(newPeriod)
+    savePeriod(newPeriod)
+    setShowPeriodSheet(false)
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploadingImage(true)
+    setError('')
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'خطا در آپلود تصویر')
+      }
+
+      const data = await res.json()
+      setReceiptUrl(data.url)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'خطا در آپلود تصویر')
+    } finally {
+      setUploadingImage(false)
     }
   }
 
@@ -118,6 +224,11 @@ export default function AddCommonExpensePage() {
       return
     }
 
+    if (!periodKey) {
+      setError('ماه هزینه را انتخاب کنید')
+      return
+    }
+
     setSubmitting(true)
     setError('')
 
@@ -134,7 +245,8 @@ export default function AddCommonExpensePage() {
           description: description.trim() || undefined,
           paidById,
           includedParticipantIds,
-          // No periodKey - common expenses are not period-based
+          periodKey,
+          receiptUrl: receiptUrl || undefined,
         }),
       })
 
@@ -169,6 +281,14 @@ export default function AddCommonExpensePage() {
 
   const selectedPayer = project?.participants.find(p => p.id === paidById)
   const sharePreview = getSharePreview()
+
+  // Period display
+  const periodDisplay = useMemo(() => {
+    if (!periodKey) return null
+    const [year, month] = periodKey.split('-')
+    const monthInfo = PERSIAN_MONTHS.find(m => m.key === month)
+    return `${monthInfo?.name} ${year}`
+  }, [periodKey])
 
   if (loading) {
     return (
@@ -235,7 +355,42 @@ export default function AddCommonExpensePage() {
           </div>
         )}
 
-        {/* 1. Expense Type Selection */}
+        {/* 1. Period Selection */}
+        <section>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            این هزینه مربوط به کدوم ماه‌ه؟ <span className="text-red-500">*</span>
+          </label>
+          <button
+            type="button"
+            onClick={() => setShowPeriodSheet(true)}
+            className={`w-full px-4 py-3.5 rounded-xl text-right transition-all ${
+              periodKey
+                ? 'bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-200 dark:border-orange-800'
+                : 'bg-gray-100 dark:bg-gray-800 border-2 border-transparent'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <svg
+                className="w-5 h-5 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+              <span className={periodKey ? 'font-medium' : 'text-gray-400'}>
+                {periodDisplay || 'انتخاب ماه'}
+              </span>
+            </div>
+          </button>
+        </section>
+
+        {/* 2. Expense Type Selection */}
         <section>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
             نوع هزینه چیه؟
@@ -260,7 +415,7 @@ export default function AddCommonExpensePage() {
           </div>
         </section>
 
-        {/* 2. Title */}
+        {/* 3. Title */}
         <section>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             عنوان هزینه
@@ -273,7 +428,7 @@ export default function AddCommonExpensePage() {
           <p className="text-xs text-gray-400 mt-1">توضیح مختصری از هزینه</p>
         </section>
 
-        {/* 3. Amount */}
+        {/* 4. Amount */}
         <section>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             مبلغ کل (تومان)
@@ -288,7 +443,7 @@ export default function AddCommonExpensePage() {
           />
         </section>
 
-        {/* 4. Paid By */}
+        {/* 5. Paid By */}
         <section>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             پرداخت‌کننده
@@ -312,7 +467,55 @@ export default function AddCommonExpensePage() {
           <p className="text-xs text-gray-400 mt-1">معمولاً مدیر ساختمان یا صندوق‌دار</p>
         </section>
 
-        {/* 5. Description (Optional) */}
+        {/* 6. Receipt Image */}
+        <section>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            تصویر رسید یا فاکتور (اختیاری)
+          </label>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            className="hidden"
+          />
+          {receiptUrl ? (
+            <div className="relative">
+              <img
+                src={receiptUrl}
+                alt="رسید"
+                className="w-full h-48 object-cover rounded-xl"
+              />
+              <button
+                onClick={() => setReceiptUrl(null)}
+                className="absolute top-2 left-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingImage}
+              className="w-full p-6 bg-white dark:bg-gray-800 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              {uploadingImage ? (
+                <div className="animate-spin w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full" />
+              ) : (
+                <>
+                  <svg className="w-10 h-10 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span className="text-gray-500 text-sm">انتخاب تصویر</span>
+                </>
+              )}
+            </button>
+          )}
+        </section>
+
+        {/* 7. Description (Optional) */}
         <section>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             توضیحات (اختیاری)
@@ -350,7 +553,7 @@ export default function AddCommonExpensePage() {
         <Button
           onClick={handleSubmit}
           loading={submitting}
-          disabled={!selectedType || !title.trim() || !amount || !paidById}
+          disabled={!selectedType || !title.trim() || !amount || !paidById || !periodKey}
           className="w-full !bg-orange-500 hover:!bg-orange-600"
           size="lg"
         >
@@ -391,6 +594,66 @@ export default function AddCommonExpensePage() {
               )}
             </button>
           ))}
+        </div>
+      </BottomSheet>
+
+      {/* Period Selection Sheet */}
+      <BottomSheet
+        isOpen={showPeriodSheet}
+        onClose={() => setShowPeriodSheet(false)}
+        title="انتخاب دوره"
+      >
+        <div className="space-y-4">
+          {/* Year Selector */}
+          <div>
+            <label className="block text-xs text-gray-500 mb-2">سال</label>
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {availableYears.map((year) => (
+                <button
+                  key={year}
+                  type="button"
+                  onClick={() => setSelectedYear(year)}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${
+                    selectedYear === year
+                      ? 'bg-orange-500 text-white'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  {year}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Month Grid */}
+          <div>
+            <label className="block text-xs text-gray-500 mb-2">ماه</label>
+            <div className="grid grid-cols-4 gap-2">
+              {PERSIAN_MONTHS.map((month) => (
+                <button
+                  key={month.key}
+                  type="button"
+                  onClick={() => setSelectedMonth(month.key)}
+                  className={`px-3 py-3 rounded-xl text-sm font-medium transition-all ${
+                    selectedMonth === month.key
+                      ? 'bg-orange-500 text-white'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  {month.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Confirm Button */}
+          <button
+            type="button"
+            onClick={handlePeriodConfirm}
+            className="w-full py-3 bg-orange-500 text-white rounded-xl font-medium hover:bg-orange-600 transition-colors"
+          >
+            تأیید - {PERSIAN_MONTHS.find((m) => m.key === selectedMonth)?.name} {selectedYear}
+          </button>
         </div>
       </BottomSheet>
     </main>
