@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import { InstallPrompt, OfflineBanner, ServiceWorkerRegistration } from '@/components/pwa'
 
 export const metadata: Metadata = {
   title: 'دنگی - تقسیم هزینه‌های گروهی',
@@ -9,6 +10,9 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: 'default',
     title: 'دنگی',
+  },
+  other: {
+    'mobile-web-app-capable': 'yes',
   },
 }
 
@@ -35,7 +39,10 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-dvh bg-gray-50 dark:bg-gray-950">
+        <ServiceWorkerRegistration />
+        <OfflineBanner />
         {children}
+        <InstallPrompt />
       </body>
     </html>
   )
