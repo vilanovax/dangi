@@ -2,78 +2,28 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import { Button, FloatingButton } from '@/components/ui'
 import Link from 'next/link'
+import type { Participant, Project, Settlement, Summary } from '@/types'
 import {
   DashboardHeader,
   QuickActions,
   ParticipantsRow,
   RecentExpenseCard,
   RecentSettlementCard,
-  AddMemberSheet,
-  ParticipantProfileSheet,
-  TransferBalanceSheet,
 } from './components'
 
-// ─────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────
-
-interface Participant {
-  id: string
-  name: string
-  role: string
-  avatar?: string | null
-}
-
-interface Category {
-  id: string
-  name: string
-  icon: string
-  color: string
-}
-
-interface Expense {
-  id: string
-  title: string
-  amount: number
-  expenseDate: string
-  paidBy: Participant
-  category?: Category
-}
-
-interface Settlement {
-  id: string
-  amount: number
-  note?: string | null
-  settledAt: string
-  from: Participant
-  to: Participant
-}
-
-interface Project {
-  id: string
-  name: string
-  description: string | null
-  template: string
-  currency: string
-  shareCode: string
-  participants: Participant[]
-  expenses: Expense[]
-  categories: Category[]
-}
-
-interface ParticipantBalance {
-  participantId: string
-  participantName: string
-  totalPaid: number
-  totalShare: number
-  balance: number
-}
-
-interface Summary {
-  participantBalances: ParticipantBalance[]
-}
+// Lazy load heavy bottom sheets (only when opened)
+const AddMemberSheet = dynamic(() => import('./components/AddMemberSheet').then(mod => ({ default: mod.AddMemberSheet })), {
+  ssr: false,
+})
+const ParticipantProfileSheet = dynamic(() => import('./components/ParticipantProfileSheet').then(mod => ({ default: mod.ParticipantProfileSheet })), {
+  ssr: false,
+})
+const TransferBalanceSheet = dynamic(() => import('./components/TransferBalanceSheet').then(mod => ({ default: mod.TransferBalanceSheet })), {
+  ssr: false,
+})
 
 // ─────────────────────────────────────────────────────────────
 // Main Component

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { InstallPrompt, OfflineBanner, ServiceWorkerRegistration } from '@/components/pwa'
+import { ClientErrorBoundary } from '@/components/ClientErrorBoundary'
 
 export const metadata: Metadata = {
   title: 'دنگی - تقسیم هزینه‌های گروهی',
@@ -41,7 +42,9 @@ export default function RootLayout({
       <body className="min-h-dvh bg-gray-50 dark:bg-gray-950">
         <ServiceWorkerRegistration />
         <OfflineBanner />
-        {children}
+        <ClientErrorBoundary>
+          {children}
+        </ClientErrorBoundary>
         <InstallPrompt />
       </body>
     </html>
