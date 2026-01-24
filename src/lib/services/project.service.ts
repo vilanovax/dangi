@@ -79,27 +79,31 @@ export async function createProject(input: CreateProjectInput): Promise<{
 
 /**
  * Get project by ID with all relations
+ * @param includeExpenses - Whether to include full expense data (default: true for backward compatibility)
  */
-export async function getProjectById(projectId: string) {
+export async function getProjectById(projectId: string, includeExpenses = true) {
   return prisma.project.findUnique({
     where: { id: projectId },
     include: {
       participants: true,
       categories: true,
-      expenses: {
-        include: {
-          paidBy: true,
-          category: true,
-          shares: {
+      expenses: includeExpenses
+        ? {
             include: {
-              participant: true,
+              paidBy: true,
+              category: true,
+              shares: {
+                include: {
+                  participant: true,
+                },
+              },
             },
-          },
-        },
-        orderBy: {
-          expenseDate: 'desc',
-        },
-      },
+            orderBy: {
+              expenseDate: 'desc',
+            },
+            take: 10, // Only fetch recent 10 expenses for dashboard preview
+          }
+        : false,
     },
   })
 }

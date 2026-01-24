@@ -13,7 +13,12 @@ export async function GET(
 ) {
   try {
     const { projectId } = await context.params
-    const project = await getProjectById(projectId)
+
+    // Check if expenses should be included (default: true for backward compatibility)
+    const searchParams = request.nextUrl.searchParams
+    const includeExpenses = searchParams.get('includeExpenses') !== 'false'
+
+    const project = await getProjectById(projectId, includeExpenses)
 
     if (!project) {
       return NextResponse.json(

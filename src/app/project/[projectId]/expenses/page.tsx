@@ -219,8 +219,11 @@ export default function ExpensesPage() {
     async function fetchData() {
       try {
         const [projectRes, expensesRes] = await Promise.all([
-          fetch(`/api/projects/${projectId}`),
-          fetch(`/api/projects/${projectId}/expenses`),
+          // Fetch project without expenses (optimization - avoid duplicate data)
+          fetch(`/api/projects/${projectId}?includeExpenses=false`),
+          // Fetch with high limit for now (client-side filtering)
+          // TODO: Move filtering to server-side for better performance
+          fetch(`/api/projects/${projectId}/expenses?limit=1000`),
         ])
 
         if (projectRes.ok) {
@@ -229,8 +232,9 @@ export default function ExpensesPage() {
         }
 
         if (expensesRes.ok) {
-          const { expenses } = await expensesRes.json()
-          setExpenses(expenses)
+          const data = await expensesRes.json()
+          // Handle both old format (array) and new format (object with pagination)
+          setExpenses(data.expenses || data)
         }
       } catch (error) {
         console.error('Error fetching expenses data:', error)

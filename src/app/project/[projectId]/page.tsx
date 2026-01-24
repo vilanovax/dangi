@@ -143,7 +143,8 @@ export default function ProjectPage() {
     fetchProject()
     fetchSettlements()
     fetchSummary()
-  }, [fetchProject, fetchSettlements, fetchSummary])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId])
 
   // ── Participant Handlers ──────────────────────────────────────
 
@@ -174,7 +175,8 @@ export default function ProjectPage() {
     fetchSettlements()
     fetchSummary()
     setSelectedParticipant(null)
-  }, [fetchProject, fetchSettlements, fetchSummary])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Get balance for selected participant
   const getSelectedBalance = useCallback(() => {

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
-import { getProjectById } from '@/lib/services/project.service'
 import { getProjectSettlements } from '@/lib/services/settlement.service'
 import { calculateProjectSummary } from '@/lib/domain/summaryCalculator'
 import { PERSIAN_MONTHS, getCurrentPersianYear, getCurrentPersianMonth } from '@/lib/utils/persian-date'
@@ -84,8 +83,30 @@ export async function GET(
 ) {
   try {
     const { projectId } = await context.params
+
+    // Fetch project with full expense data (required for summary)
     const [project, settlements] = await Promise.all([
-      getProjectById(projectId),
+      prisma.project.findUnique({
+        where: { id: projectId },
+        include: {
+          participants: true,
+          categories: true,
+          expenses: {
+            include: {
+              paidBy: true,
+              category: true,
+              shares: {
+                include: {
+                  participant: true,
+                },
+              },
+            },
+            orderBy: {
+              expenseDate: 'desc',
+            },
+          },
+        },
+      }),
       getProjectSettlements(projectId),
     ])
 

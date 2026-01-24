@@ -98,10 +98,26 @@ export async function createExpense(projectId: string, input: ExpenseInput) {
 }
 
 /**
- * Get all expenses for a project
+ * Get all expenses for a project with optional pagination
  */
-export async function getProjectExpenses(projectId: string) {
-  return prisma.expense.findMany({
+export async function getProjectExpenses(
+  projectId: string,
+  options?: {
+    page?: number
+    limit?: number
+  }
+) {
+  const page = options?.page || 1
+  const limit = options?.limit || 50 // Default to 50 if not specified
+  const skip = (page - 1) * limit
+
+  // Get total count for pagination metadata
+  const total = await prisma.expense.count({
+    where: { projectId },
+  })
+
+  // Get paginated expenses
+  const expenses = await prisma.expense.findMany({
     where: { projectId },
     include: {
       paidBy: true,
@@ -115,7 +131,20 @@ export async function getProjectExpenses(projectId: string) {
     orderBy: {
       expenseDate: 'desc',
     },
+    skip,
+    take: limit,
   })
+
+  return {
+    expenses,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      hasMore: page * limit < total,
+    },
+  }
 }
 
 /**

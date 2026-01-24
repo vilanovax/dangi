@@ -157,14 +157,9 @@ export function ParticipantProfileSheet({
     }
   }
 
-  // Handle expense click - go to edit page
-  const handleExpenseClick = (expense: ExpenseItem, canEdit: boolean) => {
-    if (canEdit) {
-      router.push(`/project/${projectId}/expenses/${expense.id}/edit`)
-    } else {
-      // Just view the expense details
-      router.push(`/project/${projectId}/expenses/${expense.id}`)
-    }
+  // Handle expense click - go to expense detail page
+  const handleExpenseClick = (expense: ExpenseItem) => {
+    router.push(`/project/${projectId}/expense/${expense.id}`)
     onClose()
   }
 
@@ -243,7 +238,7 @@ export function ParticipantProfileSheet({
                 return (
                   <button
                     key={expense.id}
-                    onClick={() => handleExpenseClick(expense, canEdit)}
+                    onClick={() => handleExpenseClick(expense)}
                     className="w-full flex items-center gap-3 p-3 bg-white dark:bg-gray-900/50 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors text-right"
                   >
                     {/* Category Icon */}

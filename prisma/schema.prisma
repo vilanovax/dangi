@@ -55,6 +55,9 @@ model Participant {
   settlementsTo   Settlement[]   @relation("SettlementTo")
   project         Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
   user            User?          @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([projectId])
 }
 
 model Category {
@@ -65,6 +68,8 @@ model Category {
   projectId String
   project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   expenses  Expense[]
+
+  @@index([projectId])
 }
 
 model Expense {
@@ -84,6 +89,10 @@ model Expense {
   category    Category?      @relation(fields: [categoryId], references: [id])
   paidBy      Participant    @relation("PaidBy", fields: [paidById], references: [id])
   shares      ExpenseShare[]
+
+  @@index([projectId, expenseDate(sort: Desc)])
+  @@index([periodKey])
+  @@index([paidById])
 }
 
 model ExpenseShare {
@@ -96,6 +105,8 @@ model ExpenseShare {
   participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
 
   @@unique([expenseId, participantId])
+  @@index([participantId])
+  @@index([expenseId])
 }
 
 // تسویه حساب - پرداخت بین اعضا
@@ -112,6 +123,10 @@ model Settlement {
   project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   from        Participant @relation("SettlementFrom", fields: [fromId], references: [id])
   to          Participant @relation("SettlementTo", fields: [toId], references: [id])
+
+  @@index([projectId, settledAt(sort: Desc)])
+  @@index([fromId])
+  @@index([toId])
 }
 
 // قاعده شارژ - تعریف پرداخت‌های دوره‌ای مورد انتظار (برای template ساختمان)
