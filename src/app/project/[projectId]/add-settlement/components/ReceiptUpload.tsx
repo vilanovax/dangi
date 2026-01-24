@@ -11,7 +11,10 @@ interface ReceiptUploadProps {
 
 /**
  * Receipt image upload with preview
- * Simple drag-and-drop style UI
+ *
+ * UX Intent:
+ * - Very optional, don't pressure user
+ * - Friendly copy, not formal
  */
 export function ReceiptUpload({
   preview,
@@ -30,10 +33,13 @@ export function ReceiptUpload({
 
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">
+      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
         تصویر رسید
-        <span className="text-gray-400 font-normal mr-1">(اختیاری)</span>
+        <span className="text-gray-400 font-normal mr-1.5 text-xs">(اختیاری)</span>
       </label>
+      <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
+        اگه رسید داری، می‌تونی اضافه کنی
+      </p>
 
       <input
         ref={inputRef}
@@ -81,11 +87,11 @@ export function ReceiptUpload({
       ) : (
         <button
           onClick={() => inputRef.current?.click()}
-          className="w-full p-5 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl text-center hover:border-green-400 dark:hover:border-green-600 transition-colors group"
+          className="w-full p-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl text-center hover:border-green-400 dark:hover:border-green-600 transition-colors group"
         >
-          <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center group-hover:bg-green-50 dark:group-hover:bg-green-900/30 transition-colors">
+          <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center group-hover:bg-green-50 dark:group-hover:bg-green-900/30 transition-colors">
             <svg
-              className="w-6 h-6 text-gray-400 group-hover:text-green-500 transition-colors"
+              className="w-5 h-5 text-gray-400 group-hover:text-green-500 transition-colors"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -98,8 +104,8 @@ export function ReceiptUpload({
               />
             </svg>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            عکس رسید رو اینجا آپلود کنید
+          <p className="text-sm text-gray-400 dark:text-gray-500">
+            انتخاب عکس
           </p>
         </button>
       )}

@@ -9,8 +9,12 @@ interface AmountInputProps {
 }
 
 /**
- * Large, prominent amount input for settlements
- * Clean design with currency label
+ * Hero amount input for settlements
+ *
+ * UX Intent:
+ * - This is the ONLY important thing on this page
+ * - Large, prominent, impossible to miss
+ * - Green focus state for settlement identity
  */
 export function AmountInput({ value, onChange, currency }: AmountInputProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -22,18 +26,18 @@ export function AmountInput({ value, onChange, currency }: AmountInputProps) {
       <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">
         مبلغ پرداختی
       </label>
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 focus-within:ring-2 focus-within:ring-green-500 focus-within:border-transparent transition-all">
-        <div className="flex items-center gap-3">
+      <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-2xl border border-green-100 dark:border-green-800/30 p-5 focus-within:ring-2 focus-within:ring-green-500 focus-within:border-transparent transition-all shadow-sm">
+        <div className="flex items-center justify-center gap-3">
           <input
             type="text"
             inputMode="numeric"
             value={value}
             onChange={handleChange}
             placeholder="۰"
-            className="flex-1 text-3xl font-bold text-center bg-transparent border-none outline-none placeholder:text-gray-300 dark:placeholder:text-gray-600"
+            className="flex-1 text-4xl font-bold text-center bg-transparent border-none outline-none placeholder:text-green-300 dark:placeholder:text-green-800 text-green-700 dark:text-green-300"
             dir="ltr"
           />
-          <span className="text-sm text-gray-400 font-medium flex-shrink-0">
+          <span className="text-base text-green-600 dark:text-green-400 font-medium flex-shrink-0">
             {getCurrencyLabel(currency)}
           </span>
         </div>

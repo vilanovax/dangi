@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Button, Input, BottomSheet, ImageUpload } from '@/components/ui'
+import { UnifiedHeader, FormLayout, FormSection, FormError } from '@/components/layout'
 import { parseMoney } from '@/lib/utils/money'
 import { getTemplate } from '@/lib/domain/templates'
 import type { TemplateDefinition } from '@/lib/types/domain'
@@ -274,32 +275,50 @@ export default function AddExpensePage() {
   const sharePreview = getSharePreview()
 
   return (
-    <main className="min-h-dvh pb-32">
-      {/* Header - Lighter, friendlier */}
-      <div className="sticky top-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-b border-gray-100/50 dark:border-gray-800/50 px-4 py-3 z-10">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => router.back()}
-            className="p-2 -mr-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+    <>
+      <FormLayout
+        header={
+          <UnifiedHeader
+            variant="form"
+            title={labels.addExpenseTitle}
+            subtitle="یه خرج داشتی؟ سریع ثبتش کن ⚡"
+            showBack
+            onBack={() => router.back()}
+          />
+        }
+        hero={
+          <AmountInput
+            value={amount}
+            onChange={setAmount}
+            currency={project.currency}
+            label={labels.amountLabel}
+            placeholder={labels.amountPlaceholder}
+            sharePerPerson={sharePreview}
+            participantCount={includedParticipantIds.length}
+            participantTerm={labels.participantTerm}
+          />
+        }
+        footer={
+          <Button
+            onClick={handleSubmit}
+            loading={submitting}
+            disabled={
+              !title.trim() ||
+              !amount ||
+              !paidById ||
+              includedParticipantIds.length === 0 ||
+              (template.periodRequired && !periodKey) ||
+              (splitMode === 'MANUAL' && !getCustomAmountsInfo().isValid)
+            }
+            className="w-full shadow-lg shadow-blue-500/20"
+            size="lg"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-          <div>
-            <h1 className="text-base font-semibold text-gray-800 dark:text-gray-100">{labels.addExpenseTitle}</h1>
-            <p className="text-xs text-gray-400 dark:text-gray-500">یه خرج داشتی؟ سریع ثبتش کن ⚡</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="p-4 space-y-5">
+            {submitting ? 'در حال ثبت...' : 'ثبت خرج ✓'}
+          </Button>
+        }
+      >
         {/* Error Message */}
-        {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-xl text-sm">
-            {error}
-          </div>
-        )}
+        {error && <FormError message={error} />}
 
         {/* Period Picker - Only for templates that require it (e.g., building) */}
         {template.periodRequired && (
@@ -311,7 +330,7 @@ export default function AddExpensePage() {
           />
         )}
 
-        {/* 1. Title - Most prominent */}
+        {/* Title */}
         <ExpenseTitleInput
           value={title}
           onChange={setTitle}
@@ -320,19 +339,7 @@ export default function AddExpensePage() {
           helper={labels.expenseTitleHelper}
         />
 
-        {/* 2. Amount */}
-        <AmountInput
-          value={amount}
-          onChange={setAmount}
-          currency={project.currency}
-          label={labels.amountLabel}
-          placeholder={labels.amountPlaceholder}
-          sharePerPerson={sharePreview}
-          participantCount={includedParticipantIds.length}
-          participantTerm={labels.participantTerm}
-        />
-
-        {/* 3. Category - Optional */}
+        {/* Category - Optional */}
         <CategorySelector
           categories={project.categories}
           selectedId={categoryId}
@@ -342,12 +349,8 @@ export default function AddExpensePage() {
           helper={labels.categoryHelper}
         />
 
-        {/* Note - Optional, collapsible feel */}
-        <div>
-          <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
-            یادداشت
-            <span className="text-gray-400 dark:text-gray-500 font-normal mr-1.5 text-xs">(اختیاری)</span>
-          </label>
+        {/* Note - Optional */}
+        <FormSection title="یادداشت" optional>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -355,9 +358,9 @@ export default function AddExpensePage() {
             rows={2}
             className="w-full px-4 py-3 text-base border border-gray-100 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-300 dark:focus:border-blue-700 resize-none bg-gray-50/50 dark:bg-gray-800/30 placeholder-gray-400 dark:placeholder-gray-600 transition-all"
           />
-        </div>
+        </FormSection>
 
-        {/* Receipt - Optional, friendly */}
+        {/* Receipt - Optional */}
         <ImageUpload
           value={receiptUrl}
           onChange={setReceiptUrl}
@@ -366,7 +369,7 @@ export default function AddExpensePage() {
           placeholder="رسید داری؟ بنداز اینجا 📸"
         />
 
-        {/* 4. Paid By */}
+        {/* Paid By */}
         <PaidBySelector
           participants={project.participants}
           selectedId={paidById}
@@ -376,11 +379,8 @@ export default function AddExpensePage() {
           helper={labels.paidByHelper}
         />
 
-        {/* Split Mode - Friendly toggle */}
-        <div>
-          <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
-            چطور تقسیم بشه؟
-          </label>
+        {/* Split Mode */}
+        <FormSection title="چطور تقسیم بشه؟">
           <div className="flex gap-2">
             <button
               type="button"
@@ -405,9 +405,9 @@ export default function AddExpensePage() {
               دستی ✏️
             </button>
           </div>
-        </div>
+        </FormSection>
 
-        {/* 6. Split Between */}
+        {/* Split Between */}
         <ParticipantsSelector
           participants={project.participants}
           selectedIds={includedParticipantIds}
@@ -425,27 +425,7 @@ export default function AddExpensePage() {
           onCustomAmountChange={handleCustomAmountChange}
           totalAmount={parseMoney(amount) || 0}
         />
-      </div>
-
-      {/* Fixed Submit Button - Friendly and inviting */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-t border-gray-100/50 dark:border-gray-800/50 safe-bottom">
-        <Button
-          onClick={handleSubmit}
-          loading={submitting}
-          disabled={
-            !title.trim() ||
-            !amount ||
-            !paidById ||
-            includedParticipantIds.length === 0 ||
-            (template.periodRequired && !periodKey) ||
-            (splitMode === 'MANUAL' && !getCustomAmountsInfo().isValid)
-          }
-          className="w-full shadow-lg shadow-blue-500/20"
-          size="lg"
-        >
-          {submitting ? 'در حال ثبت...' : 'ثبت خرج ✓'}
-        </Button>
-      </div>
+      </FormLayout>
 
       {/* Add Category Bottom Sheet */}
       <BottomSheet
@@ -495,6 +475,6 @@ export default function AddExpensePage() {
           </Button>
         </div>
       </BottomSheet>
-    </main>
+    </>
   )
 }

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button, Card, BottomSheet, Avatar } from '@/components/ui'
+import { UnifiedHeader, HeaderCard } from '@/components/layout'
 import { formatMoney } from '@/lib/utils/money'
 import { deserializeAvatar, type Avatar as AvatarData } from '@/lib/types/avatar'
 
@@ -239,29 +240,22 @@ export default function SummaryPage() {
 
   return (
     <main className="min-h-dvh bg-gray-50 dark:bg-gray-950 pb-8">
-      {/* Header */}
+      {/* Header - uses UnifiedHeader with variant="action" */}
       <div className="sticky top-0 z-10">
-        <div className="bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 text-white px-4 pt-4 pb-6">
-          {/* Top Row */}
-          <div className="flex items-center gap-3 mb-4">
-            <button
-              onClick={handleBack}
-              className="p-2 -mr-2 hover:bg-white/10 rounded-xl transition-colors"
-            >
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-            <div className="flex-1">
-              <h1 className="text-xl font-bold">خلاصه حساب</h1>
-              <p className="text-blue-100 text-sm">{summary.projectName}</p>
-            </div>
+        <UnifiedHeader
+          variant="action"
+          tone="default"
+          title="خلاصه حساب"
+          subtitle={summary.projectName}
+          showBack
+          onBack={handleBack}
+          rightAction={
             <Link
               href={`/project/${projectId}/settlements`}
-              className="p-2.5 hover:bg-white/10 rounded-xl transition-colors"
+              className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 active:scale-95 transition-all"
               title="تاریخچه تسویه‌ها"
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-4 h-4 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -270,18 +264,18 @@ export default function SummaryPage() {
                 />
               </svg>
             </Link>
-          </div>
-
+          }
+        >
           {/* Stats Cards */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white/15 backdrop-blur-sm rounded-xl p-3">
+            <HeaderCard>
               <p className="text-blue-100 text-xs mb-1">مجموع هزینه‌ها</p>
               <p className="text-xl font-bold">{formatMoney(summary.totalExpenses, summary.currency)}</p>
-            </div>
-            <div className="bg-white/15 backdrop-blur-sm rounded-xl p-3">
+            </HeaderCard>
+            <HeaderCard>
               <p className="text-blue-100 text-xs mb-1">سهم هر نفر</p>
               <p className="text-xl font-bold">{formatMoney(sharePerPerson, summary.currency)}</p>
-            </div>
+            </HeaderCard>
             {isBuilding && hasChargeDebt && (
               <div className="col-span-2 bg-red-500/30 backdrop-blur-sm rounded-xl p-3">
                 <div className="flex items-center justify-between">
@@ -299,7 +293,7 @@ export default function SummaryPage() {
               </div>
             )}
           </div>
-        </div>
+        </UnifiedHeader>
       </div>
 
       {/* Tabs (only for building template) */}
@@ -334,40 +328,16 @@ export default function SummaryPage() {
         {/* Balance Tab */}
         {activeTab === 'balance' && (
           <>
-            {/* Balance Chart */}
-            {hasExpenses && summary.participantBalances.length > 1 && (
-              <section>
-                <BalanceChart balances={summary.participantBalances} currency={summary.currency} />
-              </section>
-            )}
-
-            {/* Member Balances */}
-            <section>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-3">وضعیت اعضا</h2>
-              <div className="space-y-2">
-                {balancesWithChargeDebt.map((p) => (
-                  <MemberBalanceCard
-                    key={p.participantId}
-                    name={p.participantName}
-                    avatar={getParticipantAvatar(p.participantId)}
-                    totalPaid={p.totalPaid}
-                    totalShare={p.totalShare}
-                    balance={p.balance}
-                    chargeDebt={isBuilding ? p.chargeDebt : 0}
-                    currency={summary.currency}
-                  />
-                ))}
-              </div>
-            </section>
-
-            {/* Settlement Suggestions */}
+            {/* Settlement Suggestions - Hero Section (moved to top for action priority) */}
             {hasDebt && (
               <section>
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">پیشنهاد تسویه</h2>
-                  <span className="text-xs text-gray-500 bg-gray-100 dark:bg-gray-800 px-2.5 py-1 rounded-full font-medium">
-                    {summary.settlements.length} تراکنش
-                  </span>
+                <div className="mb-3">
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                    با این تسویه‌ها حسابا صاف می‌شن
+                  </h2>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                    ساده‌ترین راه برای تموم‌شدن حسابا
+                  </p>
                 </div>
                 <div className="space-y-2">
                   {summary.settlements.map((s, index) => (
@@ -383,37 +353,51 @@ export default function SummaryPage() {
                     />
                   ))}
                 </div>
-                <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-4">
-                  با انجام این تراکنش‌ها همه تسویه می‌شوند
-                </p>
               </section>
             )}
 
-            {/* All Settled State */}
+            {/* All Settled State - Celebration! */}
             {!hasDebt && hasExpenses && (
-              <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 text-center shadow-sm">
-                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg
-                    className="w-8 h-8 text-green-600 dark:text-green-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2.5}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-2xl p-8 text-center border border-green-100 dark:border-green-800/30">
+                <div className="w-20 h-20 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-4xl">🎉</span>
                 </div>
-                <p className="text-green-600 dark:text-green-400 font-bold text-lg">
-                  همه تسویه هستند!
+                <p className="text-green-700 dark:text-green-300 font-bold text-xl">
+                  همه حسابا صافه
                 </p>
-                <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-                  هیچ بدهی باقی نمانده
+                <p className="text-green-600/70 dark:text-green-400/70 text-sm mt-2">
+                  دیگه کاری نمونده، بریم ادامه سفر
                 </p>
               </div>
+            )}
+
+            {/* Balance Overview - Simplified */}
+            {hasExpenses && summary.participantBalances.length > 1 && hasDebt && (
+              <section>
+                <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3">وضعیت کلی</h2>
+                <BalanceChart balances={summary.participantBalances} currency={summary.currency} />
+              </section>
+            )}
+
+            {/* Member Status - Secondary */}
+            {hasExpenses && (
+              <section>
+                <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3">وضعیت هم‌سفرها</h2>
+                <div className="space-y-2">
+                  {balancesWithChargeDebt.map((p) => (
+                    <MemberBalanceCard
+                      key={p.participantId}
+                      name={p.participantName}
+                      avatar={getParticipantAvatar(p.participantId)}
+                      totalPaid={p.totalPaid}
+                      totalShare={p.totalShare}
+                      balance={p.balance}
+                      chargeDebt={isBuilding ? p.chargeDebt : 0}
+                      currency={summary.currency}
+                    />
+                  ))}
+                </div>
+              </section>
             )}
 
             {/* No Expenses State */}
@@ -616,7 +600,12 @@ export default function SummaryPage() {
 // ─────────────────────────────────────────────────────────────
 
 /**
- * Balance Chart - Visual bar chart showing each person's balance
+ * Balance Chart - Simplified visual bar chart
+ *
+ * UX Intent:
+ * - Quick scan in under 5 seconds
+ * - Name + Balance only, no extra data
+ * - Color semantics: green=creditor, red=debtor
  */
 function BalanceChart({
   balances,
@@ -634,94 +623,83 @@ function BalanceChart({
   // Separate creditors and debtors
   const creditors = balances.filter((b) => b.balance > 0).sort((a, b) => b.balance - a.balance)
   const debtors = balances.filter((b) => b.balance < 0).sort((a, b) => a.balance - b.balance)
-  const settled = balances.filter((b) => b.balance === 0)
 
   if (balances.length === 0 || maxBalance === 0) {
     return null
   }
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm">
-      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">نمودار تراز</h3>
-
-      <div className="space-y-3">
+    <div className="bg-white dark:bg-gray-900 rounded-xl p-3 shadow-sm">
+      <div className="space-y-2">
         {/* Creditors (positive) */}
         {creditors.map((b) => {
           const percentage = (b.balance / maxBalance) * 100
           return (
-            <div key={b.participantId} className="flex items-center gap-3">
-              <span className="w-16 text-xs text-right truncate text-gray-600 dark:text-gray-400">
+            <div key={b.participantId} className="flex items-center gap-2">
+              <span className="w-14 text-xs text-right truncate text-gray-600 dark:text-gray-400">
                 {b.participantName}
               </span>
-              <div className="flex-1 h-6 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden relative">
+              <div className="flex-1 h-5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden relative">
                 <div
-                  className="absolute inset-y-0 right-0 bg-gradient-to-l from-green-500 to-green-400 rounded-full transition-all duration-500"
+                  className="absolute inset-y-0 right-0 bg-green-500 rounded-full transition-all duration-500"
                   style={{ width: `${percentage}%` }}
                 />
-                <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-gray-700 dark:text-gray-300">
-                  +{formatMoney(b.balance, currency)}
-                </span>
               </div>
+              <span className="w-20 text-xs font-medium text-green-600 dark:text-green-400 text-left">
+                +{formatMoney(b.balance, currency)}
+              </span>
             </div>
           )
         })}
-
-        {/* Settled (zero) */}
-        {settled.map((b) => (
-          <div key={b.participantId} className="flex items-center gap-3">
-            <span className="w-16 text-xs text-right truncate text-gray-600 dark:text-gray-400">
-              {b.participantName}
-            </span>
-            <div className="flex-1 h-6 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden relative">
-              <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-gray-500">
-                تسویه
-              </span>
-            </div>
-          </div>
-        ))}
 
         {/* Debtors (negative) */}
         {debtors.map((b) => {
           const percentage = (Math.abs(b.balance) / maxBalance) * 100
           return (
-            <div key={b.participantId} className="flex items-center gap-3">
-              <span className="w-16 text-xs text-right truncate text-gray-600 dark:text-gray-400">
+            <div key={b.participantId} className="flex items-center gap-2">
+              <span className="w-14 text-xs text-right truncate text-gray-600 dark:text-gray-400">
                 {b.participantName}
               </span>
-              <div className="flex-1 h-6 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden relative">
+              <div className="flex-1 h-5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden relative">
                 <div
-                  className="absolute inset-y-0 right-0 bg-gradient-to-l from-red-500 to-red-400 rounded-full transition-all duration-500"
+                  className="absolute inset-y-0 right-0 bg-red-500 rounded-full transition-all duration-500"
                   style={{ width: `${percentage}%` }}
                 />
-                <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-gray-700 dark:text-gray-300">
-                  {formatMoney(b.balance, currency)}
-                </span>
               </div>
+              <span className="w-20 text-xs font-medium text-red-500 dark:text-red-400 text-left">
+                {formatMoney(b.balance, currency)}
+              </span>
             </div>
           )
         })}
       </div>
 
-      {/* Legend */}
-      <div className="flex items-center justify-center gap-6 mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-green-500" />
-          <span className="text-xs text-gray-500">طلبکار</span>
+      {/* Subtle Legend */}
+      <div className="flex items-center justify-center gap-4 mt-3 pt-2 border-t border-gray-100 dark:border-gray-800">
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-green-500" />
+          <span className="text-[10px] text-gray-400">طلبکار</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-red-500" />
-          <span className="text-xs text-gray-500">بدهکار</span>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-red-500" />
+          <span className="text-[10px] text-gray-400">بدهکار</span>
         </div>
       </div>
     </div>
   )
 }
 
+/**
+ * Member Balance Card - Simplified
+ *
+ * UX Intent:
+ * - Show only name + balance by default
+ * - Hide paid/share breakdown (reduces cognitive load)
+ * - Zero-balance members shown muted
+ */
 function MemberBalanceCard({
   name,
   avatar,
-  totalPaid,
-  totalShare,
   balance,
   chargeDebt,
   currency,
@@ -736,30 +714,27 @@ function MemberBalanceCard({
 }) {
   const isCreditor = balance > 0
   const isDebtor = balance < 0
+  const isSettled = balance === 0
   const hasChargeDebt = chargeDebt > 0
-
-  const borderColor = isCreditor
-    ? 'border-r-green-500'
-    : isDebtor || hasChargeDebt
-    ? 'border-r-red-400'
-    : 'border-r-gray-300'
 
   const statusLabel = isCreditor ? 'طلبکار' : isDebtor ? 'بدهکار' : 'تسویه'
   const statusColor = isCreditor
     ? 'text-green-600 dark:text-green-400'
     : isDebtor
     ? 'text-red-500 dark:text-red-400'
-    : 'text-gray-500'
+    : 'text-gray-400 dark:text-gray-500'
+
+  const cardOpacity = isSettled && !hasChargeDebt ? 'opacity-60' : ''
 
   return (
-    <div className={`bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm border-r-4 ${borderColor}`}>
+    <div className={`bg-white dark:bg-gray-900 rounded-xl p-3 shadow-sm ${cardOpacity}`}>
       <div className="flex items-center gap-3">
-        <div className="w-12 h-12 flex-shrink-0">
+        <div className="w-10 h-10 flex-shrink-0">
           {avatar ? (
-            <Avatar avatar={avatar} name={name} size="lg" />
+            <Avatar avatar={avatar} name={name} size="md" />
           ) : (
-            <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-              <span className="font-semibold text-lg text-gray-600 dark:text-gray-300">
+            <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+              <span className="font-semibold text-gray-600 dark:text-gray-300">
                 {name.charAt(0)}
               </span>
             </div>
@@ -767,28 +742,23 @@ function MemberBalanceCard({
         </div>
 
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-gray-900 dark:text-white">{name}</p>
-          <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mt-1">
-            <span>پرداخت: {formatMoney(totalPaid, currency)}</span>
-            <span className="text-gray-300 dark:text-gray-600">•</span>
-            <span>سهم: {formatMoney(totalShare, currency)}</span>
-          </div>
+          <p className="font-medium text-gray-900 dark:text-white text-sm">{name}</p>
         </div>
 
         <div className="text-left flex-shrink-0">
-          <p className={`font-bold text-lg ${statusColor}`}>
+          <p className={`font-bold ${statusColor}`}>
             {isCreditor ? '+' : ''}
             {formatMoney(balance, currency)}
           </p>
-          <p className={`text-xs ${statusColor}`}>{statusLabel}</p>
+          <p className={`text-[10px] ${statusColor}`}>{statusLabel}</p>
         </div>
       </div>
 
-      {/* Charge debt row */}
+      {/* Charge debt row - only for building template */}
       {hasChargeDebt && (
-        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
-          <span className="text-xs text-gray-500">بدهی شارژ:</span>
-          <span className="text-sm font-bold text-red-500">{formatMoney(chargeDebt, 'IRR')}</span>
+        <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
+          <span className="text-xs text-gray-400">بدهی شارژ:</span>
+          <span className="text-xs font-bold text-red-500">{formatMoney(chargeDebt, 'IRR')}</span>
         </div>
       )}
     </div>

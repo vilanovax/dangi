@@ -222,7 +222,7 @@ export function ProjectCard({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">تسویه</span>
+                  <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">حسابا صافه</span>
                 </div>
               ) : isCreditor ? (
                 <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-gradient-to-r from-emerald-500/10 to-green-500/10 border border-emerald-500/20">
@@ -232,7 +232,7 @@ export function ProjectCard({
                     </svg>
                   </div>
                   <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                    {formatMoney(myBalance, currency)} طلب
+                    {formatMoney(myBalance, currency)} طلب داری
                   </span>
                 </div>
               ) : (
@@ -243,7 +243,7 @@ export function ProjectCard({
                     </svg>
                   </div>
                   <span className="text-sm font-bold text-red-500 dark:text-red-400">
-                    {formatMoney(Math.abs(myBalance), currency)} بدهی
+                    باید {formatMoney(Math.abs(myBalance), currency)} بدی
                   </span>
                 </div>
               )}

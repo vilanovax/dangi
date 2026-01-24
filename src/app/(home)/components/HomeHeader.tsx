@@ -49,13 +49,12 @@ export function HomeHeader({ user, onLogout }: HomeHeaderProps) {
           <div className="flex flex-col">
             {user ? (
               <>
-                <span className="text-sm text-gray-500 dark:text-gray-400">خوش آمدی</span>
-                <p className="text-lg font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-                  {user.name}
+                <p className="text-lg font-bold text-gray-900 dark:text-white">
+                  سلام {user.name} 👋
                 </p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 font-mono tracking-wider">
-                  {user.phone}
-                </p>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  اینجا پروژه‌هات رو مدیریت می‌کنی
+                </span>
               </>
             ) : (
               <>

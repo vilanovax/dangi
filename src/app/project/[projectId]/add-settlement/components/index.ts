@@ -1,5 +1,5 @@
 // Add Settlement page components
-export { SettlementHeader } from './SettlementHeader'
+export { TransferPreview } from './TransferPreview'
 export { ParticipantSelector } from './ParticipantSelector'
 export { AmountInput } from './AmountInput'
 export { ReceiptUpload } from './ReceiptUpload'

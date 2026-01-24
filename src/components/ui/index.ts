@@ -6,6 +6,7 @@ export { FloatingButton } from './FloatingButton'
 export { Avatar } from './Avatar'
 export { AvatarPicker } from './AvatarPicker'
 export { ImageUpload } from './ImageUpload'
+// TravelHeader deprecated - use UnifiedHeader from '@/components/layout' instead
 export {
   Skeleton,
   ProjectCardSkeleton,

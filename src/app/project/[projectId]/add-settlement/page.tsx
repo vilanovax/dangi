@@ -3,9 +3,10 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Button, Input } from '@/components/ui'
+import { UnifiedHeader, FormLayout, FormSection, FormError } from '@/components/layout'
 import { parseMoney } from '@/lib/utils/money'
 import {
-  SettlementHeader,
+  TransferPreview,
   ParticipantSelector,
   AmountInput,
   ReceiptUpload,
@@ -220,83 +221,86 @@ export default function AddSettlementPage() {
   // ── Main Render ─────────────────────────────────────────────
 
   return (
-    <main className="min-h-dvh bg-gray-50 dark:bg-gray-950 pb-28">
-      {/* Green Header with Transfer Preview */}
-      <SettlementHeader
-        projectName={project.name}
-        from={fromParticipant}
-        to={toParticipant}
-        amount={parsedAmount}
-        currency={project.currency}
-        onBack={handleBack}
-        onSwap={handleSwap}
+    <FormLayout
+      header={
+        <UnifiedHeader
+          variant="form"
+          title="صاف‌کردن حساب"
+          subtitle="یه پرداخت انجام شده؟ اینجا ثبتش کن"
+          showBack
+          onBack={handleBack}
+        />
+      }
+      hero={
+        <TransferPreview
+          from={fromParticipant}
+          to={toParticipant}
+          amount={parsedAmount}
+          currency={project.currency}
+          onSwap={handleSwap}
+        />
+      }
+      footer={
+        <>
+          {fromId && toId && fromId === toId && (
+            <p className="text-red-500 text-xs text-center mb-2">
+              پرداخت‌کننده و دریافت‌کننده نمی‌تونن یکی باشن
+            </p>
+          )}
+          <Button
+            onClick={handleSubmit}
+            loading={submitting}
+            disabled={!isValid || uploadingImage}
+            className="w-full !bg-green-500 hover:!bg-green-600 shadow-lg shadow-green-500/20"
+            size="lg"
+          >
+            {submitting ? 'در حال ثبت...' : 'حساب صاف شد ✓'}
+          </Button>
+        </>
+      }
+    >
+      {/* Error Message */}
+      {error && <FormError message={error} />}
+
+      {/* Select Payer (From) */}
+      <ParticipantSelector
+        participants={project.participants}
+        selectedId={fromId}
+        disabledId={toId}
+        onSelect={setFromId}
+        label="پرداخت‌کننده (کسی که پول داده)"
+        color="blue"
       />
 
-      <div className="p-4 space-y-5">
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-xl text-sm">
-            {error}
-          </div>
-        )}
+      {/* Select Receiver (To) */}
+      <ParticipantSelector
+        participants={project.participants}
+        selectedId={toId}
+        disabledId={fromId}
+        onSelect={setToId}
+        label="دریافت‌کننده (کسی که پول گرفته)"
+        color="green"
+      />
 
-        {/* Select Payer (From) */}
-        <ParticipantSelector
-          participants={project.participants}
-          selectedId={fromId}
-          disabledId={toId}
-          onSelect={setFromId}
-          label="پرداخت‌کننده (کسی که پول داده)"
-          color="blue"
+      {/* Amount */}
+      <AmountInput value={amount} onChange={setAmount} currency={project.currency} />
+
+      {/* Note - Optional */}
+      <FormSection title="توضیح" optional>
+        <Input
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="اگه خواستی، توضیح کوتاه بنویس"
         />
+      </FormSection>
 
-        {/* Select Receiver (To) */}
-        <ParticipantSelector
-          participants={project.participants}
-          selectedId={toId}
-          disabledId={fromId}
-          onSelect={setToId}
-          label="دریافت‌کننده (کسی که پول گرفته)"
-          color="green"
-        />
-
-        {/* Amount */}
-        <AmountInput value={amount} onChange={setAmount} currency={project.currency} />
-
-        {/* Note */}
-        <div>
-          <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
-            توضیحات
-            <span className="text-gray-400 font-normal mr-1">(اختیاری)</span>
-          </label>
-          <Input
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="مثلاً: بابت هزینه‌های رستوران"
-          />
-        </div>
-
-        {/* Receipt Upload */}
-        <ReceiptUpload
-          preview={receiptPreview}
-          uploading={uploadingImage}
-          onSelect={handleImageSelect}
-          onRemove={handleRemoveReceipt}
-        />
-      </div>
-
-      {/* Fixed Submit Button */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-t border-gray-100 dark:border-gray-800">
-        <Button
-          onClick={handleSubmit}
-          loading={submitting}
-          disabled={!isValid || uploadingImage}
-          className="w-full !bg-green-500 hover:!bg-green-600"
-          size="lg"
-        >
-          {submitting ? 'در حال ثبت...' : 'ثبت تسویه'}
-        </Button>
-      </div>
-    </main>
+      {/* Receipt Upload */}
+      <ReceiptUpload
+        preview={receiptPreview}
+        uploading={uploadingImage}
+        onSelect={handleImageSelect}
+        onRemove={handleRemoveReceipt}
+      />
+    </FormLayout>
   )
 }
