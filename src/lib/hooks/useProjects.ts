@@ -1,6 +1,7 @@
 'use client'
 
 import useSWR from 'swr'
+import { useMemo } from 'react'
 
 interface User {
   id: string
@@ -43,9 +44,13 @@ export function useProjects() {
     }
   )
 
+  // Memoize to prevent infinite re-renders when data is undefined
+  const projects = useMemo(() => data?.projects || [], [data?.projects])
+  const user = useMemo(() => data?.user || null, [data?.user])
+
   return {
-    projects: data?.projects || [],
-    user: data?.user || null,
+    projects,
+    user,
     isLoading,
     isError: error,
     refresh: mutate,
