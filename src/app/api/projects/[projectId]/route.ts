@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { getProjectById, updateProject, deleteProject } from '@/lib/services/project.service'
+import { prisma } from '@/lib/db/prisma'
 
 type RouteContext = {
   params: Promise<{ projectId: string }>
@@ -20,7 +22,23 @@ export async function GET(
       )
     }
 
-    return NextResponse.json({ project })
+    // Get current participant from session
+    const cookieStore = await cookies()
+    const sessionToken = cookieStore.get(`session_${projectId}`)?.value
+
+    let myParticipantId: string | null = null
+    if (sessionToken) {
+      const participant = await prisma.participant.findFirst({
+        where: {
+          sessionToken,
+          projectId,
+        },
+        select: { id: true },
+      })
+      myParticipantId = participant?.id || null
+    }
+
+    return NextResponse.json({ project, myParticipantId })
   } catch (error) {
     console.error('Error fetching project:', error)
     return NextResponse.json(

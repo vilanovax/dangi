@@ -88,6 +88,7 @@ export default function ProjectPage() {
   const [project, setProject] = useState<Project | null>(null)
   const [settlements, setSettlements] = useState<Settlement[]>([])
   const [summary, setSummary] = useState<Summary | null>(null)
+  const [myParticipantId, setMyParticipantId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -106,6 +107,7 @@ export default function ProjectPage() {
 
       const data = await res.json()
       setProject(data.project)
+      setMyParticipantId(data.myParticipantId || null)
     } catch {
       setError('خطا در بارگذاری پروژه')
     } finally {
@@ -373,6 +375,8 @@ export default function ProjectPage() {
         balance={getSelectedBalance()}
         currency={project.currency}
         settlementCount={getSettlementCount()}
+        projectId={projectId}
+        myParticipantId={myParticipantId}
         onEdit={handleEditParticipant}
         onDelete={handleDeleteParticipant}
         onTransferBalance={handleTransferBalance}
