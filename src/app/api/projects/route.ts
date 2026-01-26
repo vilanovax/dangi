@@ -3,7 +3,6 @@ import { createProject } from '@/lib/services/project.service'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/db/prisma'
 import { verifyToken } from '@/lib/utils/auth'
-import { calculateBalances } from '@/lib/domain/summaryCalculator'
 
 // Get projects for logged-in user
 export async function GET() {
@@ -35,44 +34,27 @@ export async function GET() {
       return NextResponse.json({ projects: [], user: null })
     }
 
-    // Find all projects where user is a participant with full expense data
+    // Find all projects where user is a participant
+    // Optimized: only fetch necessary data for list view
     const participants = await prisma.participant.findMany({
       where: {
         userId: userId,
       },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        role: true,
         project: {
-          include: {
-            participants: {
-              select: {
-                id: true,
-                name: true,
-                role: true,
-              },
-            },
-            expenses: {
-              select: {
-                id: true,
-                amount: true,
-                paidById: true,
-                shares: {
-                  select: {
-                    participantId: true,
-                    amount: true,
-                  },
-                },
-              },
-            },
-            settlements: {
-              select: {
-                id: true,
-                amount: true,
-                fromId: true,
-                toId: true,
-              },
-            },
+          select: {
+            id: true,
+            name: true,
+            template: true,
+            currency: true,
+            isArchived: true,
+            createdAt: true,
             _count: {
               select: {
+                participants: true,
                 expenses: true,
               },
             },
@@ -81,28 +63,39 @@ export async function GET() {
       },
     })
 
-    // Build projects list with balance info
-    const projects = participants.map((p) => {
-      // Calculate total expenses
-      const totalExpenses = p.project.expenses.reduce((sum, e) => sum + e.amount, 0)
+    // Get project IDs for aggregation queries
+    const projectIds = participants.map((p) => p.project.id)
 
-      // Calculate user's balance in this project
-      const balances = calculateBalances(
-        p.project.expenses,
-        p.project.participants,
-        p.project.settlements
-      )
-      const myBalance = balances.find((b) => b.participantId === p.id)?.balance || 0
+    // Optimized: Get total expenses per project in a single query
+    const expenseSums = await prisma.expense.groupBy({
+      by: ['projectId'],
+      where: {
+        projectId: { in: projectIds },
+      },
+      _sum: {
+        amount: true,
+      },
+    })
+
+    // Create a map for quick lookup
+    const expenseSumMap = new Map(
+      expenseSums.map((e) => [e.projectId, e._sum.amount || 0])
+    )
+
+    // Build projects list (optimized: minimal data fetching)
+    const projects = participants.map((p) => {
+      const totalExpenses = expenseSumMap.get(p.project.id) || 0
 
       return {
         id: p.project.id,
         name: p.project.name,
         template: p.project.template,
         currency: p.project.currency,
-        participantCount: p.project.participants.length,
+        participantCount: p.project._count.participants,
         expenseCount: p.project._count.expenses,
         totalExpenses,
-        myBalance: Math.round(myBalance), // مثبت = طلبکار، منفی = بدهکار
+        // Note: myBalance removed for performance - use summary API for detailed balance
+        myBalance: 0, // Placeholder for frontend compatibility
         myParticipantId: p.id,
         myName: p.name,
         myRole: p.role,
@@ -141,7 +134,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, template } = body
+    const { name, template, trackingOnly } = body
 
     if (!name) {
       return NextResponse.json(
@@ -171,6 +164,7 @@ export async function POST(request: NextRequest) {
       name,
       ownerName,
       template,
+      trackingOnly: trackingOnly ?? false,
       userId: userId || undefined,
     })
 

@@ -9,6 +9,7 @@ interface CreateProjectInput {
   name: string
   description?: string
   template?: string
+  trackingOnly?: boolean // Tracking Mode (true) vs Split Mode (false) - فقط برای personal template
   ownerName: string
   userId?: string // اتصال به کاربر لاگین شده (اختیاری)
 }
@@ -37,7 +38,7 @@ export async function createProject(input: CreateProjectInput): Promise<{
   project: ProjectWithParticipants
   ownerToken: string
 }> {
-  const { name, description, template = 'travel', ownerName, userId } = input
+  const { name, description, template = 'travel', trackingOnly = false, ownerName, userId } = input
 
   const templateDef = getTemplate(template)
 
@@ -47,6 +48,7 @@ export async function createProject(input: CreateProjectInput): Promise<{
       description,
       template,
       splitType: templateDef.defaultSplitType as SplitType,
+      trackingOnly, // Dual-mode support for personal template
       // Create owner participant (linked to user if logged in)
       participants: {
         create: {
@@ -131,6 +133,7 @@ export async function updateProject(
     splitType?: SplitType
     currency?: string
     chargeYear?: number | null
+    trackingOnly?: boolean
     isArchived?: boolean
     archivedAt?: Date | null
   }
@@ -142,6 +145,7 @@ export async function updateProject(
   if (data.splitType !== undefined) updateData.splitType = data.splitType
   if (data.currency !== undefined) updateData.currency = data.currency
   if (data.chargeYear !== undefined) updateData.chargeYear = data.chargeYear
+  if (data.trackingOnly !== undefined) updateData.trackingOnly = data.trackingOnly
   if (data.isArchived !== undefined) updateData.isArchived = data.isArchived
   if (data.archivedAt !== undefined) updateData.archivedAt = data.archivedAt
 

@@ -24,6 +24,7 @@ model Project {
   description   String?
   template      String         @default("travel")
   splitType     String         @default("EQUAL")
+  trackingOnly  Boolean        @default(false) // Tracking Mode (true) vs Split Mode (false) - برای template personal
   currency      String         @default("IRR")
   chargeYear    Int?           // سال شارژ (شمسی) - برای template ساختمان
   shareCode     String         @unique @default(cuid())
@@ -93,8 +94,11 @@ model Expense {
   shares      ExpenseShare[]
 
   @@index([projectId, expenseDate(sort: Desc)])
+  @@index([projectId, categoryId]) // Filter by category within project
+  @@index([projectId, paidById]) // Filter by payer within project
   @@index([periodKey])
   @@index([paidById])
+  @@index([categoryId]) // Queries by category
 }
 
 model ExpenseShare {
