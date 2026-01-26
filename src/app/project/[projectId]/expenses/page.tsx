@@ -221,9 +221,9 @@ export default function ExpensesPage() {
         const [projectRes, expensesRes] = await Promise.all([
           // Fetch project without expenses (optimization - avoid duplicate data)
           fetch(`/api/projects/${projectId}?includeExpenses=false`),
-          // Fetch with high limit for now (client-side filtering)
+          // Fetch with limit of 100 (API max) for now (client-side filtering)
           // TODO: Move filtering to server-side for better performance
-          fetch(`/api/projects/${projectId}/expenses?limit=1000`),
+          fetch(`/api/projects/${projectId}/expenses?limit=100`),
         ])
 
         if (projectRes.ok) {

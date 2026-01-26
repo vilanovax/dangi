@@ -273,15 +273,16 @@ export default function AddExpensePage() {
 
   const labels = template.labels
   const sharePreview = getSharePreview()
+  const isHangout = template.id === 'gathering'
 
   return (
     <>
       <FormLayout
         header={
           <UnifiedHeader
-            variant="form"
+            variant={isHangout ? 'hangout' : 'form'}
             title={labels.addExpenseTitle}
-            subtitle="یه خرج داشتی؟ سریع ثبتش کن ⚡"
+            subtitle={isHangout ? labels.addExpenseSubtitle : 'یه خرج داشتی؟ سریع ثبتش کن ⚡'}
             showBack
             onBack={() => router.back()}
           />
@@ -310,10 +311,14 @@ export default function AddExpensePage() {
               (template.periodRequired && !periodKey) ||
               (splitMode === 'MANUAL' && !getCustomAmountsInfo().isValid)
             }
-            className="w-full shadow-lg shadow-blue-500/20"
+            className={`w-full shadow-lg ${
+              isHangout
+                ? 'shadow-purple-500/20 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
+                : 'shadow-blue-500/20'
+            }`}
             size="lg"
           >
-            {submitting ? 'در حال ثبت...' : 'ثبت خرج ✓'}
+            {submitting ? labels.submittingButton : labels.submitButton}
           </Button>
         }
       >

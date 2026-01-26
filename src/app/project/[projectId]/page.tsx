@@ -8,10 +8,12 @@ import Link from 'next/link'
 import type { Participant, Project, Settlement, Summary } from '@/types'
 import {
   DashboardHeader,
+  HangoutHeader,
   QuickActions,
   ParticipantsRow,
   RecentExpenseCard,
   RecentSettlementCard,
+  ShoppingChecklistTab,
 } from './components'
 
 // Lazy load heavy bottom sheets (only when opened)
@@ -47,6 +49,9 @@ export default function ProjectPage() {
   const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null)
   const [showProfileSheet, setShowProfileSheet] = useState(false)
   const [showTransferSheet, setShowTransferSheet] = useState(false)
+
+  // ── Tab State (for gathering template) ─────────────────────
+  const [activeTab, setActiveTab] = useState<'expenses' | 'shopping'>('expenses')
 
   // ── Fetch Data ──────────────────────────────────────────────
 
@@ -190,14 +195,24 @@ export default function ProjectPage() {
 
   return (
     <main className="min-h-dvh bg-gray-50 dark:bg-gray-950 pb-24">
-      {/* Header */}
-      <DashboardHeader
-        projectId={projectId}
-        projectName={project.name}
-        participantCount={project.participants.length}
-        totalExpenses={totalExpenses}
-        currency={project.currency}
-      />
+      {/* Header - Different for gathering template */}
+      {project.template === 'gathering' ? (
+        <HangoutHeader
+          projectId={projectId}
+          projectName={project.name}
+          participantCount={project.participants.length}
+          totalExpenses={totalExpenses}
+          currency={project.currency}
+        />
+      ) : (
+        <DashboardHeader
+          projectId={projectId}
+          projectName={project.name}
+          participantCount={project.participants.length}
+          totalExpenses={totalExpenses}
+          currency={project.currency}
+        />
+      )}
 
       {/* Quick Actions */}
       <QuickActions projectId={projectId} template={project.template} isSettled={isAllSettled} />
@@ -209,7 +224,46 @@ export default function ProjectPage() {
         onParticipantClick={handleParticipantClick}
       />
 
+      {/* ─── Tabs (only for gathering template) ─────────────────── */}
+      {project.template === 'gathering' && (
+        <div className="px-4 mt-6">
+          <div className="flex gap-2 p-1 bg-gray-100 dark:bg-gray-800/50 rounded-xl">
+            <button
+              onClick={() => setActiveTab('expenses')}
+              className={`flex-1 py-2.5 px-4 text-sm font-medium rounded-lg transition-all ${
+                activeTab === 'expenses'
+                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+              }`}
+            >
+              💰 خرج‌ها
+            </button>
+            <button
+              onClick={() => setActiveTab('shopping')}
+              className={`flex-1 py-2.5 px-4 text-sm font-medium rounded-lg transition-all ${
+                activeTab === 'shopping'
+                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+              }`}
+            >
+              🛒 لیست خرید
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Shopping Checklist Tab ─────────────────────────────── */}
+      {project.template === 'gathering' && activeTab === 'shopping' && (
+        <section className="px-4 mt-6">
+          <ShoppingChecklistTab
+            projectId={projectId}
+            currentParticipantId={myParticipantId || undefined}
+          />
+        </section>
+      )}
+
       {/* ─── Recent Expenses Section ─────────────────────────────── */}
+      {(project.template !== 'gathering' || activeTab === 'expenses') && (
       <section className="px-4 mt-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100">
@@ -254,9 +308,10 @@ export default function ProjectPage() {
           </div>
         )}
       </section>
+      )}
 
       {/* ─── Recent Settlements Section ───────────────────────────── */}
-      {settlements.length > 0 && (
+      {(project.template !== 'gathering' || activeTab === 'expenses') && settlements.length > 0 && (
         <section className="px-4 mt-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100">
@@ -287,6 +342,7 @@ export default function ProjectPage() {
       )}
 
       {/* Floating Add Button - Primary CTA */}
+      {(project.template !== 'gathering' || activeTab === 'expenses') && (
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-10 safe-bottom flex flex-col items-center gap-1.5">
         {/* Hint text - only show when few expenses to encourage first action */}
         {project.expenses.length < 3 && (
@@ -306,6 +362,7 @@ export default function ProjectPage() {
           ثبت هزینه
         </FloatingButton>
       </div>
+      )}
 
       {/* Add Member Bottom Sheet */}
       <AddMemberSheet

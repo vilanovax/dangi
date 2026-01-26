@@ -1,0 +1,76 @@
+'use client'
+
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { UnifiedHeader, HeaderTotalCard } from '@/components/layout'
+
+interface HangoutHeaderProps {
+  projectId: string
+  projectName: string
+  participantCount: number
+  totalExpenses: number
+  currency: string
+}
+
+/**
+ * Hangout dashboard header - uses UnifiedHeader with variant="hangout"
+ *
+ * UX Intent:
+ * - Casual, friendly vibe with purple/pink gradient
+ * - Shorter than travel header (lightweight feel)
+ * - Simple participant count (just "4 نفر" vs "4 هم‌سفر")
+ * - "جمع خرج‌ها" (casual) vs "مجموع خرج‌ها" (formal)
+ * - Tappable total card links to summary
+ */
+export function HangoutHeader({
+  projectId,
+  projectName,
+  participantCount,
+  totalExpenses,
+  currency,
+}: HangoutHeaderProps) {
+  const router = useRouter()
+
+  return (
+    <UnifiedHeader
+      variant="hangout"
+      title={projectName}
+      subtitle={`${participantCount} نفر`}
+      showBack
+      onBack={() => router.push('/')}
+      rightAction={
+        <Link
+          href={`/project/${projectId}/settings`}
+          className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 active:scale-95 transition-all"
+          aria-label="تنظیمات"
+        >
+          <svg className="w-4 h-4 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+            />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+          </svg>
+        </Link>
+      }
+    >
+      {/* Total Card - Tappable, links to summary */}
+      <Link href={`/project/${projectId}/summary`}>
+        <HeaderTotalCard
+          label="جمع خرج‌ها"
+          amount={totalExpenses}
+          currency={currency}
+          helperText="تا این لحظه"
+          onClick={() => {}}
+        />
+      </Link>
+    </UnifiedHeader>
+  )
+}

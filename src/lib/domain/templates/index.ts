@@ -4,14 +4,13 @@
 import type { TemplateDefinition, TemplateLabels } from '@/lib/types/domain'
 import { travelTemplate } from './travel'
 import { buildingTemplate } from './building'
+import { gatheringTemplate } from './gathering'
 
 // Registry of all templates
 export const templates: Record<string, TemplateDefinition> = {
   travel: travelTemplate,
   building: buildingTemplate,
-  // Future templates:
-  // party: partyTemplate,
-  // custom: customTemplate,
+  gathering: gatheringTemplate,
 }
 
 export function getTemplate(templateId: string): TemplateDefinition {

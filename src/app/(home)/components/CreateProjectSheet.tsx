@@ -90,14 +90,6 @@ export function CreateProjectSheet({ isOpen, onClose, userName }: CreateProjectS
                 <span className="text-sm font-medium">{t.nameFa}</span>
               </button>
             ))}
-
-            <button
-              disabled
-              className="p-4 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 text-center opacity-50"
-            >
-              <span className="text-3xl block mb-2">🎉</span>
-              <span className="text-sm text-gray-500">دورهمی (به‌زودی)</span>
-            </button>
           </div>
         </div>
 

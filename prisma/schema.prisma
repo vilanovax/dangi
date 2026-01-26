@@ -19,42 +19,44 @@ model User {
 }
 
 model Project {
-  id           String        @id @default(cuid())
-  name         String
-  description  String?
-  template     String        @default("travel")
-  splitType    String        @default("EQUAL")
-  currency     String        @default("IRR")
-  chargeYear   Int?          // سال شارژ (شمسی) - برای template ساختمان
-  shareCode    String        @unique @default(cuid())
-  isArchived   Boolean       @default(false) // آرشیو شده / بسته شده
-  archivedAt   DateTime?     // تاریخ آرشیو
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  categories   Category[]
-  chargeRules  ChargeRule[]
-  expenses     Expense[]
-  participants Participant[]
-  settlements  Settlement[]
+  id            String         @id @default(cuid())
+  name          String
+  description   String?
+  template      String         @default("travel")
+  splitType     String         @default("EQUAL")
+  currency      String         @default("IRR")
+  chargeYear    Int?           // سال شارژ (شمسی) - برای template ساختمان
+  shareCode     String         @unique @default(cuid())
+  isArchived    Boolean        @default(false) // آرشیو شده / بسته شده
+  archivedAt    DateTime?      // تاریخ آرشیو
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  categories    Category[]
+  chargeRules   ChargeRule[]
+  expenses      Expense[]
+  participants  Participant[]
+  settlements   Settlement[]
+  shoppingItems ShoppingItem[] // چک‌لیست خرید (برای template gathering)
 }
 
 model Participant {
-  id              String         @id @default(cuid())
-  name            String
-  role            String         @default("MEMBER")
-  weight          Float          @default(1)
-  percentage      Float?
-  avatar          String?        // آواتار (JSON) - null یعنی auto
-  sessionToken    String         @unique @default(cuid())
-  projectId       String
-  userId          String?        // اتصال به کاربر (اختیاری - برای مهمان‌ها null)
-  createdAt       DateTime       @default(now())
-  expensesPaid    Expense[]      @relation("PaidBy")
-  expenseShares   ExpenseShare[]
-  settlementsFrom Settlement[]   @relation("SettlementFrom")
-  settlementsTo   Settlement[]   @relation("SettlementTo")
-  project         Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user            User?          @relation(fields: [userId], references: [id])
+  id                 String         @id @default(cuid())
+  name               String
+  role               String         @default("MEMBER")
+  weight             Float          @default(1)
+  percentage         Float?
+  avatar             String?        // آواتار (JSON) - null یعنی auto
+  sessionToken       String         @unique @default(cuid())
+  projectId          String
+  userId             String?        // اتصال به کاربر (اختیاری - برای مهمان‌ها null)
+  createdAt          DateTime       @default(now())
+  expensesPaid       Expense[]      @relation("PaidBy")
+  expenseShares      ExpenseShare[]
+  settlementsFrom    Settlement[]   @relation("SettlementFrom")
+  settlementsTo      Settlement[]   @relation("SettlementTo")
+  shoppingItemsAdded ShoppingItem[] // آیتم‌های لیست خریدی که اضافه کرده
+  project            Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user               User?          @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([projectId])
@@ -141,4 +143,22 @@ model ChargeRule {
   project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// چک‌لیست خرید - لیست خریدها برای دورهمی (فقط برای template gathering)
+model ShoppingItem {
+  id        String       @id @default(cuid())
+  text      String       // متن آیتم (مثلاً "پیتزا پپرونی 2 عدد")
+  isChecked Boolean      @default(false) // آیا خریداری شده؟
+  quantity  String?      // تعداد (اختیاری)
+  note      String?      // یادداشت (اختیاری)
+  addedById String?      // کی اضافه کرده
+  projectId String
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  project   Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  addedBy   Participant? @relation(fields: [addedById], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@index([projectId, createdAt])
 }

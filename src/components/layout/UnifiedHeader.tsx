@@ -21,6 +21,18 @@ export const HEADER_TOKENS = {
     border: 'border-white/20',
   },
 
+  // Hangout variant gradients (purple/pink family - casual & friendly)
+  hangout: {
+    gradient: 'from-purple-500 via-pink-500 to-rose-500',
+    gradientSimple: 'from-purple-500 to-pink-500',
+    textPrimary: 'text-white',
+    textSecondary: 'text-purple-100',
+    textMuted: 'text-purple-200/70',
+    cardBg: 'bg-white/15',
+    cardBgHover: 'hover:bg-white/20',
+    border: 'border-white/20',
+  },
+
   // Action variant tones
   action: {
     success: {
@@ -58,7 +70,7 @@ export const HEADER_TOKENS = {
 // Types
 // ─────────────────────────────────────────────────────────────
 
-export type HeaderVariant = 'project' | 'action' | 'form'
+export type HeaderVariant = 'project' | 'hangout' | 'action' | 'form'
 export type ActionTone = 'default' | 'success' | 'danger' | 'warning'
 
 export interface ProjectMeta {
@@ -159,11 +171,13 @@ export function UnifiedHeader({
   className,
 }: UnifiedHeaderProps) {
   const isProject = variant === 'project'
+  const isHangout = variant === 'hangout'
   const isAction = variant === 'action'
   const isForm = variant === 'form'
+  const isGradientVariant = isProject || isHangout
 
   // ── Container styles ──────────────────────────────────────
-  const containerStyles = cn('relative', isProject && 'overflow-hidden', className)
+  const containerStyles = cn('relative', isGradientVariant && 'overflow-hidden', className)
 
   // ── Background styles ─────────────────────────────────────
   const getBackgroundStyles = () => {
@@ -177,12 +191,13 @@ export function UnifiedHeader({
     if (isAction) {
       return cn('text-white bg-gradient-to-br', HEADER_TOKENS.action[tone].gradient)
     }
-    // Project variant - gradient handled by decorative layer for strong effect
+    // Project/Hangout variant - gradient handled by decorative layer for strong effect
     return 'text-white'
   }
 
   // ── Padding styles ────────────────────────────────────────
   const getPaddingStyles = () => {
+    if (isHangout) return 'pt-4 pb-6' // Shorter than project
     if (isProject) return 'pt-4 pb-8'
     if (isAction) return 'pt-4 pb-5'
     return 'py-3' // form
@@ -207,19 +222,22 @@ export function UnifiedHeader({
     if (isAction) {
       return cn('text-sm', HEADER_TOKENS.action[tone].textSecondary)
     }
+    if (isHangout) {
+      return 'text-sm text-purple-100'
+    }
     return 'text-sm text-blue-100' // project
   }
 
   // ── Render project meta badge ─────────────────────────────
   const renderProjectMeta = () => {
-    if (!projectMeta || !isProject) return null
+    if (!projectMeta || !isGradientVariant) return null
 
     return (
       <div className="flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-full px-3 py-1.5">
         {projectMeta.membersCount && (
           <>
             <span className="text-base">👥</span>
-            <span className="text-sm font-medium">{projectMeta.membersCount} هم‌سفر</span>
+            <span className="text-sm font-medium">{projectMeta.membersCount} {isHangout ? 'نفر' : 'هم‌سفر'}</span>
           </>
         )}
       </div>
@@ -228,7 +246,7 @@ export function UnifiedHeader({
 
   return (
     <div className={containerStyles}>
-      {/* Decorative elements - only for project variant */}
+      {/* Decorative elements - for gradient variants */}
       {isProject && (
         <>
           <div className={cn('absolute inset-0 bg-gradient-to-br', HEADER_TOKENS.project.gradient)} />
@@ -238,14 +256,23 @@ export function UnifiedHeader({
         </>
       )}
 
+      {isHangout && (
+        <>
+          <div className={cn('absolute inset-0 bg-gradient-to-br', HEADER_TOKENS.hangout.gradient)} />
+          <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/4 blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-36 h-36 bg-pink-300/20 rounded-full translate-y-1/2 -translate-x-1/4 blur-2xl" />
+          <div className="absolute top-1/2 right-1/4 w-24 h-24 bg-purple-300/15 rounded-full blur-xl" />
+        </>
+      )}
+
       {/* Main content */}
-      <div className={cn(getBackgroundStyles(), 'px-4', getPaddingStyles(), isProject && 'relative')}>
+      <div className={cn(getBackgroundStyles(), 'px-4', getPaddingStyles(), isGradientVariant && 'relative')}>
         {/* Navigation row */}
         <div
           className={cn(
             'flex items-center',
-            isProject ? 'justify-between mb-5' : 'gap-3',
-            !isProject && children ? 'mb-3' : ''
+            isGradientVariant ? 'justify-between mb-5' : 'gap-3',
+            !isGradientVariant && children ? 'mb-3' : ''
           )}
         >
           {/* Back button */}
@@ -255,7 +282,7 @@ export function UnifiedHeader({
           {leftIcon}
 
           {/* Title section - inline for action/form variants */}
-          {!isProject && (
+          {!isGradientVariant && (
             <div className="flex-1 min-w-0">
               <h1 className={getTitleStyles()}>{title}</h1>
               {subtitle && <p className={getSubtitleStyles()}>{subtitle}</p>}
@@ -269,22 +296,33 @@ export function UnifiedHeader({
           {rightAction}
         </div>
 
-        {/* Title - centered for project variant (separate row) */}
-        {isProject && <h1 className={cn(getTitleStyles(), 'text-center mb-4')}>{title}</h1>}
+        {/* Title - centered for gradient variants (separate row) */}
+        {isGradientVariant && (
+          <div className="text-center mb-4">
+            <h1 className={getTitleStyles()}>{title}</h1>
+            {subtitle && <p className={cn(getSubtitleStyles(), 'mt-1')}>{subtitle}</p>}
+          </div>
+        )}
 
         {/* Children content (cards, stats, etc.) */}
         {children}
       </div>
 
-      {/* Wave bottom - only for project variant */}
-      {isProject && (
+      {/* Wave bottom - simpler for hangout, full for project */}
+      {isGradientVariant && (
         <svg
           className="absolute bottom-0 left-0 right-0 text-gray-50 dark:text-gray-950"
           viewBox="0 0 1440 56"
           fill="currentColor"
           preserveAspectRatio="none"
         >
-          <path d="M0,56 L1440,56 L1440,0 C1200,48 960,56 720,40 C480,24 240,16 0,32 L0,56 Z" />
+          {isHangout ? (
+            // Softer, flatter wave for hangout
+            <path d="M0,56 L1440,56 L1440,12 C1200,24 960,28 720,24 C480,20 240,16 0,20 L0,56 Z" />
+          ) : (
+            // Default wave for project
+            <path d="M0,56 L1440,56 L1440,0 C1200,48 960,56 720,40 C480,24 240,16 0,32 L0,56 Z" />
+          )}
         </svg>
       )}
     </div>
