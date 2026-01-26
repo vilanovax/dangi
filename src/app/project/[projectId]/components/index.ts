@@ -13,3 +13,7 @@ export { TransferBalanceSheet } from './TransferBalanceSheet'
 export { ShoppingChecklistTab } from './ShoppingChecklistTab'
 export { ShoppingItemCard } from './ShoppingItemCard'
 export { ShoppingItemInput } from './ShoppingItemInput'
+
+// Personal finance components (personal template)
+export { PersonalSplitDashboard } from './PersonalSplitDashboard'
+export { PersonalTrackingDashboard } from './PersonalTrackingDashboard'

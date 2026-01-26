@@ -53,6 +53,7 @@ export interface Project {
   shareCode: string
   splitType?: string
   chargeYear?: number | null
+  trackingOnly?: boolean
   isArchived?: boolean
   participants: Participant[]
   expenses: Expense[]

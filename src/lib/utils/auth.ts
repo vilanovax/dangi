@@ -1,55 +1,86 @@
-// Auth utilities - Simple password hashing and JWT-like token
+// Auth utilities - Password hashing and JWT token management
+import jwt from 'jsonwebtoken'
+import bcrypt from 'bcryptjs'
 
-// Simple hash using Web Crypto API (works in Edge runtime)
+// Bcrypt configuration
+const SALT_ROUNDS = 10 // Higher = more secure but slower (10 is recommended)
+
+/**
+ * Hash a password using bcrypt
+ * Uses salt rounds of 10 for a good balance of security and performance
+ */
 export async function hashPassword(password: string): Promise<string> {
-  const encoder = new TextEncoder()
-  const data = encoder.encode(password + process.env.AUTH_SECRET || 'dangi-secret-key')
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+  return bcrypt.hash(password, SALT_ROUNDS)
 }
 
-export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-  const hash = await hashPassword(password)
-  return hash === hashedPassword
-}
-
-// Simple token generation (Base64 encoded JSON with expiry)
-const TOKEN_SECRET = process.env.AUTH_SECRET || 'dangi-secret-key-2024'
-
-export function generateToken(userId: string): string {
-  const payload = {
-    userId,
-    exp: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days
-    rand: Math.random().toString(36).substring(2), // Add randomness
+/**
+ * Verify a password against a bcrypt hash
+ * Also handles migration from old SHA-256 hashes
+ */
+export async function verifyPassword(
+  password: string,
+  hashedPassword: string
+): Promise<{ valid: boolean; needsMigration: boolean }> {
+  // Try bcrypt first (current standard)
+  try {
+    const isValid = await bcrypt.compare(password, hashedPassword)
+    if (isValid) {
+      return { valid: true, needsMigration: false }
+    }
+  } catch (error) {
+    // Not a bcrypt hash, might be old SHA-256 format
   }
 
-  const jsonStr = JSON.stringify(payload)
-  const base64 = Buffer.from(jsonStr).toString('base64')
+  // Check if it's an old SHA-256 hash (64 hex characters)
+  if (hashedPassword.length === 64 && /^[a-f0-9]+$/i.test(hashedPassword)) {
+    const oldHash = await hashPasswordLegacy(password)
+    if (oldHash === hashedPassword) {
+      // Valid password, but needs migration to bcrypt
+      return { valid: true, needsMigration: true }
+    }
+  }
 
-  // Add simple signature
-  const signature = Buffer.from(jsonStr + TOKEN_SECRET).toString('base64').substring(0, 16)
+  return { valid: false, needsMigration: false }
+}
 
-  return `${base64}.${signature}`
+/**
+ * Legacy SHA-256 hash function (for migration only)
+ * DO NOT use for new passwords
+ */
+async function hashPasswordLegacy(password: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(password + (process.env.AUTH_SECRET || 'dangi-secret-key'))
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+// JWT token generation and verification
+const JWT_SECRET = process.env.JWT_SECRET || process.env.AUTH_SECRET || 'dangi-secret-key-2024'
+
+if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
+  console.warn('⚠️  JWT_SECRET not set! Using fallback secret. This is insecure for production.')
+}
+
+export function generateToken(userId: string): string {
+  try {
+    return jwt.sign(
+      { userId },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    )
+  } catch (error) {
+    console.error('Error generating JWT token:', error)
+    throw new Error('Failed to generate authentication token')
+  }
 }
 
 export function verifyToken(token: string): string | null {
   try {
-    const [base64, signature] = token.split('.')
-    if (!base64 || !signature) return null
-
-    const jsonStr = Buffer.from(base64, 'base64').toString('utf-8')
-    const expectedSig = Buffer.from(jsonStr + TOKEN_SECRET).toString('base64').substring(0, 16)
-
-    if (signature !== expectedSig) return null
-
-    const payload = JSON.parse(jsonStr)
-
-    // Check expiry
-    if (payload.exp < Date.now()) return null
-
-    return payload.userId
-  } catch {
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string }
+    return decoded.userId
+  } catch (error) {
+    // Token is invalid, expired, or malformed
     return null
   }
 }
@@ -80,5 +111,65 @@ export async function getCurrentUser() {
     return user
   } catch {
     return null
+  }
+}
+
+// Authorization helper: Check if user has access to a project
+import { NextResponse } from 'next/server'
+
+interface AuthResult {
+  authorized: true
+  user: { id: string; phone: string; name: string }
+  participant: { id: string; userId: string | null; projectId: string }
+}
+
+interface UnauthorizedResult {
+  authorized: false
+  response: NextResponse
+}
+
+export async function requireProjectAccess(
+  projectId: string
+): Promise<AuthResult | UnauthorizedResult> {
+  // 1. Check if user is authenticated
+  const user = await getCurrentUser()
+  if (!user) {
+    return {
+      authorized: false,
+      response: NextResponse.json(
+        { error: 'لطفاً وارد حساب کاربری خود شوید' },
+        { status: 401 }
+      ),
+    }
+  }
+
+  // 2. Check if user is a participant of this project
+  const participant = await prisma.participant.findFirst({
+    where: {
+      projectId,
+      userId: user.id,
+    },
+    select: {
+      id: true,
+      userId: true,
+      projectId: true,
+    },
+  })
+
+  if (!participant) {
+    return {
+      authorized: false,
+      response: NextResponse.json(
+        { error: 'شما به این پروژه دسترسی ندارید' },
+        { status: 403 }
+      ),
+    }
+  }
+
+  // User has access
+  return {
+    authorized: true,
+    user,
+    participant,
   }
 }

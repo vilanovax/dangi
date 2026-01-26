@@ -14,6 +14,8 @@ import {
   RecentExpenseCard,
   RecentSettlementCard,
   ShoppingChecklistTab,
+  PersonalSplitDashboard,
+  PersonalTrackingDashboard,
 } from './components'
 
 // Lazy load heavy bottom sheets (only when opened)
@@ -214,8 +216,29 @@ export default function ProjectPage() {
         />
       )}
 
-      {/* Quick Actions */}
-      <QuickActions projectId={projectId} template={project.template} isSettled={isAllSettled} />
+      {/* Quick Actions - Different for personal template */}
+      {project.template === 'personal' ? (
+        // Personal Template Dashboard (Dual-Mode)
+        project.trackingOnly ? (
+          <PersonalTrackingDashboard
+            projectId={projectId}
+            summary={summary}
+            participants={project.participants}
+            expenses={project.expenses}
+            currency={project.currency}
+            totalExpenses={totalExpenses}
+          />
+        ) : (
+          <PersonalSplitDashboard
+            projectId={projectId}
+            summary={summary}
+            participants={project.participants}
+            currency={project.currency}
+          />
+        )
+      ) : (
+        <QuickActions projectId={projectId} template={project.template} isSettled={isAllSettled} />
+      )}
 
       {/* Participants */}
       <ParticipantsRow
@@ -311,7 +334,9 @@ export default function ProjectPage() {
       )}
 
       {/* ─── Recent Settlements Section ───────────────────────────── */}
-      {(project.template !== 'gathering' || activeTab === 'expenses') && settlements.length > 0 && (
+      {(project.template !== 'gathering' || activeTab === 'expenses') &&
+       !(project.template === 'personal' && project.trackingOnly) &&
+       settlements.length > 0 && (
         <section className="px-4 mt-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100">

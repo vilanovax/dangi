@@ -3,6 +3,8 @@ import { prisma } from '@/lib/db/prisma'
 import { getProjectSettlements } from '@/lib/services/settlement.service'
 import { calculateProjectSummary } from '@/lib/domain/summaryCalculator'
 import { PERSIAN_MONTHS, getCurrentPersianYear, getCurrentPersianMonth } from '@/lib/utils/persian-date'
+import type { CategoryBreakdown, ParticipantExpenseBreakdown } from '@/types'
+import { requireProjectAccess } from '@/lib/utils/auth'
 
 type RouteContext = {
   params: Promise<{ projectId: string }>
@@ -83,6 +85,12 @@ export async function GET(
 ) {
   try {
     const { projectId } = await context.params
+
+    // Authorization check: user must be a participant
+    const authResult = await requireProjectAccess(projectId)
+    if (!authResult.authorized) {
+      return authResult.response
+    }
 
     // Fetch project with full expense data (required for summary)
     const [project, settlements] = await Promise.all([
@@ -173,6 +181,109 @@ export async function GET(
       }
     }
 
+    // Calculate category breakdown for gathering template
+    let categoryBreakdown: CategoryBreakdown[] = []
+
+    if (project.template === 'gathering') {
+      // Group expenses by category
+      const categoryMap = new Map<string | null, {
+        name: string
+        icon: string
+        color: string
+        total: number
+        count: number
+      }>()
+
+      // Calculate total for percentage
+      const totalExpenses = project.expenses.reduce((sum, e) => sum + e.amount, 0)
+
+      // Process each expense
+      for (const expense of project.expenses) {
+        const catId = expense.category?.id || null
+        const catName = expense.category?.name || 'سایر'
+        const catIcon = expense.category?.icon || '📝'
+        const catColor = expense.category?.color || '#6B7280'
+
+        if (categoryMap.has(catId)) {
+          const existing = categoryMap.get(catId)!
+          existing.total += expense.amount
+          existing.count += 1
+        } else {
+          categoryMap.set(catId, {
+            name: catName,
+            icon: catIcon,
+            color: catColor,
+            total: expense.amount,
+            count: 1,
+          })
+        }
+      }
+
+      // Convert to array and calculate percentage
+      categoryBreakdown = Array.from(categoryMap.entries()).map(([id, data]) => ({
+        categoryId: id,
+        categoryName: data.name,
+        categoryIcon: data.icon,
+        categoryColor: data.color,
+        totalAmount: data.total,
+        expenseCount: data.count,
+        percentage: totalExpenses > 0 ? (data.total / totalExpenses) * 100 : 0,
+      }))
+
+      // Sort by total amount (highest first)
+      categoryBreakdown.sort((a, b) => b.totalAmount - a.totalAmount)
+    }
+
+    // Calculate participant expense breakdown for gathering template
+    let participantExpenseBreakdown: ParticipantExpenseBreakdown[] = []
+
+    if (project.template === 'gathering') {
+      // Group expenses by paidBy participant
+      const participantMap = new Map<string, {
+        name: string
+        avatar: string | null
+        total: number
+        count: number
+      }>()
+
+      // Calculate total for percentage
+      const totalExpenses = project.expenses.reduce((sum, e) => sum + e.amount, 0)
+
+      // Process each expense
+      for (const expense of project.expenses) {
+        const participantId = expense.paidById
+        const participant = project.participants.find((p) => p.id === participantId)
+
+        if (!participant) continue
+
+        if (participantMap.has(participantId)) {
+          const existing = participantMap.get(participantId)!
+          existing.total += expense.amount
+          existing.count += 1
+        } else {
+          participantMap.set(participantId, {
+            name: participant.name,
+            avatar: participant.avatar,
+            total: expense.amount,
+            count: 1,
+          })
+        }
+      }
+
+      // Convert to array and calculate percentage
+      participantExpenseBreakdown = Array.from(participantMap.entries()).map(([id, data]) => ({
+        participantId: id,
+        participantName: data.name,
+        participantAvatar: data.avatar,
+        totalExpenses: data.total,
+        expenseCount: data.count,
+        percentage: totalExpenses > 0 ? (data.total / totalExpenses) * 100 : 0,
+      }))
+
+      // Sort by total expenses (highest first)
+      participantExpenseBreakdown.sort((a, b) => b.totalExpenses - a.totalExpenses)
+    }
+
     return NextResponse.json({
       summary,
       chargeInfo: {
@@ -183,6 +294,8 @@ export async function GET(
         chargeDebts,
         totalChargeDebt: chargeDebts.reduce((sum, d) => sum + d.chargeDebt, 0),
       },
+      categoryBreakdown,
+      participantExpenseBreakdown,
     })
   } catch (error) {
     console.error('Error calculating summary:', error)
