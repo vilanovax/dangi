@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
 import { calculateBalances } from '@/lib/domain/summaryCalculator'
+import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
   params: Promise<{ projectId: string; participantId: string }>
@@ -201,7 +202,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       deleted: false,
     })
   } catch (error) {
-    console.error('Error transferring balance:', error)
+    logApiError(error, { context: 'POST /api/projects/[projectId]/participants/[participantId]/transfer' })
     return NextResponse.json(
       { error: 'خطا در انتقال مانده' },
       { status: 500 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
 import { PERSIAN_MONTHS, getCurrentPersianYear } from '@/lib/utils/persian-date'
+import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
   params: Promise<{ projectId: string }>
@@ -140,7 +141,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       },
     })
   } catch (error) {
-    console.error('Error fetching building stats:', error)
+    logApiError(error, { context: 'GET /api/projects/[projectId]/building-stats' })
     return NextResponse.json({ error: 'خطا در دریافت آمار' }, { status: 500 })
   }
 }

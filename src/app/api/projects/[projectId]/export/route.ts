@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
 import { formatMoney } from '@/lib/utils/money'
+import { requireProjectAccess } from '@/lib/utils/auth'
+import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
   params: Promise<{ projectId: string }>
@@ -54,6 +56,13 @@ function formatPersianDate(date: Date): string {
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { projectId } = await context.params
+
+    // Authorization check: user must be a participant
+    const authResult = await requireProjectAccess(projectId)
+    if (!authResult.authorized) {
+      return authResult.response
+    }
+
     const { searchParams } = new URL(request.url)
     const format = searchParams.get('format') || 'json'
 
@@ -256,7 +265,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       },
     })
   } catch (error) {
-    console.error('Error exporting project:', error)
+    logApiError(error, { context: 'GET /api/projects/[projectId]/export' })
     return NextResponse.json({ error: 'خطا در اکسپورت پروژه' }, { status: 500 })
   }
 }

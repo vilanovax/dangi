@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
 import { PERSIAN_MONTHS, getCurrentPersianYear } from '@/lib/utils/persian-date'
+import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
   params: Promise<{ projectId: string }>
@@ -168,7 +169,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       participantsCount: project.participants.length,
     })
   } catch (error) {
-    console.error('Error fetching charge status:', error)
+    logApiError(error, { context: 'GET /api/projects/[projectId]/charge-status' })
     return NextResponse.json({ error: 'خطا در دریافت وضعیت شارژ' }, { status: 500 })
   }
 }

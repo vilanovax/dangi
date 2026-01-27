@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getExpenseById, updateExpense, deleteExpense } from '@/lib/services/expense.service'
 import { getProjectById } from '@/lib/services/project.service'
+import { requireProjectAccess } from '@/lib/utils/auth'
+import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
   params: Promise<{ projectId: string; expenseId: string }>
@@ -9,6 +11,12 @@ type RouteContext = {
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { projectId, expenseId } = await context.params
+
+    // Authorization check: user must be a participant
+    const authResult = await requireProjectAccess(projectId)
+    if (!authResult.authorized) {
+      return authResult.response
+    }
 
     const expense = await getExpenseById(expenseId)
 
@@ -22,7 +30,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ expense })
   } catch (error) {
-    console.error('Error fetching expense:', error)
+    logApiError(error, { context: 'GET /api/projects/[projectId]/expenses/[expenseId]' })
     return NextResponse.json({ error: 'خطا در دریافت هزینه' }, { status: 500 })
   }
 }
@@ -30,6 +38,12 @@ export async function GET(request: NextRequest, context: RouteContext) {
 export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     const { projectId, expenseId } = await context.params
+
+    // Authorization check: user must be a participant
+    const authResult = await requireProjectAccess(projectId)
+    if (!authResult.authorized) {
+      return authResult.response
+    }
 
     const existingExpense = await getExpenseById(expenseId)
 
@@ -103,7 +117,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ expense })
   } catch (error) {
-    console.error('Error updating expense:', error)
+    logApiError(error, { context: 'PATCH /api/projects/[projectId]/expenses/[expenseId]' })
     return NextResponse.json({ error: 'خطا در ویرایش هزینه' }, { status: 500 })
   }
 }
@@ -111,6 +125,12 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
     const { projectId, expenseId } = await context.params
+
+    // Authorization check: user must be a participant
+    const authResult = await requireProjectAccess(projectId)
+    if (!authResult.authorized) {
+      return authResult.response
+    }
 
     const existingExpense = await getExpenseById(expenseId)
 
@@ -126,7 +146,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting expense:', error)
+    logApiError(error, { context: 'DELETE /api/projects/[projectId]/expenses/[expenseId]' })
     return NextResponse.json({ error: 'خطا در حذف هزینه' }, { status: 500 })
   }
 }

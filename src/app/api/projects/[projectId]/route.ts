@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { getProjectById, updateProject, deleteProject } from '@/lib/services/project.service'
 import { prisma } from '@/lib/db/prisma'
+import { requireProjectAccess } from '@/lib/utils/auth'
+import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
   params: Promise<{ projectId: string }>
@@ -13,6 +15,12 @@ export async function GET(
 ) {
   try {
     const { projectId } = await context.params
+
+    // Authorization check: user must be a participant
+    const authResult = await requireProjectAccess(projectId)
+    if (!authResult.authorized) {
+      return authResult.response
+    }
 
     // Check if expenses should be included (default: true for backward compatibility)
     const searchParams = request.nextUrl.searchParams
@@ -27,25 +35,12 @@ export async function GET(
       )
     }
 
-    // Get current participant from session
-    const cookieStore = await cookies()
-    const sessionToken = cookieStore.get(`session_${projectId}`)?.value
-
-    let myParticipantId: string | null = null
-    if (sessionToken) {
-      const participant = await prisma.participant.findFirst({
-        where: {
-          sessionToken,
-          projectId,
-        },
-        select: { id: true },
-      })
-      myParticipantId = participant?.id || null
-    }
+    // Use the authenticated participant's ID
+    const myParticipantId = authResult.participant.id
 
     return NextResponse.json({ project, myParticipantId })
   } catch (error) {
-    console.error('Error fetching project:', error)
+    logApiError(error, { context: 'GET /api/projects/[projectId]' })
     return NextResponse.json(
       { error: 'خطا در دریافت اطلاعات پروژه' },
       { status: 500 }
@@ -59,6 +54,13 @@ export async function PATCH(
 ) {
   try {
     const { projectId } = await context.params
+
+    // Authorization check: user must be a participant
+    const authResult = await requireProjectAccess(projectId)
+    if (!authResult.authorized) {
+      return authResult.response
+    }
+
     const body = await request.json()
 
     const { name, description, currency, splitType, chargeYear, isArchived } = body
@@ -120,7 +122,7 @@ export async function PATCH(
 
     return NextResponse.json({ project })
   } catch (error) {
-    console.error('Error updating project:', error)
+    logApiError(error, { context: 'PATCH /api/projects/[projectId]' })
     return NextResponse.json(
       { error: 'خطا در بروزرسانی پروژه' },
       { status: 500 }
@@ -135,6 +137,12 @@ export async function DELETE(
   try {
     const { projectId } = await context.params
 
+    // Authorization check: user must be a participant
+    const authResult = await requireProjectAccess(projectId)
+    if (!authResult.authorized) {
+      return authResult.response
+    }
+
     // Check if project exists
     const existingProject = await getProjectById(projectId)
     if (!existingProject) {
@@ -148,7 +156,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting project:', error)
+    logApiError(error, { context: 'DELETE /api/projects/[projectId]' })
     return NextResponse.json(
       { error: 'خطا در حذف پروژه' },
       { status: 500 }

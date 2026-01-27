@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { joinProject, getProjectParticipants } from '@/lib/services/participant.service'
 import { getProjectById } from '@/lib/services/project.service'
+import { requireProjectAccess } from '@/lib/utils/auth'
+import { logApiError } from '@/lib/utils/logger'
 
 interface RouteParams {
   params: Promise<{ projectId: string }>
@@ -11,6 +13,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { projectId } = await params
 
+    // Authorization check: user must be a participant
+    const authResult = await requireProjectAccess(projectId)
+    if (!authResult.authorized) {
+      return authResult.response
+    }
+
     const project = await getProjectById(projectId)
     if (!project) {
       return NextResponse.json({ error: 'پروژه یافت نشد' }, { status: 404 })
@@ -20,7 +28,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ participants })
   } catch (error) {
-    console.error('Get participants error:', error)
+    logApiError(error, { context: 'GET /api/projects/[projectId]/participants' })
     return NextResponse.json({ error: 'خطا در دریافت اعضا' }, { status: 500 })
   }
 }
@@ -29,6 +37,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const { projectId } = await params
+
+    // Authorization check: user must be a participant
+    const authResult = await requireProjectAccess(projectId)
+    if (!authResult.authorized) {
+      return authResult.response
+    }
+
     const body = await request.json()
 
     const { name, weight, avatar } = body
@@ -53,7 +68,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ participant }, { status: 201 })
   } catch (error) {
-    console.error('Add participant error:', error)
+    logApiError(error, { context: 'POST /api/projects/[projectId]/participants' })
     return NextResponse.json({ error: 'خطا در افزودن عضو' }, { status: 500 })
   }
 }

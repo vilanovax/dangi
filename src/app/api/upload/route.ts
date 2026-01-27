@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { uploadFile } from '@/lib/services/storage.service'
+import { logApiError } from '@/lib/utils/logger'
 
 /**
  * Upload file to S3-compatible storage
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     )
   } catch (error) {
-    console.error('Error uploading file:', error)
+    logApiError(error, { context: 'POST /api/upload' })
     const message = error instanceof Error ? error.message : 'خطا در آپلود فایل'
     return NextResponse.json({ error: message }, { status: 500 })
   }

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createExpense, getProjectExpenses } from '@/lib/services/expense.service'
 import { getProjectById } from '@/lib/services/project.service'
+import { requireProjectAccess } from '@/lib/utils/auth'
+import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
   params: Promise<{ projectId: string }>
@@ -12,6 +14,12 @@ export async function GET(
 ) {
   try {
     const { projectId } = await context.params
+
+    // Authorization check: user must be a participant
+    const authResult = await requireProjectAccess(projectId)
+    if (!authResult.authorized) {
+      return authResult.response
+    }
 
     // Get pagination parameters from query string
     const searchParams = request.nextUrl.searchParams
@@ -30,7 +38,7 @@ export async function GET(
 
     return NextResponse.json(result)
   } catch (error) {
-    console.error('Error fetching expenses:', error)
+    logApiError(error, { context: 'GET /api/projects/[projectId]/expenses' })
     return NextResponse.json(
       { error: 'خطا در دریافت هزینه‌ها' },
       { status: 500 }
@@ -44,6 +52,12 @@ export async function POST(
 ) {
   try {
     const { projectId } = await context.params
+
+    // Authorization check: user must be a participant
+    const authResult = await requireProjectAccess(projectId)
+    if (!authResult.authorized) {
+      return authResult.response
+    }
 
     const body = await request.json()
     const {
@@ -132,7 +146,7 @@ export async function POST(
 
     return NextResponse.json({ expense }, { status: 201 })
   } catch (error) {
-    console.error('Error creating expense:', error)
+    logApiError(error, { context: 'POST /api/projects/[projectId]/expenses' })
     const errorMessage = error instanceof Error ? error.message : 'خطا در ثبت هزینه'
     return NextResponse.json(
       { error: errorMessage, details: String(error) },

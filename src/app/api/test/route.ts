@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
+import { logApiError } from '@/lib/utils/logger'
 
 export async function GET() {
   try {
@@ -7,7 +8,7 @@ export async function GET() {
     const count = await prisma.project.count()
     return NextResponse.json({ success: true, projectCount: count })
   } catch (error) {
-    console.error('Test error:', error)
+    logApiError(error, { context: 'GET /api/test' })
     return NextResponse.json({
       error: String(error),
       stack: error instanceof Error ? error.stack : undefined

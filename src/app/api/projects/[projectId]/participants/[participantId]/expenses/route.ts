@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
+import { requireProjectAccess } from '@/lib/utils/auth'
+import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
   params: Promise<{ projectId: string; participantId: string }>
@@ -15,6 +17,12 @@ export async function GET(
 ) {
   try {
     const { projectId, participantId } = await context.params
+
+    // Authorization check: user must be a participant
+    const authResult = await requireProjectAccess(projectId)
+    if (!authResult.authorized) {
+      return authResult.response
+    }
 
     // Verify participant exists in this project
     const participant = await prisma.participant.findFirst({
@@ -90,7 +98,7 @@ export async function GET(
       },
     })
   } catch (error) {
-    console.error('Error fetching participant expenses:', error)
+    logApiError(error, { context: 'GET /api/projects/[projectId]/participants/[participantId]/expenses' })
     return NextResponse.json(
       { error: 'خطا در دریافت هزینه‌ها' },
       { status: 500 }

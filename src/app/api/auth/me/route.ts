@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
 import { cookies } from 'next/headers'
 import { verifyToken } from '@/lib/utils/auth'
+import { logApiError } from '@/lib/utils/logger'
 
 export async function GET() {
   try {
@@ -43,7 +44,7 @@ export async function GET() {
 
     return NextResponse.json({ user })
   } catch (error) {
-    console.error('Error getting user:', error)
+    logApiError(error, { context: 'GET /api/auth/me' })
     return NextResponse.json(
       { error: 'خطا در دریافت اطلاعات کاربر' },
       { status: 500 }
@@ -100,7 +101,7 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ user })
   } catch (error) {
-    console.error('Error updating user:', error)
+    logApiError(error, { context: 'PATCH /api/auth/me' })
     return NextResponse.json(
       { error: 'خطا در بروزرسانی پروفایل' },
       { status: 500 }

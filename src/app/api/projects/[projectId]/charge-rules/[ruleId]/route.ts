@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
+import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
   params: Promise<{ projectId: string; ruleId: string }>
@@ -32,7 +33,7 @@ export async function GET(
 
     return NextResponse.json({ chargeRule })
   } catch (error) {
-    console.error('Error fetching charge rule:', error)
+    logApiError(error, { context: 'GET /api/projects/[projectId]/charge-rules/[ruleId]' })
     return NextResponse.json(
       { error: 'خطا در دریافت قاعده شارژ' },
       { status: 500 }
@@ -131,7 +132,7 @@ export async function PUT(
 
     return NextResponse.json({ chargeRule })
   } catch (error) {
-    console.error('Error updating charge rule:', error)
+    logApiError(error, { context: 'PUT /api/projects/[projectId]/charge-rules/[ruleId]' })
     return NextResponse.json(
       { error: 'خطا در بروزرسانی قاعده شارژ' },
       { status: 500 }
@@ -171,7 +172,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting charge rule:', error)
+    logApiError(error, { context: 'DELETE /api/projects/[projectId]/charge-rules/[ruleId]' })
     return NextResponse.json(
       { error: 'خطا در حذف قاعده شارژ' },
       { status: 500 }

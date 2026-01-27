@@ -5,6 +5,7 @@ import { calculateProjectSummary } from '@/lib/domain/summaryCalculator'
 import { PERSIAN_MONTHS, getCurrentPersianYear, getCurrentPersianMonth } from '@/lib/utils/persian-date'
 import type { CategoryBreakdown, ParticipantExpenseBreakdown } from '@/types'
 import { requireProjectAccess } from '@/lib/utils/auth'
+import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
   params: Promise<{ projectId: string }>
@@ -298,7 +299,7 @@ export async function GET(
       participantExpenseBreakdown,
     })
   } catch (error) {
-    console.error('Error calculating summary:', error)
+    logApiError(error, { context: 'GET /api/projects/[projectId]/summary' })
     return NextResponse.json(
       { error: 'خطا در محاسبه خلاصه' },
       { status: 500 }

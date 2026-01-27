@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSettlementById, updateSettlement, deleteSettlement } from '@/lib/services/settlement.service'
 import { getProjectById } from '@/lib/services/project.service'
+import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
   params: Promise<{ projectId: string; settlementId: string }>
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ settlement })
   } catch (error) {
-    console.error('Error fetching settlement:', error)
+    logApiError(error, { context: 'GET /api/projects/[projectId]/settlements/[settlementId]' })
     return NextResponse.json({ error: 'خطا در دریافت تسویه' }, { status: 500 })
   }
 }
@@ -89,7 +90,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ settlement })
   } catch (error) {
-    console.error('Error updating settlement:', error)
+    logApiError(error, { context: 'PATCH /api/projects/[projectId]/settlements/[settlementId]' })
     return NextResponse.json({ error: 'خطا در ویرایش تسویه' }, { status: 500 })
   }
 }
@@ -112,7 +113,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting settlement:', error)
+    logApiError(error, { context: 'DELETE /api/projects/[projectId]/settlements/[settlementId]' })
     return NextResponse.json({ error: 'خطا در حذف تسویه' }, { status: 500 })
   }
 }

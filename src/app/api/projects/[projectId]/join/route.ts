@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getProjectById } from '@/lib/services/project.service'
 import { joinProject } from '@/lib/services/participant.service'
 import { cookies } from 'next/headers'
+import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
   params: Promise<{ projectId: string }>
@@ -49,7 +50,7 @@ export async function POST(
 
     return NextResponse.json({ participant })
   } catch (error) {
-    console.error('Error joining project:', error)
+    logApiError(error, { context: 'POST /api/projects/[projectId]/join' })
     return NextResponse.json(
       { error: 'خطا در پیوستن به پروژه' },
       { status: 500 }

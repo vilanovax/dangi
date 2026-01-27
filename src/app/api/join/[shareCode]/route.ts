@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getProjectByShareCode } from '@/lib/services/project.service'
+import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
   params: Promise<{ shareCode: string }>
@@ -31,7 +32,7 @@ export async function GET(
       },
     })
   } catch (error) {
-    console.error('Error fetching project:', error)
+    logApiError(error, { context: 'GET /api/join/[shareCode]' })
     return NextResponse.json(
       { error: 'خطا در دریافت اطلاعات پروژه' },
       { status: 500 }

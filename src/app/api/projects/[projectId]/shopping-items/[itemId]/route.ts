@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { updateShoppingItem, deleteShoppingItem } from '@/lib/services/shopping.service'
+import { requireProjectAccess } from '@/lib/utils/auth'
+import { logApiError } from '@/lib/utils/logger'
 
 /**
  * PATCH /api/projects/[projectId]/shopping-items/[itemId]
@@ -10,7 +12,14 @@ export async function PATCH(
   { params }: { params: Promise<{ projectId: string; itemId: string }> }
 ) {
   try {
-    const { itemId } = await params
+    const { projectId, itemId } = await params
+
+    // Authorization check: user must be a participant
+    const authResult = await requireProjectAccess(projectId)
+    if (!authResult.authorized) {
+      return authResult.response
+    }
+
     const body = await request.json()
 
     const { text, isChecked, quantity, note } = body
@@ -48,7 +57,7 @@ export async function PATCH(
 
     return NextResponse.json({ item })
   } catch (error) {
-    console.error('Error updating shopping item:', error)
+    logApiError(error, { context: 'PATCH /api/projects/[projectId]/shopping-items/[itemId]' })
     return NextResponse.json(
       { error: 'خطا در به‌روزرسانی آیتم' },
       { status: 500 }
@@ -65,13 +74,19 @@ export async function DELETE(
   { params }: { params: Promise<{ projectId: string; itemId: string }> }
 ) {
   try {
-    const { itemId } = await params
+    const { projectId, itemId } = await params
+
+    // Authorization check: user must be a participant
+    const authResult = await requireProjectAccess(projectId)
+    if (!authResult.authorized) {
+      return authResult.response
+    }
 
     await deleteShoppingItem(itemId)
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting shopping item:', error)
+    logApiError(error, { context: 'DELETE /api/projects/[projectId]/shopping-items/[itemId]' })
     return NextResponse.json(
       { error: 'خطا در حذف آیتم' },
       { status: 500 }

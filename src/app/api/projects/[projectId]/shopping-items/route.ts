@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getShoppingItems, createShoppingItem } from '@/lib/services/shopping.service'
+import { requireProjectAccess } from '@/lib/utils/auth'
+import { logApiError } from '@/lib/utils/logger'
 
 /**
  * GET /api/projects/[projectId]/shopping-items
@@ -12,11 +14,17 @@ export async function GET(
   try {
     const { projectId } = await params
 
+    // Authorization check: user must be a participant
+    const authResult = await requireProjectAccess(projectId)
+    if (!authResult.authorized) {
+      return authResult.response
+    }
+
     const result = await getShoppingItems(projectId)
 
     return NextResponse.json(result)
   } catch (error) {
-    console.error('Error fetching shopping items:', error)
+    logApiError(error, { context: 'GET /api/projects/[projectId]/shopping-items' })
     return NextResponse.json(
       { error: 'خطا در بارگذاری لیست خرید' },
       { status: 500 }
@@ -34,6 +42,13 @@ export async function POST(
 ) {
   try {
     const { projectId } = await params
+
+    // Authorization check: user must be a participant
+    const authResult = await requireProjectAccess(projectId)
+    if (!authResult.authorized) {
+      return authResult.response
+    }
+
     const body = await request.json()
 
     const { text, quantity, note, addedById } = body
@@ -62,7 +77,7 @@ export async function POST(
 
     return NextResponse.json({ item }, { status: 201 })
   } catch (error) {
-    console.error('Error creating shopping item:', error)
+    logApiError(error, { context: 'POST /api/projects/[projectId]/shopping-items' })
     return NextResponse.json(
       { error: 'خطا در افزودن آیتم' },
       { status: 500 }

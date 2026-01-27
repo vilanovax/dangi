@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSettlement, getProjectSettlements } from '@/lib/services/settlement.service'
 import { getProjectById } from '@/lib/services/project.service'
+import { requireProjectAccess } from '@/lib/utils/auth'
+import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
   params: Promise<{ projectId: string }>
@@ -10,6 +12,12 @@ export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { projectId } = await context.params
 
+    // Authorization check: user must be a participant
+    const authResult = await requireProjectAccess(projectId)
+    if (!authResult.authorized) {
+      return authResult.response
+    }
+
     const project = await getProjectById(projectId)
     if (!project) {
       return NextResponse.json({ error: 'پروژه یافت نشد' }, { status: 404 })
@@ -18,7 +26,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const settlements = await getProjectSettlements(projectId)
     return NextResponse.json({ settlements })
   } catch (error) {
-    console.error('Error fetching settlements:', error)
+    logApiError(error, { context: 'GET /api/projects/[projectId]/settlements' })
     return NextResponse.json({ error: 'خطا در دریافت تسویه‌ها' }, { status: 500 })
   }
 }
@@ -26,6 +34,12 @@ export async function GET(request: NextRequest, context: RouteContext) {
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const { projectId } = await context.params
+
+    // Authorization check: user must be a participant
+    const authResult = await requireProjectAccess(projectId)
+    if (!authResult.authorized) {
+      return authResult.response
+    }
 
     const project = await getProjectById(projectId)
     if (!project) {
@@ -75,7 +89,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ settlement }, { status: 201 })
   } catch (error) {
-    console.error('Error creating settlement:', error)
+    logApiError(error, { context: 'POST /api/projects/[projectId]/settlements' })
     return NextResponse.json({ error: 'خطا در ثبت تسویه' }, { status: 500 })
   }
 }

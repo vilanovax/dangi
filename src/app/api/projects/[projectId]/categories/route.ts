@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
 import { getProjectById } from '@/lib/services/project.service'
+import { requireProjectAccess } from '@/lib/utils/auth'
+import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
   params: Promise<{ projectId: string }>
@@ -14,6 +16,12 @@ export async function GET(
   try {
     const { projectId } = await context.params
 
+    // Authorization check: user must be a participant
+    const authResult = await requireProjectAccess(projectId)
+    if (!authResult.authorized) {
+      return authResult.response
+    }
+
     const project = await getProjectById(projectId)
     if (!project) {
       return NextResponse.json(
@@ -24,7 +32,7 @@ export async function GET(
 
     return NextResponse.json({ categories: project.categories })
   } catch (error) {
-    console.error('Error fetching categories:', error)
+    logApiError(error, { context: 'GET /api/projects/[projectId]/categories' })
     return NextResponse.json(
       { error: 'خطا در دریافت دسته‌بندی‌ها' },
       { status: 500 }
@@ -41,6 +49,13 @@ export async function POST(
 ) {
   try {
     const { projectId } = await context.params
+
+    // Authorization check: user must be a participant
+    const authResult = await requireProjectAccess(projectId)
+    if (!authResult.authorized) {
+      return authResult.response
+    }
+
     const body = await request.json()
 
     const { name, icon, color } = body
@@ -84,7 +99,7 @@ export async function POST(
 
     return NextResponse.json({ category }, { status: 201 })
   } catch (error) {
-    console.error('Error creating category:', error)
+    logApiError(error, { context: 'POST /api/projects/[projectId]/categories' })
     return NextResponse.json(
       { error: 'خطا در ایجاد دسته‌بندی' },
       { status: 500 }

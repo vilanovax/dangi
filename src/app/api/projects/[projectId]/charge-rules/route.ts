@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
 import { getTemplate } from '@/lib/domain/templates'
+import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
   params: Promise<{ projectId: string }>
@@ -45,7 +46,7 @@ export async function GET(
 
     return NextResponse.json({ chargeRules })
   } catch (error) {
-    console.error('Error fetching charge rules:', error)
+    logApiError(error, { context: 'GET /api/projects/[projectId]/charge-rules' })
     return NextResponse.json(
       { error: 'خطا در دریافت قواعد شارژ' },
       { status: 500 }
@@ -127,7 +128,7 @@ export async function POST(
 
     return NextResponse.json({ chargeRule }, { status: 201 })
   } catch (error) {
-    console.error('Error creating charge rule:', error)
+    logApiError(error, { context: 'POST /api/projects/[projectId]/charge-rules' })
     return NextResponse.json(
       { error: 'خطا در ایجاد قاعده شارژ' },
       { status: 500 }

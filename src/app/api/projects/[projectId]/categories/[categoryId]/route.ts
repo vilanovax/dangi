@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
+import { requireProjectAccess } from '@/lib/utils/auth'
+import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
   params: Promise<{ projectId: string; categoryId: string }>
@@ -14,6 +16,12 @@ export async function DELETE(
 ) {
   try {
     const { projectId, categoryId } = await context.params
+
+    // Authorization check: user must be a participant
+    const authResult = await requireProjectAccess(projectId)
+    if (!authResult.authorized) {
+      return authResult.response
+    }
 
     // Check if category exists and belongs to project
     const category = await prisma.category.findFirst({
@@ -37,7 +45,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting category:', error)
+    logApiError(error, { context: 'DELETE /api/projects/[projectId]/categories/[categoryId]' })
     return NextResponse.json(
       { error: 'خطا در حذف دسته‌بندی' },
       { status: 500 }
@@ -52,6 +60,13 @@ export async function PATCH(
 ) {
   try {
     const { projectId, categoryId } = await context.params
+
+    // Authorization check: user must be a participant
+    const authResult = await requireProjectAccess(projectId)
+    if (!authResult.authorized) {
+      return authResult.response
+    }
+
     const body = await request.json()
 
     const { name, icon, color } = body
@@ -83,7 +98,7 @@ export async function PATCH(
 
     return NextResponse.json({ category })
   } catch (error) {
-    console.error('Error updating category:', error)
+    logApiError(error, { context: 'PATCH /api/projects/[projectId]/categories/[categoryId]' })
     return NextResponse.json(
       { error: 'خطا در بروزرسانی دسته‌بندی' },
       { status: 500 }

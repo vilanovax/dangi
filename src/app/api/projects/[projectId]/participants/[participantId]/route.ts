@@ -4,6 +4,8 @@ import {
   updateParticipant,
   deleteParticipant,
 } from '@/lib/services/participant.service'
+import { requireProjectAccess } from '@/lib/utils/auth'
+import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
   params: Promise<{ projectId: string; participantId: string }>
@@ -13,6 +15,12 @@ type RouteContext = {
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { projectId, participantId } = await context.params
+
+    // Authorization check: user must be a participant
+    const authResult = await requireProjectAccess(projectId)
+    if (!authResult.authorized) {
+      return authResult.response
+    }
 
     const participant = await getParticipantById(participantId)
 
@@ -29,7 +37,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ participant })
   } catch (error) {
-    console.error('Error fetching participant:', error)
+    logApiError(error, { context: 'GET /api/projects/[projectId]/participants/[participantId]' })
     return NextResponse.json({ error: 'خطا در دریافت اطلاعات عضو' }, { status: 500 })
   }
 }
@@ -38,6 +46,12 @@ export async function GET(request: NextRequest, context: RouteContext) {
 export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     const { projectId, participantId } = await context.params
+
+    // Authorization check: user must be a participant
+    const authResult = await requireProjectAccess(projectId)
+    if (!authResult.authorized) {
+      return authResult.response
+    }
 
     const existingParticipant = await getParticipantById(participantId)
 
@@ -84,7 +98,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ participant })
   } catch (error) {
-    console.error('Error updating participant:', error)
+    logApiError(error, { context: 'PATCH /api/projects/[projectId]/participants/[participantId]' })
     return NextResponse.json({ error: 'خطا در ویرایش عضو' }, { status: 500 })
   }
 }
@@ -93,6 +107,12 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
     const { projectId, participantId } = await context.params
+
+    // Authorization check: user must be a participant
+    const authResult = await requireProjectAccess(projectId)
+    if (!authResult.authorized) {
+      return authResult.response
+    }
 
     const existingParticipant = await getParticipantById(participantId)
 
@@ -119,8 +139,6 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ success: true })
   } catch (error: unknown) {
-    console.error('Error deleting participant:', error)
-
     // Handle specific errors
     const errorMessage = error instanceof Error ? error.message : String(error)
 
@@ -143,6 +161,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       )
     }
 
+    logApiError(error, { context: 'DELETE /api/projects/[projectId]/participants/[participantId]' })
     return NextResponse.json({ error: 'خطا در حذف عضو' }, { status: 500 })
   }
 }
