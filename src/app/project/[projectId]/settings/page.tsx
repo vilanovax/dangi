@@ -30,6 +30,7 @@ interface Project {
   currency: string
   shareCode: string
   chargeYear?: number | null
+  trackingOnly?: boolean
   isArchived: boolean
   archivedAt?: string | null
   participants: Participant[]
@@ -66,6 +67,7 @@ export default function SettingsPage() {
   const [description, setDescription] = useState('')
   const [currency, setCurrency] = useState('IRR')
   const [splitType, setSplitType] = useState('EQUAL')
+  const [trackingOnly, setTrackingOnly] = useState(false)
 
   // Charge year state (only for building template)
   const [chargeYear, setChargeYear] = useState<number>(getCurrentPersianYear())
@@ -73,6 +75,7 @@ export default function SettingsPage() {
   // Modal states
   const [showCurrencySheet, setShowCurrencySheet] = useState(false)
   const [showSplitTypeSheet, setShowSplitTypeSheet] = useState(false)
+  const [showModeSheet, setShowModeSheet] = useState(false)
   const [showYearSheet, setShowYearSheet] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false)
@@ -103,6 +106,7 @@ export default function SettingsPage() {
       setDescription(data.project.description || '')
       setCurrency(data.project.currency)
       setSplitType(data.project.splitType)
+      setTrackingOnly(data.project.trackingOnly || false)
       if (data.project.chargeYear) {
         setChargeYear(data.project.chargeYear)
       }
@@ -133,6 +137,7 @@ export default function SettingsPage() {
           currency,
           splitType,
           ...(project && getTemplate(project.template).supportsChargeRules && { chargeYear }),
+          ...(project && project.template === 'personal' && { trackingOnly }),
         }),
       })
 
@@ -374,6 +379,37 @@ export default function SettingsPage() {
             </button>
           </Card>
         </section>
+
+        {/* Mode Selection - Only for personal template */}
+        {project.template === 'personal' && (
+          <section>
+            <h2 className="text-sm font-semibold text-gray-500 mb-3">حالت پروژه</h2>
+            <Card>
+              <button
+                onClick={() => setShowModeSheet(true)}
+                className="w-full flex items-center justify-between"
+              >
+                <div>
+                  <p className="font-medium">
+                    {trackingOnly ? '👨‍👩‍👧 خانواده (فقط ردیابی)' : '🏠 هم‌خونه (تقسیم خرج)'}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {trackingOnly
+                      ? 'فقط مشخص میشه هر نفر چقدر خرج کرده، بدون تسویه'
+                      : 'خرج‌ها بین اعضا تقسیم میشه و تسویه حساب انجام میشه'
+                    }
+                  </p>
+                </div>
+                <svg className="w-5 h-5 text-gray-400 flex-shrink-0 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+            </Card>
+            <p className="text-xs text-gray-400 mt-2">
+              تغییر این تنظیم روی خرج‌های قبلی تأثیر می‌گذارد
+            </p>
+          </section>
+        )}
 
         {/* Charge Rules - Only for templates that support it */}
         {getTemplate(project.template).supportsChargeRules && (
@@ -656,6 +692,90 @@ export default function SettingsPage() {
               </div>
             </button>
           ))}
+        </div>
+      </BottomSheet>
+
+      {/* Mode Selection Bottom Sheet - Only for personal template */}
+      <BottomSheet
+        isOpen={showModeSheet}
+        onClose={() => setShowModeSheet(false)}
+        title="انتخاب حالت پروژه"
+      >
+        <div className="space-y-3">
+          <button
+            onClick={() => {
+              setTrackingOnly(true)
+              setShowModeSheet(false)
+            }}
+            className={`w-full text-right p-4 rounded-xl transition-all ${
+              trackingOnly
+                ? 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500'
+                : 'bg-gray-50 dark:bg-gray-800 border-2 border-transparent'
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              <span className="text-2xl flex-shrink-0">👨‍👩‍👧</span>
+              <div className="flex-1">
+                <p className="font-semibold text-gray-900 dark:text-gray-100">خانواده (فقط ردیابی)</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  فقط مشخص میشه هر نفر چقدر خرج کرده، بدون تسویه حساب
+                </p>
+                <ul className="text-xs text-gray-400 dark:text-gray-500 mt-2 space-y-1 pr-4">
+                  <li>• بدون محاسبه balance</li>
+                  <li>• بدون تسویه حساب</li>
+                  <li>• فقط ردیابی خرج‌ها</li>
+                </ul>
+              </div>
+              {trackingOnly && (
+                <svg className="w-5 h-5 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              )}
+            </div>
+          </button>
+
+          <button
+            onClick={() => {
+              setTrackingOnly(false)
+              setShowModeSheet(false)
+            }}
+            className={`w-full text-right p-4 rounded-xl transition-all ${
+              !trackingOnly
+                ? 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500'
+                : 'bg-gray-50 dark:bg-gray-800 border-2 border-transparent'
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              <span className="text-2xl flex-shrink-0">🏠</span>
+              <div className="flex-1">
+                <p className="font-semibold text-gray-900 dark:text-gray-100">هم‌خونه (تقسیم خرج)</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  خرج‌ها بین اعضا تقسیم میشه و تسویه حساب انجام میشه
+                </p>
+                <ul className="text-xs text-gray-400 dark:text-gray-500 mt-2 space-y-1 pr-4">
+                  <li>• محاسبه balance برای هر نفر</li>
+                  <li>• تسویه حساب بدهی‌ها</li>
+                  <li>• تقسیم هزینه‌ها</li>
+                </ul>
+              </div>
+              {!trackingOnly && (
+                <svg className="w-5 h-5 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              )}
+            </div>
+          </button>
+        </div>
+
+        <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
+          <div className="flex gap-2">
+            <svg className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <p className="text-xs text-amber-700 dark:text-amber-300">
+              تغییر حالت روی خرج‌های قبلی هم تأثیر می‌گذارد. برای اعمال تغییرات، "ذخیره تغییرات" را بزنید.
+            </p>
+          </div>
         </div>
       </BottomSheet>
 

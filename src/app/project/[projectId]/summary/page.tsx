@@ -7,6 +7,8 @@ import { Button, Card, BottomSheet, Avatar } from '@/components/ui'
 import { UnifiedHeader, HeaderCard } from '@/components/layout'
 import { formatMoney } from '@/lib/utils/money'
 import { deserializeAvatar, type Avatar as AvatarData } from '@/lib/types/avatar'
+import type { CategoryBreakdown, ParticipantExpenseBreakdown } from '@/types'
+import { CategoryBreakdownCard, ParticipantExpenseBreakdownCard } from './components'
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -63,6 +65,7 @@ interface ProjectSummary {
 interface Project {
   id: string
   template: string
+  trackingOnly?: boolean
   participants: Participant[]
 }
 
@@ -80,6 +83,8 @@ export default function SummaryPage() {
   // ── Data State ──────────────────────────────────────────────
   const [summary, setSummary] = useState<ProjectSummary | null>(null)
   const [chargeInfo, setChargeInfo] = useState<ChargeInfo | null>(null)
+  const [categoryBreakdown, setCategoryBreakdown] = useState<CategoryBreakdown[]>([])
+  const [participantExpenseBreakdown, setParticipantExpenseBreakdown] = useState<ParticipantExpenseBreakdown[]>([])
   const [project, setProject] = useState<Project | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<TabType>('balance')
@@ -102,6 +107,8 @@ export default function SummaryPage() {
         const data = await summaryRes.json()
         setSummary(data.summary)
         setChargeInfo(data.chargeInfo)
+        setCategoryBreakdown(data.categoryBreakdown || [])
+        setParticipantExpenseBreakdown(data.participantExpenseBreakdown || [])
       }
 
       if (projectRes.ok) {
@@ -210,6 +217,12 @@ export default function SummaryPage() {
   const participantCount = summary.participantBalances.length
   const sharePerPerson = participantCount > 0 ? summary.totalExpenses / participantCount : 0
 
+  // Top category for gathering template
+  const isGathering = project?.template === 'gathering'
+  const isPersonal = project?.template === 'personal'
+  const isTrackingMode = isPersonal && project?.trackingOnly
+  const topCategory = categoryBreakdown.length > 0 ? categoryBreakdown[0] : null
+
   // Sort balances: creditors first, then debtors, then settled
   const sortedBalances = [...summary.participantBalances].sort((a, b) => {
     if (a.balance > 0 && b.balance <= 0) return -1
@@ -249,7 +262,7 @@ export default function SummaryPage() {
           subtitle={summary.projectName}
           showBack
           onBack={handleBack}
-          rightAction={
+          rightAction={!isTrackingMode ? (
             <Link
               href={`/project/${projectId}/settlements`}
               className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 active:scale-95 transition-all"
@@ -264,7 +277,7 @@ export default function SummaryPage() {
                 />
               </svg>
             </Link>
-          }
+          ) : undefined}
         >
           {/* Stats Cards */}
           <div className="grid grid-cols-2 gap-3">
@@ -276,6 +289,27 @@ export default function SummaryPage() {
               <p className="text-blue-100 text-xs mb-1">سهم هر نفر</p>
               <p className="text-xl font-bold">{formatMoney(sharePerPerson, summary.currency)}</p>
             </HeaderCard>
+
+            {/* Top Category - Only for gathering */}
+            {isGathering && topCategory && (
+              <div className="col-span-2 bg-white/10 backdrop-blur-sm rounded-xl p-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <p className="text-blue-100 text-xs mb-1">بیشترین خرج</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">{topCategory.categoryIcon}</span>
+                      <div>
+                        <p className="text-lg font-bold">{topCategory.categoryName}</p>
+                        <p className="text-xs text-blue-100/80">
+                          {formatMoney(topCategory.totalAmount, summary.currency)} • {topCategory.percentage.toFixed(0)}%
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {isBuilding && hasChargeDebt && (
               <div className="col-span-2 bg-red-500/30 backdrop-blur-sm rounded-xl p-3">
                 <div className="flex items-center justify-between">
@@ -329,7 +363,7 @@ export default function SummaryPage() {
         {activeTab === 'balance' && (
           <>
             {/* Settlement Suggestions - Hero Section (moved to top for action priority) */}
-            {hasDebt && (
+            {!isTrackingMode && hasDebt && (
               <section>
                 <div className="mb-3">
                   <h2 className="text-lg font-bold text-gray-900 dark:text-white">
@@ -356,8 +390,26 @@ export default function SummaryPage() {
               </section>
             )}
 
+            {/* Category Breakdown - For gathering and personal templates */}
+            {(isGathering || isPersonal) && categoryBreakdown.length > 0 && (
+              <CategoryBreakdownCard
+                breakdown={categoryBreakdown}
+                currency={summary.currency}
+                projectId={projectId}
+              />
+            )}
+
+            {/* Participant Expense Breakdown - For gathering and personal templates */}
+            {(isGathering || isPersonal) && participantExpenseBreakdown.length > 0 && (
+              <ParticipantExpenseBreakdownCard
+                breakdown={participantExpenseBreakdown}
+                currency={summary.currency}
+                projectId={projectId}
+              />
+            )}
+
             {/* All Settled State - Celebration! */}
-            {!hasDebt && hasExpenses && (
+            {!isTrackingMode && !hasDebt && hasExpenses && (
               <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-2xl p-8 text-center border border-green-100 dark:border-green-800/30">
                 <div className="w-20 h-20 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-4xl">🎉</span>
@@ -372,7 +424,7 @@ export default function SummaryPage() {
             )}
 
             {/* Balance Overview - Simplified */}
-            {hasExpenses && summary.participantBalances.length > 1 && hasDebt && (
+            {!isTrackingMode && hasExpenses && summary.participantBalances.length > 1 && hasDebt && (
               <section>
                 <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3">وضعیت کلی</h2>
                 <BalanceChart balances={summary.participantBalances} currency={summary.currency} />
@@ -380,7 +432,7 @@ export default function SummaryPage() {
             )}
 
             {/* Member Status - Secondary */}
-            {hasExpenses && (
+            {!isTrackingMode && hasExpenses && (
               <section>
                 <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3">وضعیت هم‌سفرها</h2>
                 <div className="space-y-2">
