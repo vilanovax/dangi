@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ project })
   } catch (error) {
-    logApiError(error, { context: 'create project', projectName: name })
+    logApiError(error, { context: 'POST /api/projects' })
     return NextResponse.json(
       { error: 'خطا در ساخت پروژه' },
       { status: 500 }

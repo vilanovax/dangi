@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    logApiError(error, { context: 'register', phone })
+    logApiError(error, { context: 'POST /api/auth/register' })
     return NextResponse.json(
       { error: 'خطا در ثبت‌نام' },
       { status: 500 }

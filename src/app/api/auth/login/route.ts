@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    logApiError(error, { context: 'login', phone })
+    logApiError(error, { context: 'POST /api/auth/login' })
     return NextResponse.json(
       { error: 'خطا در ورود' },
       { status: 500 }
