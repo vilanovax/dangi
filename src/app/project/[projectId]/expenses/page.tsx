@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { FloatingButton } from '@/components/ui'
 import { getTemplate } from '@/lib/domain/templates'
 import { getRecentPeriods, formatPeriodKey } from '@/lib/utils/persian-date'
@@ -198,6 +198,7 @@ function getFilterLabel(
 export default function ExpensesPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const projectId = params.projectId as string
 
   // Data state
@@ -213,6 +214,32 @@ export default function ExpensesPage() {
   const [selectedPayerId, setSelectedPayerId] = useState<string | null>(null)
   const [selectedPeriodKey, setSelectedPeriodKey] = useState<string | null>(null)
   const [dateRange, setDateRange] = useState<DateRange>({ startDate: null, endDate: null })
+  const [categoryFilterName, setCategoryFilterName] = useState<string | null>(null)
+  const [payerFilterName, setPayerFilterName] = useState<string | null>(null)
+
+  // Apply filters from URL query params
+  useEffect(() => {
+    const categoryParam = searchParams.get('category')
+    const categoryNameParam = searchParams.get('categoryName')
+    const payerParam = searchParams.get('payer')
+    const payerNameParam = searchParams.get('payerName')
+
+    if (categoryParam) {
+      setFilterType('category')
+      setSelectedCategoryId(categoryParam === 'uncategorized' ? null : categoryParam)
+      if (categoryNameParam) {
+        setCategoryFilterName(categoryNameParam)
+      }
+    }
+
+    if (payerParam) {
+      setFilterType('payer')
+      setSelectedPayerId(payerParam)
+      if (payerNameParam) {
+        setPayerFilterName(payerNameParam)
+      }
+    }
+  }, [searchParams])
 
   // Fetch data on mount
   useEffect(() => {
@@ -358,6 +385,52 @@ export default function ExpensesPage() {
           activeFilterLabel={activeFilterLabel}
           onFilterClick={() => setShowFilters(true)}
         />
+
+        {/* Category Filter Indicator from Summary */}
+        {categoryFilterName && filterType === 'category' && (
+          <div className="bg-white dark:bg-gray-900 px-4 pb-3 border-b border-gray-100/50 dark:border-gray-800/50">
+            <div className="flex items-center gap-2 bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800/30 rounded-lg px-3 py-2">
+              <svg className="w-4 h-4 text-purple-600 dark:text-purple-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              <span className="text-sm text-purple-700 dark:text-purple-300 flex-1">
+                نمایش خرج‌های: <span className="font-semibold">{categoryFilterName}</span>
+              </span>
+              <button
+                onClick={handleClearFilters}
+                className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-200 transition-colors active:scale-95"
+                aria-label="حذف فیلتر"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Payer Filter Indicator from Summary */}
+        {payerFilterName && filterType === 'payer' && (
+          <div className="bg-white dark:bg-gray-900 px-4 pb-3 border-b border-gray-100/50 dark:border-gray-800/50">
+            <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30 rounded-lg px-3 py-2">
+              <svg className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <span className="text-sm text-blue-700 dark:text-blue-300 flex-1">
+                خرج‌های پرداخت‌شده توسط: <span className="font-semibold">{payerFilterName}</span>
+              </span>
+              <button
+                onClick={handleClearFilters}
+                className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors active:scale-95"
+                aria-label="حذف فیلتر"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Expenses Timeline */}

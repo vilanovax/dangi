@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { Card, Avatar } from '@/components/ui'
 import { formatMoney } from '@/lib/utils/money'
 import { deserializeAvatar } from '@/lib/types/avatar'
@@ -50,6 +51,7 @@ export function ExpenseView({
   category,
   shares,
 }: ExpenseViewProps) {
+  const [imageError, setImageError] = useState(false)
   const categoryBgColor = category?.color ? `${category.color}20` : '#6B728020'
 
   return (
@@ -80,15 +82,28 @@ export function ExpenseView({
       {receiptUrl && (
         <Card className="overflow-hidden">
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">تصویر رسید</p>
-          <a href={receiptUrl} target="_blank" rel="noopener noreferrer" className="block">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={receiptUrl}
-              alt="رسید"
-              className="w-full rounded-xl object-cover max-h-64"
-            />
-            <p className="text-xs text-blue-500 mt-2 text-center">برای مشاهده کامل کلیک کنید</p>
-          </a>
+          {!imageError ? (
+            <a href={receiptUrl} target="_blank" rel="noopener noreferrer" className="block">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={receiptUrl}
+                alt="رسید"
+                className="w-full rounded-xl object-cover max-h-64"
+                onError={() => setImageError(true)}
+              />
+              <p className="text-xs text-blue-500 mt-2 text-center">برای مشاهده کامل کلیک کنید</p>
+            </a>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-3">
+                <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">تصویر در دسترس نیست</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">ممکن است سرور تصاویر خاموش باشد</p>
+            </div>
+          )}
         </Card>
       )}
 
