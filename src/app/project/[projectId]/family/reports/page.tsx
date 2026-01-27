@@ -2,6 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import {
+  getCurrentPeriodKey,
+  getCurrentPersianYear,
+  getCurrentPersianMonth,
+} from '@/lib/utils/persian-date'
 
 interface MonthReport {
   periodKey: string
@@ -16,10 +21,9 @@ export default function ReportsOverviewPage() {
   const router = useRouter()
   const projectId = params.projectId as string
 
-  // Get current and previous months
-  const now = new Date()
-  const currentYear = now.getFullYear()
-  const currentMonth = now.getMonth() + 1
+  // Get current Persian year and month
+  const currentYear = getCurrentPersianYear()
+  const currentMonth = parseInt(getCurrentPersianMonth())
 
   const [selectedYear, setSelectedYear] = useState(currentYear)
   const [selectedMonth, setSelectedMonth] = useState(currentMonth)

@@ -4,6 +4,10 @@ import { getProjectById } from '@/lib/services/project.service'
 import { calculateFamilyStats } from '@/lib/domain/calculators/familyStats'
 import { recurringService } from '@/lib/services/recurring.service'
 import {
+  getCurrentPeriodKey,
+  getPersianPeriodBounds,
+} from '@/lib/utils/persian-date'
+import {
   MonthlyOverviewCard,
   QuickActionsCard,
   BudgetTrackerCard,
@@ -35,15 +39,11 @@ export default async function FamilyDashboardPage({ params }: PageProps) {
     redirect(`/project/${projectId}`)
   }
 
-  // Get current period (current month)
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const periodKey = `${year}-${month}`
+  // Get current period (Persian/Shamsi calendar)
+  const periodKey = getCurrentPeriodKey() // e.g., "1403-10"
 
-  // Calculate period dates
-  const startDate = new Date(year, now.getMonth(), 1) // First day of month
-  const endDate = new Date(year, now.getMonth() + 1, 0) // Last day of month
+  // Calculate period dates (convert Persian to Gregorian)
+  const { startDate, endDate } = getPersianPeriodBounds(periodKey)
 
   // Fetch dashboard data
   const [stats, recurringTransactions] = await Promise.all([
@@ -91,7 +91,7 @@ export default async function FamilyDashboardPage({ params }: PageProps) {
       <RecurringItemsCard
         items={recurringItems}
         currency={project.currency}
-        onToggle={() => {}}
+        projectId={projectId}
       />
 
       {/* Card 5: Recent Activity */}

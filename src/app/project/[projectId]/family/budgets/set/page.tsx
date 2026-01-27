@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui'
+import { getCurrentPeriodKey } from '@/lib/utils/persian-date'
 
 interface Category {
   id: string
@@ -20,11 +21,9 @@ export default function SetBudgetsPage() {
   const router = useRouter()
   const projectId = params.projectId as string
 
-  // Get current period (current month)
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const periodKey = `${year}-${month}`
+  // Get current period (Persian/Shamsi calendar)
+  const periodKey = getCurrentPeriodKey() // e.g., "1403-10"
+  const [year, month] = periodKey.split('-')
 
   // State
   const [categories, setCategories] = useState<Category[]>([])

@@ -134,3 +134,61 @@ export function getRecentPeriods(count = 12): { key: string; label: string }[] {
 
   return periods
 }
+
+/**
+ * Get Gregorian date bounds for a Persian period
+ * This is an approximation based on typical month transitions
+ * @param periodKey - Format: "YYYY-MM" (e.g., "1403-10")
+ * @returns { startDate, endDate } in Gregorian calendar
+ */
+export function getPersianPeriodBounds(periodKey: string): {
+  startDate: Date
+  endDate: Date
+} {
+  const [yearStr, monthStr] = periodKey.split('-')
+  const persianYear = parseInt(yearStr)
+  const persianMonth = parseInt(monthStr)
+
+  // Convert Persian year to Gregorian year (approximate)
+  const gregorianYear = persianYear + 621
+
+  // Approximate Gregorian month for each Persian month
+  // Persian months 1-6 have 31 days, 7-11 have 30 days, 12 has 29/30 days
+  const monthTransitions: Record<
+    number,
+    { startMonth: number; startDay: number; endMonth: number; endDay: number }
+  > = {
+    1: { startMonth: 3, startDay: 21, endMonth: 4, endDay: 20 }, // Farvardin (Mar 21 - Apr 20)
+    2: { startMonth: 4, startDay: 21, endMonth: 5, endDay: 21 }, // Ordibehesht (Apr 21 - May 21)
+    3: { startMonth: 5, startDay: 22, endMonth: 6, endDay: 21 }, // Khordad (May 22 - Jun 21)
+    4: { startMonth: 6, startDay: 22, endMonth: 7, endDay: 22 }, // Tir (Jun 22 - Jul 22)
+    5: { startMonth: 7, startDay: 23, endMonth: 8, endDay: 22 }, // Mordad (Jul 23 - Aug 22)
+    6: { startMonth: 8, startDay: 23, endMonth: 9, endDay: 22 }, // Shahrivar (Aug 23 - Sep 22)
+    7: { startMonth: 9, startDay: 23, endMonth: 10, endDay: 22 }, // Mehr (Sep 23 - Oct 22)
+    8: { startMonth: 10, startDay: 23, endMonth: 11, endDay: 21 }, // Aban (Oct 23 - Nov 21)
+    9: { startMonth: 11, startDay: 22, endMonth: 12, endDay: 21 }, // Azar (Nov 22 - Dec 21)
+    10: { startMonth: 12, startDay: 22, endMonth: 1, endDay: 20 }, // Dey (Dec 22 - Jan 20)
+    11: { startMonth: 1, startDay: 21, endMonth: 2, endDay: 19 }, // Bahman (Jan 21 - Feb 19)
+    12: { startMonth: 2, startDay: 20, endMonth: 3, endDay: 20 }, // Esfand (Feb 20 - Mar 20)
+  }
+
+  const transition = monthTransitions[persianMonth]
+  if (!transition) {
+    throw new Error(`Invalid Persian month: ${persianMonth}`)
+  }
+
+  // Handle year transitions for months 10, 11, 12
+  const startYear =
+    persianMonth >= 10 ? gregorianYear : gregorianYear
+  const endYear =
+    persianMonth >= 10 ? gregorianYear + 1 : gregorianYear
+
+  const startDate = new Date(
+    startYear,
+    transition.startMonth - 1,
+    transition.startDay
+  )
+  const endDate = new Date(endYear, transition.endMonth - 1, transition.endDay)
+
+  return { startDate, endDate }
+}

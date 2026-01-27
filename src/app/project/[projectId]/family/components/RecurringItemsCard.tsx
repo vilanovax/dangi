@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 interface RecurringItem {
   id: string
@@ -17,14 +17,16 @@ interface RecurringItem {
 interface RecurringItemsCardProps {
   items: RecurringItem[]
   currency: string
-  onToggle: (id: string) => void
+  projectId: string
 }
 
 export function RecurringItemsCard({
   items,
   currency,
-  onToggle,
+  projectId,
 }: RecurringItemsCardProps) {
+  const router = useRouter()
+
   const frequencyLabels = {
     DAILY: 'روزانه',
     WEEKLY: 'هفتگی',
@@ -55,7 +57,12 @@ export function RecurringItemsCard({
             <p className="text-stone-600 mb-4">
               تراکنش تکراری ثبت نشده است
             </p>
-            <button className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2 rounded-full text-sm font-medium transition-colors">
+            <button
+              onClick={() =>
+                router.push(`/project/${projectId}/family/recurring/add`)
+              }
+              className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2 rounded-full text-sm font-medium transition-colors"
+            >
               افزودن تراکنش تکراری
             </button>
           </div>
@@ -100,24 +107,33 @@ export function RecurringItemsCard({
                   </div>
                 </div>
 
-                {/* Toggle switch */}
-                <button
-                  onClick={() => onToggle(item.id)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    item.isActive ? 'bg-green-500' : 'bg-stone-300'
+                {/* Status indicator */}
+                <div
+                  className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    item.isActive
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-stone-200 text-stone-600'
                   }`}
                 >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      item.isActive ? 'translate-x-1' : 'translate-x-6'
-                    }`}
-                  />
-                </button>
+                  {item.isActive ? '✓ فعال' : '⏸ غیرفعال'}
+                </div>
               </div>
             </div>
           ))
         )}
       </div>
+
+      {/* View All button */}
+      {items.length > 0 && (
+        <div className="mt-6">
+          <button
+            onClick={() => router.push(`/project/${projectId}/family/recurring`)}
+            className="w-full bg-white/90 hover:bg-white text-amber-700 border border-amber-300 px-6 py-3 rounded-full font-medium transition-colors"
+          >
+            مدیریت تراکنش‌های تکراری →
+          </button>
+        </div>
+      )}
 
       {/* Bottom spacing */}
       <div className="h-6" />
