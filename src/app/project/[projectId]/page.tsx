@@ -103,6 +103,13 @@ export default function ProjectPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId])
 
+  // Redirect family template to family dashboard
+  useEffect(() => {
+    if (project && project.template === 'family') {
+      router.push(`/project/${projectId}/family`)
+    }
+  }, [project, projectId, router])
+
   // ── Participant Handlers ──────────────────────────────────────
 
   const handleParticipantClick = useCallback((participant: Participant) => {

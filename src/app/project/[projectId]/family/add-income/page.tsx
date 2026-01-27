@@ -1,0 +1,277 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import { Button } from '@/components/ui'
+
+interface Participant {
+  id: string
+  name: string
+  avatar?: string | null
+}
+
+interface IncomeCategory {
+  id: string
+  name: string
+  icon?: string | null
+}
+
+export default function AddIncomePage() {
+  const params = useParams()
+  const router = useRouter()
+  const projectId = params.projectId as string
+
+  // Form state
+  const [title, setTitle] = useState('')
+  const [amount, setAmount] = useState('')
+  const [receivedById, setReceivedById] = useState('')
+  const [categoryId, setCategoryId] = useState('')
+  const [source, setSource] = useState('')
+  const [description, setDescription] = useState('')
+  const [incomeDate, setIncomeDate] = useState(
+    new Date().toISOString().split('T')[0]
+  )
+
+  // Data state
+  const [participants, setParticipants] = useState<Participant[]>([])
+  const [categories, setCategories] = useState<IncomeCategory[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  // Fetch participants and categories
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [participantsRes, categoriesRes] = await Promise.all([
+          fetch(`/api/projects/${projectId}/participants`),
+          fetch(`/api/projects/${projectId}/income-categories`),
+        ])
+
+        if (participantsRes.ok) {
+          const data = await participantsRes.json()
+          setParticipants(data.participants || [])
+          // Auto-select first participant
+          if (data.participants?.length > 0) {
+            setReceivedById(data.participants[0].id)
+          }
+        }
+
+        if (categoriesRes.ok) {
+          const data = await categoriesRes.json()
+          setCategories(data.categories || [])
+        }
+      } catch (err) {
+        console.error('Error fetching data:', err)
+      }
+    }
+
+    fetchData()
+  }, [projectId])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+
+    // Validation
+    if (!title.trim()) {
+      setError('عنوان الزامی است')
+      return
+    }
+
+    const amountNum = parseFloat(amount)
+    if (!amount || isNaN(amountNum) || amountNum <= 0) {
+      setError('مبلغ باید عدد مثبت باشد')
+      return
+    }
+
+    if (!receivedById) {
+      setError('دریافت‌کننده الزامی است')
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      const res = await fetch(`/api/projects/${projectId}/incomes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: title.trim(),
+          amount: amountNum,
+          receivedById,
+          categoryId: categoryId || undefined,
+          source: source.trim() || undefined,
+          description: description.trim() || undefined,
+          incomeDate: new Date(incomeDate).toISOString(),
+        }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'خطا در ثبت درآمد')
+      }
+
+      // Success - navigate back to dashboard
+      router.push(`/project/${projectId}/family`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'خطا در ثبت درآمد')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-6 shadow-lg">
+        <div className="flex items-center gap-4 mb-2">
+          <button
+            onClick={() => router.back()}
+            className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+          >
+            ←
+          </button>
+          <h1 className="text-2xl font-bold">ثبت درآمد</h1>
+        </div>
+        <p className="text-green-100 text-sm mr-14">
+          درآمد جدید خانواده را ثبت کنید
+        </p>
+      </div>
+
+      {/* Form */}
+      <div className="p-6 max-w-2xl mx-auto">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Title */}
+          <div className="bg-white rounded-2xl p-4 shadow-md">
+            <label className="block text-sm font-medium text-stone-700 mb-2">
+              عنوان <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="مثلاً: حقوق ماهانه"
+              className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              disabled={loading}
+            />
+          </div>
+
+          {/* Amount */}
+          <div className="bg-white rounded-2xl p-4 shadow-md">
+            <label className="block text-sm font-medium text-stone-700 mb-2">
+              مبلغ <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0"
+              className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-left"
+              disabled={loading}
+            />
+          </div>
+
+          {/* Received By */}
+          <div className="bg-white rounded-2xl p-4 shadow-md">
+            <label className="block text-sm font-medium text-stone-700 mb-2">
+              دریافت‌کننده <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={receivedById}
+              onChange={(e) => setReceivedById(e.target.value)}
+              className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              disabled={loading}
+            >
+              <option value="">انتخاب کنید</option>
+              {participants.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Category */}
+          <div className="bg-white rounded-2xl p-4 shadow-md">
+            <label className="block text-sm font-medium text-stone-700 mb-2">
+              دسته‌بندی
+            </label>
+            <select
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              disabled={loading}
+            >
+              <option value="">بدون دسته‌بندی</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.icon} {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Source */}
+          <div className="bg-white rounded-2xl p-4 shadow-md">
+            <label className="block text-sm font-medium text-stone-700 mb-2">
+              منبع درآمد
+            </label>
+            <input
+              type="text"
+              value={source}
+              onChange={(e) => setSource(e.target.value)}
+              placeholder="مثلاً: شرکت، پروژه جانبی، ..."
+              className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              disabled={loading}
+            />
+          </div>
+
+          {/* Date */}
+          <div className="bg-white rounded-2xl p-4 shadow-md">
+            <label className="block text-sm font-medium text-stone-700 mb-2">
+              تاریخ
+            </label>
+            <input
+              type="date"
+              value={incomeDate}
+              onChange={(e) => setIncomeDate(e.target.value)}
+              className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              disabled={loading}
+            />
+          </div>
+
+          {/* Description */}
+          <div className="bg-white rounded-2xl p-4 shadow-md">
+            <label className="block text-sm font-medium text-stone-700 mb-2">
+              توضیحات
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="توضیحات اضافی..."
+              rows={3}
+              className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+              disabled={loading}
+            />
+          </div>
+
+          {/* Error message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+              {error}
+            </div>
+          )}
+
+          {/* Submit button */}
+          <Button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-4 rounded-xl font-bold text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            {loading ? 'در حال ثبت...' : '💰 ثبت درآمد'}
+          </Button>
+        </form>
+      </div>
+    </div>
+  )
+}
