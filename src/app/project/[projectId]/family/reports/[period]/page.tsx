@@ -13,6 +13,7 @@ export default function PeriodDetailReportPage() {
   const [stats, setStats] = useState<FamilyDashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [showExportSuccess, setShowExportSuccess] = useState(false)
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -107,6 +108,53 @@ export default function PeriodDetailReportPage() {
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+
+    // Show success feedback
+    setShowExportSuccess(true)
+    setTimeout(() => setShowExportSuccess(false), 3000)
+  }
+
+  // Smart analysis helpers
+  const getFinancialNarrative = () => {
+    if (!stats) return ''
+
+    if (stats.netSavings > 0) {
+      if (stats.savingsRate >= 20) {
+        return `این ماه ${(stats.netSavings / 10).toLocaleString('fa-IR')} تومان پس‌انداز کردی، عالیه! 🎉`
+      } else if (stats.savingsRate >= 10) {
+        return `${(stats.netSavings / 10).toLocaleString('fa-IR')} تومان پس‌انداز این ماه، خوبه 👍`
+      } else {
+        return `پس‌انداز این ماه: ${(stats.netSavings / 10).toLocaleString('fa-IR')} تومان`
+      }
+    } else if (stats.netSavings < 0) {
+      return `این ماه ${Math.abs(stats.netSavings / 10).toLocaleString('fa-IR')} تومان بیشتر از درآمد خرج کردی ⚠️`
+    } else {
+      return 'این ماه درآمد و هزینه برابر بوده'
+    }
+  }
+
+  const getBudgetAnalysis = () => {
+    if (!stats || stats.totalBudget === 0) return ''
+
+    const util = stats.budgetUtilization
+    if (util === 0) return 'هنوز از بودجه‌های تعیین شده استفاده نشده'
+    if (util < 70) return 'بودجه این ماه به‌خوبی مدیریت شده 👌'
+    if (util < 90) return 'داری نزدیک سقف بودجه می‌شی، کمی دقت کن'
+    if (util < 100) return 'تقریباً تمام بودجه مصرف شده ⚠️'
+    return 'بودجه این ماه رد شده، ماه بعد دقت بیشتری لازمه 🔴'
+  }
+
+  const getTopExpenseInsight = () => {
+    if (!stats || stats.topExpenses.length === 0) return ''
+
+    const top = stats.topExpenses[0]
+    return `بیشترین هزینه این ماه مربوط به ${top.categoryName} بوده (${top.percentage.toFixed(0)}% از کل)`
+  }
+
+  // Filter meaningful budgets (only show if has spending or budget set)
+  const getMeaningfulBudgets = () => {
+    if (!stats) return []
+    return stats.budgets.filter(b => b.spent > 0 || b.budgetAmount > 0)
   }
 
   if (loading) {
@@ -177,47 +225,88 @@ export default function PeriodDetailReportPage() {
 
       {/* Content */}
       <div className="p-6 max-w-4xl mx-auto space-y-6">
-        {/* Financial Summary */}
-        <div className="bg-white rounded-2xl p-6 shadow-lg">
-          <h2 className="text-lg font-bold text-stone-800 mb-4">
-            خلاصه مالی
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
-                {stats.totalIncome.toLocaleString('fa-IR')}
-              </div>
-              <div className="text-sm text-stone-600 mt-1">کل درآمد</div>
+        {/* Export Success Toast */}
+        {showExportSuccess && (
+          <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-full shadow-lg z-50 animate-bounce">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">✓</span>
+              <span className="font-medium">فایل CSV دانلود شد</span>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-red-600">
-                {stats.totalExpenses.toLocaleString('fa-IR')}
-              </div>
-              <div className="text-sm text-stone-600 mt-1">کل هزینه</div>
+          </div>
+        )}
+
+        {/* Financial Summary - Narrative Style */}
+        <div className="bg-gradient-to-br from-indigo-500 to-blue-600 rounded-3xl p-8 shadow-xl text-white">
+          {/* Main narrative */}
+          <div className="text-center mb-6">
+            <div className="text-sm opacity-90 mb-2">نتیجه مالی این ماه</div>
+            <div className="text-2xl font-bold leading-relaxed">
+              {getFinancialNarrative()}
             </div>
-            <div className="text-center">
-              <div
-                className={`text-2xl font-bold ${stats.netSavings >= 0 ? 'text-blue-600' : 'text-orange-600'}`}
-              >
-                {stats.netSavings >= 0 ? '+' : ''}
-                {stats.netSavings.toLocaleString('fa-IR')}
+          </div>
+
+          {/* Three key metrics */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-white/10 backdrop-blur rounded-xl p-4 text-center">
+              <div className="text-2xl mb-1">🟢</div>
+              <div className="text-xs opacity-80 mb-1">درآمد</div>
+              <div className="text-lg font-bold">
+                {(stats.totalIncome / 10).toLocaleString('fa-IR')}
               </div>
-              <div className="text-sm text-stone-600 mt-1">خالص</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-indigo-600">
-                {stats.savingsRate.toFixed(1)}%
+            <div className="bg-white/10 backdrop-blur rounded-xl p-4 text-center">
+              <div className="text-2xl mb-1">🔴</div>
+              <div className="text-xs opacity-80 mb-1">هزینه</div>
+              <div className="text-lg font-bold">
+                {(stats.totalExpenses / 10).toLocaleString('fa-IR')}
               </div>
-              <div className="text-sm text-stone-600 mt-1">نرخ پس‌انداز</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur rounded-xl p-4 text-center">
+              <div className="text-2xl mb-1">
+                {stats.netSavings >= 0 ? '📊' : '⚠️'}
+              </div>
+              <div className="text-xs opacity-80 mb-1">
+                {stats.netSavings >= 0 ? 'پس‌انداز' : 'کسری'}
+              </div>
+              <div className="text-lg font-bold">
+                {Math.abs(stats.netSavings / 10).toLocaleString('fa-IR')}
+              </div>
             </div>
           </div>
         </div>
 
+        {/* Smart Insights */}
+        {(getBudgetAnalysis() || getTopExpenseInsight()) && (
+          <div className="bg-amber-50 border-2 border-amber-100 rounded-2xl p-5 shadow-md">
+            <div className="flex items-start gap-3">
+              <div className="text-2xl flex-shrink-0">💡</div>
+              <div className="flex-1">
+                <h3 className="font-bold text-amber-900 mb-2">نکات تحلیلی</h3>
+                <div className="space-y-2 text-sm text-amber-800">
+                  {getBudgetAnalysis() && (
+                    <div className="flex items-start gap-2">
+                      <span className="flex-shrink-0">•</span>
+                      <span>{getBudgetAnalysis()}</span>
+                    </div>
+                  )}
+                  {getTopExpenseInsight() && (
+                    <div className="flex items-start gap-2">
+                      <span className="flex-shrink-0">•</span>
+                      <span>{getTopExpenseInsight()}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Budget Overview */}
-        <div className="bg-white rounded-2xl p-6 shadow-lg">
-          <h2 className="text-lg font-bold text-stone-800 mb-4">
-            وضعیت بودجه
-          </h2>
+        {stats.totalBudget > 0 ? (
+          <div className="bg-white rounded-2xl p-6 shadow-lg">
+            <h2 className="text-lg font-bold text-stone-800 mb-4">
+              وضعیت بودجه
+            </h2>
           <div className="grid grid-cols-3 gap-4 mb-6">
             <div className="text-center bg-stone-50 rounded-xl p-4">
               <div className="text-xl font-bold text-stone-800">
@@ -239,54 +328,75 @@ export default function PeriodDetailReportPage() {
             </div>
           </div>
 
-          {/* Budget details */}
-          {stats.budgets.length > 0 && (
-            <div className="space-y-3">
-              <h3 className="font-medium text-stone-700 text-sm">
-                جزئیات بودجه دسته‌بندی‌ها
-              </h3>
-              {stats.budgets.map((budget, index) => (
-                <div key={index} className="border-t border-stone-100 pt-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      {budget.categoryIcon && (
-                        <span>{budget.categoryIcon}</span>
-                      )}
-                      <span className="font-medium text-stone-800">
-                        {budget.categoryName}
-                      </span>
+            {/* Budget details - only meaningful ones */}
+            {getMeaningfulBudgets().length > 0 ? (
+              <div className="space-y-3">
+                <h3 className="font-medium text-stone-700 text-sm">
+                  جزئیات بودجه دسته‌بندی‌ها
+                </h3>
+                {getMeaningfulBudgets().map((budget, index) => (
+                  <div key={index} className="border-t border-stone-100 pt-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        {budget.categoryIcon && (
+                          <span>{budget.categoryIcon}</span>
+                        )}
+                        <span className="font-medium text-stone-800">
+                          {budget.categoryName}
+                        </span>
+                      </div>
+                      <div className="text-sm text-stone-600">
+                        {(budget.spent / 10).toLocaleString('fa-IR')} /{' '}
+                        {(budget.budgetAmount / 10).toLocaleString('fa-IR')}
+                      </div>
                     </div>
-                    <div className="text-sm text-stone-600">
-                      {budget.spent.toLocaleString('fa-IR')} /{' '}
-                      {budget.budgetAmount.toLocaleString('fa-IR')}
-                    </div>
+                    {budget.spent === 0 && budget.budgetAmount > 0 ? (
+                      <div className="text-xs text-stone-400 italic">
+                        هنوز مصرفی ثبت نشده
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 h-2 bg-stone-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${
+                              budget.isOverBudget
+                                ? 'bg-red-500'
+                                : budget.percentage >= 90
+                                  ? 'bg-orange-500'
+                                  : budget.percentage >= 70
+                                    ? 'bg-yellow-500'
+                                    : 'bg-green-500'
+                            }`}
+                            style={{ width: `${Math.min(budget.percentage, 100)}%` }}
+                          />
+                        </div>
+                        <span
+                          className={`text-sm font-medium ${budget.isOverBudget ? 'text-red-600' : 'text-stone-600'}`}
+                        >
+                          {budget.percentage.toFixed(0)}%
+                        </span>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 h-2 bg-stone-100 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${
-                          budget.isOverBudget
-                            ? 'bg-red-500'
-                            : budget.percentage >= 90
-                              ? 'bg-orange-500'
-                              : budget.percentage >= 70
-                                ? 'bg-yellow-500'
-                                : 'bg-green-500'
-                        }`}
-                        style={{ width: `${Math.min(budget.percentage, 100)}%` }}
-                      />
-                    </div>
-                    <span
-                      className={`text-sm font-medium ${budget.isOverBudget ? 'text-red-600' : 'text-stone-600'}`}
-                    >
-                      {budget.percentage.toFixed(0)}%
-                    </span>
-                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-stone-400">
+                <div className="text-3xl mb-2">💭</div>
+                <div className="text-sm">
+                  بودجه تعیین شده ولی هنوز خرجی ثبت نشده
                 </div>
-              ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="bg-stone-50 rounded-2xl p-8 text-center border-2 border-dashed border-stone-200">
+            <div className="text-4xl mb-3">🎯</div>
+            <div className="text-stone-600 text-sm">
+              برای این ماه بودجه‌ای تعیین نشده
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Top Expenses */}
         {stats.topExpenses.length > 0 && (
@@ -322,68 +432,98 @@ export default function PeriodDetailReportPage() {
           </div>
         )}
 
-        {/* Recent Transactions */}
-        <div className="bg-white rounded-2xl p-6 shadow-lg">
-          <h2 className="text-lg font-bold text-stone-800 mb-4">
-            آخرین تراکنش‌ها
-          </h2>
-
-          {/* Recent Incomes */}
-          {stats.recentIncomes.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-green-700 mb-3">
-                درآمدها
-              </h3>
-              <div className="space-y-2">
-                {stats.recentIncomes.slice(0, 3).map((income) => (
-                  <div
-                    key={income.id}
-                    className="flex items-center justify-between p-3 bg-green-50 rounded-xl"
-                  >
-                    <div className="flex-1">
-                      <div className="font-medium text-stone-800">
-                        {income.title}
-                      </div>
-                      <div className="text-xs text-stone-600">
-                        {income.receivedByName}
-                      </div>
-                    </div>
-                    <div className="text-green-700 font-bold">
-                      +{income.amount.toLocaleString('fa-IR')}
-                    </div>
+        {/* Recent Transactions - Separated */}
+        {(stats.recentIncomes.length > 0 || stats.recentExpenses.length > 0) && (
+          <div className="space-y-4">
+            {/* Recent Incomes */}
+            {stats.recentIncomes.length > 0 && (
+              <div className="bg-white rounded-2xl p-6 shadow-lg">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-lg font-bold text-green-700">
+                      💰 درآمدهای اخیر
+                    </h2>
+                    <p className="text-xs text-stone-500 mt-1">
+                      {stats.recentIncomes.length > 5
+                        ? '۵ مورد آخر'
+                        : `${stats.recentIncomes.length} مورد`}
+                    </p>
                   </div>
-                ))}
+                </div>
+                <div className="space-y-2">
+                  {stats.recentIncomes.slice(0, 5).map((income) => (
+                    <div
+                      key={income.id}
+                      className="flex items-center justify-between p-3 bg-green-50 rounded-xl hover:bg-green-100 transition-colors"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-stone-800 truncate">
+                          {income.title}
+                        </div>
+                        <div className="text-xs text-stone-600 flex items-center gap-2">
+                          <span>{income.receivedByName}</span>
+                          {income.categoryName && (
+                            <>
+                              <span>•</span>
+                              <span>{income.categoryName}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-green-700 font-bold flex-shrink-0 mr-3">
+                        +{(income.amount / 10).toLocaleString('fa-IR')}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Recent Expenses */}
-          {stats.recentExpenses.length > 0 && (
-            <div>
-              <h3 className="text-sm font-medium text-red-700 mb-3">هزینه‌ها</h3>
-              <div className="space-y-2">
-                {stats.recentExpenses.slice(0, 3).map((expense) => (
-                  <div
-                    key={expense.id}
-                    className="flex items-center justify-between p-3 bg-red-50 rounded-xl"
-                  >
-                    <div className="flex-1">
-                      <div className="font-medium text-stone-800">
-                        {expense.title}
-                      </div>
-                      <div className="text-xs text-stone-600">
-                        {expense.paidByName}
-                      </div>
-                    </div>
-                    <div className="text-red-700 font-bold">
-                      -{expense.amount.toLocaleString('fa-IR')}
-                    </div>
+            {/* Recent Expenses */}
+            {stats.recentExpenses.length > 0 && (
+              <div className="bg-white rounded-2xl p-6 shadow-lg">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-lg font-bold text-red-700">
+                      💸 هزینه‌های اخیر
+                    </h2>
+                    <p className="text-xs text-stone-500 mt-1">
+                      {stats.recentExpenses.length > 5
+                        ? '۵ مورد آخر'
+                        : `${stats.recentExpenses.length} مورد`}
+                    </p>
                   </div>
-                ))}
+                </div>
+                <div className="space-y-2">
+                  {stats.recentExpenses.slice(0, 5).map((expense) => (
+                    <div
+                      key={expense.id}
+                      className="flex items-center justify-between p-3 bg-red-50 rounded-xl hover:bg-red-100 transition-colors"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-stone-800 truncate">
+                          {expense.title}
+                        </div>
+                        <div className="text-xs text-stone-600 flex items-center gap-2">
+                          <span>{expense.paidByName}</span>
+                          {expense.categoryName && (
+                            <>
+                              <span>•</span>
+                              <span>{expense.categoryName}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-red-700 font-bold flex-shrink-0 mr-3">
+                        −{(expense.amount / 10).toLocaleString('fa-IR')}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
