@@ -2,9 +2,34 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
 import { cookies } from 'next/headers'
 import { hashPassword, generateToken } from '@/lib/utils/auth'
+import { checkRateLimit, getClientIp } from '@/lib/utils/rate-limiter'
+import { logApiError } from '@/lib/utils/logger'
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting: 3 registrations per hour per IP
+    const clientIp = getClientIp(request)
+    const rateLimitResult = checkRateLimit(`register:${clientIp}`, {
+      maxRequests: 3,
+      windowMs: 60 * 60 * 1000, // 1 hour
+      blockDurationMs: 60 * 60 * 1000, // 1 hour block
+    })
+
+    if (!rateLimitResult.success) {
+      const blockedUntil = rateLimitResult.blockedUntil
+        ? new Date(rateLimitResult.blockedUntil).toLocaleTimeString('fa-IR')
+        : null
+
+      return NextResponse.json(
+        {
+          error: blockedUntil
+            ? `تعداد ثبت‌نام زیاد است. لطفاً تا ${blockedUntil} صبر کنید`
+            : 'تعداد درخواست‌ها زیاد است. لطفاً کمی صبر کنید',
+        },
+        { status: 429 }
+      )
+    }
+
     const body = await request.json()
     const { phone, password, name, avatar } = body
 
@@ -74,7 +99,7 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Error registering user:', error)
+    logApiError(error, { context: 'register', phone })
     return NextResponse.json(
       { error: 'خطا در ثبت‌نام' },
       { status: 500 }

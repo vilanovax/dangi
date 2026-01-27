@@ -3,6 +3,7 @@ import { createProject } from '@/lib/services/project.service'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/db/prisma'
 import { verifyToken } from '@/lib/utils/auth'
+import { logApiError } from '@/lib/utils/logger'
 
 // Get projects for logged-in user
 export async function GET() {
@@ -114,7 +115,7 @@ export async function GET() {
       user,
     })
   } catch (error) {
-    console.error('Error fetching projects:', error)
+    logApiError(error, { context: 'fetch projects' })
     return NextResponse.json(
       { error: 'خطا در دریافت پروژه‌ها' },
       { status: 500 }
@@ -178,7 +179,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ project })
   } catch (error) {
-    console.error('Error creating project:', error)
+    logApiError(error, { context: 'create project', projectName: name })
     return NextResponse.json(
       { error: 'خطا در ساخت پروژه' },
       { status: 500 }
