@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import type { FamilyDashboardStats } from '@/types/family'
+import { familyTheme } from '@/styles/family-theme'
 
 export default function PeriodDetailReportPage() {
   const params = useParams()
@@ -196,9 +197,12 @@ export default function PeriodDetailReportPage() {
   const monthName = monthNames[parseInt(month, 10) - 1]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-cyan-50">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-500 to-blue-600 text-white p-6 shadow-lg sticky top-0 z-10">
+    <div className="min-h-screen" style={{ backgroundColor: familyTheme.colors.background }}>
+      {/* Header با گرادیان آبی استاندارد */}
+      <div
+        className="text-white p-6 shadow-lg sticky top-0 z-10"
+        style={{ background: familyTheme.gradients.infoHeader }}
+      >
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-4">
             <button

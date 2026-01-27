@@ -1,6 +1,8 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { CircularProgress } from './CircularProgress'
+import { familyTheme } from '@/styles/family-theme'
 
 interface MonthlyOverviewCardProps {
   totalIncome: number
@@ -8,6 +10,7 @@ interface MonthlyOverviewCardProps {
   savingsRate: number
   currency: string
   periodKey: string
+  projectId: string
   onRefresh?: () => void
 }
 
@@ -17,8 +20,11 @@ export function MonthlyOverviewCard({
   savingsRate,
   currency,
   periodKey,
+  projectId,
   onRefresh,
 }: MonthlyOverviewCardProps) {
+  const router = useRouter()
+
   const percentage =
     totalIncome > 0 ? Math.min((totalExpenses / totalIncome) * 100, 100) : 0
 
@@ -41,13 +47,28 @@ export function MonthlyOverviewCard({
   const monthName = monthNames[parseInt(month, 10) - 1]
 
   return (
-    <div className="h-screen w-full bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100 flex flex-col items-center justify-center p-6 snap-start">
+    <div
+      className="h-screen w-full flex flex-col items-center justify-center p-6 snap-start"
+      style={{ backgroundColor: familyTheme.colors.background }}
+    >
       {/* Period header */}
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-stone-800 mb-1">
+        <h2
+          className="font-bold mb-1"
+          style={{
+            fontSize: familyTheme.typography.pageTitle.size,
+            fontWeight: familyTheme.typography.pageTitle.weight,
+            color: familyTheme.colors.textPrimary
+          }}
+        >
           {monthName} {year}
         </h2>
-        <p className="text-sm text-stone-600">وضعیت مالی خانواده</p>
+        <p
+          className="text-stone-600"
+          style={{ fontSize: familyTheme.typography.small.size }}
+        >
+          وضعیت مالی خانواده
+        </p>
       </div>
 
       {/* Circular progress */}
@@ -65,61 +86,160 @@ export function MonthlyOverviewCard({
       {/* Stats cards */}
       <div className="w-full max-w-md space-y-3">
         {/* Income */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm">
+        <button
+          onClick={() => router.push(`/project/${projectId}/family/transactions?filter=income`)}
+          className="w-full rounded-2xl p-4 hover:shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
+          style={{
+            backgroundColor: familyTheme.colors.card,
+            boxShadow: familyTheme.card.shadow
+          }}
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: familyTheme.colors.successSoft }}
+              >
                 <span className="text-lg">💰</span>
               </div>
-              <div>
-                <div className="text-xs text-stone-600">درآمد</div>
-                <div className="text-lg font-bold text-green-600">
+              <div className="text-right">
+                <div
+                  style={{
+                    fontSize: familyTheme.typography.small.size,
+                    color: familyTheme.colors.textSecondary
+                  }}
+                >
+                  درآمد
+                </div>
+                <div
+                  className="font-bold"
+                  style={{
+                    fontSize: familyTheme.typography.cardNumber.size,
+                    fontWeight: familyTheme.typography.cardNumber.weight,
+                    color: familyTheme.colors.success
+                  }}
+                >
                   {totalIncome.toLocaleString('fa-IR')}
                 </div>
               </div>
             </div>
-            <div className="text-xs text-stone-500">{currency}</div>
+            <div className="flex items-center gap-2">
+              <div
+                style={{
+                  fontSize: familyTheme.typography.small.size,
+                  color: familyTheme.colors.textTertiary
+                }}
+              >
+                {currency}
+              </div>
+              <span className="text-stone-400">←</span>
+            </div>
           </div>
-        </div>
+        </button>
 
         {/* Expenses */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm">
+        <button
+          onClick={() => router.push(`/project/${projectId}/family/transactions?filter=expense`)}
+          className="w-full rounded-2xl p-4 hover:shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
+          style={{
+            backgroundColor: familyTheme.colors.card,
+            boxShadow: familyTheme.card.shadow
+          }}
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                <span className="text-lg">📊</span>
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: familyTheme.colors.dangerSoft }}
+              >
+                <span className="text-lg">💸</span>
               </div>
-              <div>
-                <div className="text-xs text-stone-600">هزینه</div>
-                <div className="text-lg font-bold text-red-600">
+              <div className="text-right">
+                <div
+                  style={{
+                    fontSize: familyTheme.typography.small.size,
+                    color: familyTheme.colors.textSecondary
+                  }}
+                >
+                  هزینه
+                </div>
+                <div
+                  className="font-bold"
+                  style={{
+                    fontSize: familyTheme.typography.cardNumber.size,
+                    fontWeight: familyTheme.typography.cardNumber.weight,
+                    color: familyTheme.colors.danger
+                  }}
+                >
                   {totalExpenses.toLocaleString('fa-IR')}
                 </div>
               </div>
             </div>
-            <div className="text-xs text-stone-500">{currency}</div>
+            <div className="flex items-center gap-2">
+              <div
+                style={{
+                  fontSize: familyTheme.typography.small.size,
+                  color: familyTheme.colors.textTertiary
+                }}
+              >
+                {currency}
+              </div>
+              <span className="text-stone-400">←</span>
+            </div>
           </div>
-        </div>
+        </button>
 
         {/* Savings rate */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm">
+        <button
+          onClick={() => router.push(`/project/${projectId}/family/reports`)}
+          className="w-full rounded-2xl p-4 hover:shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
+          style={{
+            backgroundColor: familyTheme.colors.card,
+            boxShadow: familyTheme.card.shadow
+          }}
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: familyTheme.colors.infoSoft }}
+              >
                 <span className="text-lg">📈</span>
               </div>
-              <div>
-                <div className="text-xs text-stone-600">نرخ پس‌انداز</div>
-                <div className="text-lg font-bold text-amber-600">
+              <div className="text-right">
+                <div
+                  style={{
+                    fontSize: familyTheme.typography.small.size,
+                    color: familyTheme.colors.textSecondary
+                  }}
+                >
+                  نرخ پس‌انداز
+                </div>
+                <div
+                  className="font-bold"
+                  style={{
+                    fontSize: familyTheme.typography.cardNumber.size,
+                    fontWeight: familyTheme.typography.cardNumber.weight,
+                    color: familyTheme.colors.info
+                  }}
+                >
                   {savingsRate.toFixed(1)}%
                 </div>
               </div>
             </div>
+            <span className="text-stone-400">←</span>
           </div>
-        </div>
+        </button>
       </div>
 
       {/* Pull to refresh hint */}
-      <div className="mt-8 text-xs text-stone-400 text-center">
+      <div
+        className="mt-8 text-center"
+        style={{
+          fontSize: familyTheme.typography.small.size,
+          color: familyTheme.colors.textTertiary
+        }}
+      >
         برای به‌روزرسانی به پایین بکشید
       </div>
     </div>

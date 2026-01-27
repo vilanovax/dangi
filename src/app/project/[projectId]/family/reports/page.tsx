@@ -8,6 +8,7 @@ import {
   getCurrentPersianMonth,
 } from '@/lib/utils/persian-date'
 import { BottomSheet } from '@/components/ui/BottomSheet'
+import { familyTheme } from '@/styles/family-theme'
 
 interface MonthReport {
   periodKey: string
@@ -107,9 +108,12 @@ export default function ReportsOverviewPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-cyan-50">
-      {/* Header - Compact با انتخاب ماه */}
-      <div className="bg-gradient-to-r from-indigo-500 to-blue-600 text-white p-5 shadow-lg sticky top-0 z-10">
+    <div className="min-h-screen" style={{ backgroundColor: familyTheme.colors.background }}>
+      {/* Header - آبی استاندارد برای گزارش */}
+      <div
+        className="text-white p-5 shadow-lg sticky top-0 z-10"
+        style={{ background: familyTheme.gradients.infoHeader }}
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 flex-1">
             <button
@@ -119,8 +123,16 @@ export default function ReportsOverviewPage() {
               ←
             </button>
             <div>
-              <h1 className="text-xl font-bold">گزارش‌های مالی</h1>
-              <p className="text-white/80 text-xs mt-0.5">
+              <h1
+                className="font-bold"
+                style={{ fontSize: familyTheme.typography.pageTitle.size }}
+              >
+                گزارش‌های مالی
+              </h1>
+              <p
+                className="text-white/80 mt-0.5"
+                style={{ fontSize: familyTheme.typography.small.size }}
+              >
                 عملکرد مالی خانواده
               </p>
             </div>
@@ -131,10 +143,13 @@ export default function ReportsOverviewPage() {
             onClick={() => setShowMonthPicker(true)}
             className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm px-4 py-2 rounded-xl transition-colors"
           >
-            <span className="text-sm font-bold">
+            <span
+              className="font-bold"
+              style={{ fontSize: familyTheme.typography.body.size }}
+            >
               {monthNames[selectedMonth - 1]} {selectedYear}
             </span>
-            <span className="text-xs">▾</span>
+            <span style={{ fontSize: familyTheme.typography.small.size }}>▾</span>
           </button>
         </div>
       </div>
