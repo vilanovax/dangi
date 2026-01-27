@@ -53,6 +53,21 @@ export const budgetService = {
   },
 
   /**
+   * Get a single budget by ID
+   */
+  async getById(projectId: string, budgetId: string) {
+    return await prisma.budget.findFirst({
+      where: {
+        id: budgetId,
+        projectId,
+      },
+      include: {
+        category: true,
+      },
+    })
+  },
+
+  /**
    * Get budget for a specific category and period
    */
   async getByCategoryAndPeriod(

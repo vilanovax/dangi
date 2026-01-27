@@ -94,7 +94,7 @@ export type CreateBudgetInput = {
 }
 
 export type UpdateBudgetInput = {
-  amount: number
+  amount?: number
 }
 
 export type BudgetPeriod = {
