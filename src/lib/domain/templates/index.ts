@@ -6,6 +6,7 @@ import { travelTemplate } from './travel'
 import { buildingTemplate } from './building'
 import { gatheringTemplate } from './gathering'
 import { personalTemplate } from './personal'
+import { familyTemplate } from './family'
 
 // Registry of all templates
 export const templates: Record<string, TemplateDefinition> = {
@@ -13,6 +14,7 @@ export const templates: Record<string, TemplateDefinition> = {
   building: buildingTemplate,
   gathering: gatheringTemplate,
   personal: personalTemplate,
+  family: familyTemplate,
 }
 
 export function getTemplate(templateId: string): TemplateDefinition {

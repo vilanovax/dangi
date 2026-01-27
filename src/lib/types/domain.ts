@@ -56,6 +56,7 @@ export interface TemplateDefinition {
   name: string
   nameFa: string
   defaultCategories: CategoryDefinition[]
+  defaultIncomeCategories?: CategoryDefinition[] // برای template family (اختیاری)
   defaultSplitType: SplitType
   icon: string
   labels: TemplateLabels

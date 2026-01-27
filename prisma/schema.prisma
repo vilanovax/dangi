@@ -19,58 +19,66 @@ model User {
 }
 
 model Project {
-  id            String         @id @default(cuid())
-  name          String
-  description   String?
-  template      String         @default("travel")
-  splitType     String         @default("EQUAL")
-  trackingOnly  Boolean        @default(false) // Tracking Mode (true) vs Split Mode (false) - برای template personal
-  currency      String         @default("IRR")
-  chargeYear    Int?           // سال شارژ (شمسی) - برای template ساختمان
-  shareCode     String         @unique @default(cuid())
-  isArchived    Boolean        @default(false) // آرشیو شده / بسته شده
-  archivedAt    DateTime?      // تاریخ آرشیو
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  categories    Category[]
-  chargeRules   ChargeRule[]
-  expenses      Expense[]
-  participants  Participant[]
-  settlements   Settlement[]
-  shoppingItems ShoppingItem[] // چک‌لیست خرید (برای template gathering)
+  id                    String                  @id @default(cuid())
+  name                  String
+  description           String?
+  template              String                  @default("travel")
+  splitType             String                  @default("EQUAL")
+  trackingOnly          Boolean                 @default(false) // Tracking Mode (true) vs Split Mode (false) - برای template personal
+  currency              String                  @default("IRR")
+  chargeYear            Int?                    // سال شارژ (شمسی) - برای template ساختمان
+  shareCode             String                  @unique @default(cuid())
+  isArchived            Boolean                 @default(false) // آرشیو شده / بسته شده
+  archivedAt            DateTime?               // تاریخ آرشیو
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  categories            Category[]
+  chargeRules           ChargeRule[]
+  expenses              Expense[]
+  participants          Participant[]
+  settlements           Settlement[]
+  shoppingItems         ShoppingItem[]          // چک‌لیست خرید (برای template gathering)
+  incomes               Income[]                // درآمدها (برای template family)
+  incomeCategories      IncomeCategory[]        // دسته‌بندی درآمد (برای template family)
+  budgets               Budget[]                // بودجه‌های ماهانه (برای template family)
+  recurringTransactions RecurringTransaction[] // تراکنش‌های تکراری (برای template family)
 }
 
 model Participant {
-  id                 String         @id @default(cuid())
-  name               String
-  role               String         @default("MEMBER")
-  weight             Float          @default(1)
-  percentage         Float?
-  avatar             String?        // آواتار (JSON) - null یعنی auto
-  sessionToken       String         @unique @default(cuid())
-  projectId          String
-  userId             String?        // اتصال به کاربر (اختیاری - برای مهمان‌ها null)
-  createdAt          DateTime       @default(now())
-  expensesPaid       Expense[]      @relation("PaidBy")
-  expenseShares      ExpenseShare[]
-  settlementsFrom    Settlement[]   @relation("SettlementFrom")
-  settlementsTo      Settlement[]   @relation("SettlementTo")
-  shoppingItemsAdded ShoppingItem[] // آیتم‌های لیست خریدی که اضافه کرده
-  project            Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user               User?          @relation(fields: [userId], references: [id])
+  id                    String                  @id @default(cuid())
+  name                  String
+  role                  String                  @default("MEMBER")
+  weight                Float                   @default(1)
+  percentage            Float?
+  avatar                String?                 // آواتار (JSON) - null یعنی auto
+  sessionToken          String                  @unique @default(cuid())
+  projectId             String
+  userId                String?                 // اتصال به کاربر (اختیاری - برای مهمان‌ها null)
+  createdAt             DateTime                @default(now())
+  expensesPaid          Expense[]               @relation("PaidBy")
+  expenseShares         ExpenseShare[]
+  settlementsFrom       Settlement[]            @relation("SettlementFrom")
+  settlementsTo         Settlement[]            @relation("SettlementTo")
+  shoppingItemsAdded    ShoppingItem[]          // آیتم‌های لیست خریدی که اضافه کرده
+  incomesReceived       Income[]                @relation("IncomeReceivedBy") // درآمدهای دریافت شده (برای template family)
+  recurringTransactions RecurringTransaction[]  // تراکنش‌های تکراری این شخص
+  project               Project                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user                  User?                   @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([projectId])
 }
 
 model Category {
-  id        String    @id @default(cuid())
-  name      String
-  icon      String?
-  color     String?
-  projectId String
-  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  expenses  Expense[]
+  id                    String                  @id @default(cuid())
+  name                  String
+  icon                  String?
+  color                 String?
+  projectId             String
+  project               Project                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  expenses              Expense[]
+  budgets               Budget[]                // بودجه‌های این دسته (برای template family)
+  recurringTransactions RecurringTransaction[]  // تراکنش‌های تکراری این دسته
 
   @@index([projectId])
 }
@@ -165,4 +173,89 @@ model ShoppingItem {
 
   @@index([projectId])
   @@index([projectId, createdAt])
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 👨‍👩‍👧‍👦 FAMILY FINANCE TEMPLATE MODELS
+// ═══════════════════════════════════════════════════════════════
+
+// درآمد - ثبت درآمدهای ماهانه خانواده (فقط برای template family)
+model Income {
+  id          String          @id @default(cuid())
+  title       String          // عنوان درآمد
+  amount      Float           // مبلغ
+  description String?         // توضیحات
+  source      String?         // منبع درآمد: "حقوق", "کسب‌وکار", "سایر"
+  incomeDate  DateTime        @default(now()) // تاریخ دریافت
+  categoryId  String?         // دسته‌بندی درآمد
+  receivedById String         // کی دریافت کرده
+  isRecurring Boolean         @default(false) // آیا تکراری است؟
+  recurringId String?         // لینک به RecurringTransaction
+  projectId   String
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  project     Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  receivedBy  Participant     @relation("IncomeReceivedBy", fields: [receivedById], references: [id])
+  category    IncomeCategory? @relation(fields: [categoryId], references: [id])
+
+  @@index([projectId, incomeDate(sort: Desc)])
+  @@index([receivedById])
+  @@index([categoryId])
+}
+
+// دسته‌بندی درآمد - دسته‌بندی منابع درآمد (فقط برای template family)
+model IncomeCategory {
+  id        String   @id @default(cuid())
+  name      String   // نام دسته: "حقوق", "کسب‌وکار", "سرمایه‌گذاری"
+  icon      String?  // آیکون emoji
+  color     String?  // رنگ hex
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  incomes   Income[] // درآمدهای این دسته
+
+  @@index([projectId])
+}
+
+// بودجه ماهانه - تعیین سقف بودجه برای هر دسته خرج (فقط برای template family)
+model Budget {
+  id         String   @id @default(cuid())
+  categoryId String   // برای کدام دسته خرج
+  amount     Float    // سقف بودجه (تومان)
+  periodKey  String   // دوره زمانی: "1403-10" (سال-ماه شمسی)
+  projectId  String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, categoryId, periodKey]) // یک دسته فقط یک بودجه در هر ماه
+  @@index([projectId, periodKey])
+}
+
+// تراکنش تکراری - درآمد یا خرج‌های ثابت ماهانه (فقط برای template family)
+model RecurringTransaction {
+  id            String      @id @default(cuid())
+  type          String      // نوع: "INCOME" یا "EXPENSE"
+  title         String      // عنوان: "حقوق", "اجاره خانه", "قبض برق"
+  amount        Float       // مبلغ ثابت
+  frequency     String      // تکرار: "DAILY", "WEEKLY", "MONTHLY", "YEARLY"
+  startDate     DateTime    // تاریخ شروع
+  endDate       DateTime?   // تاریخ پایان (اختیاری - اگر null باشد، نامحدود)
+  categoryId    String?     // دسته‌بندی (برای expense یا income)
+  participantId String      // کی پرداخت/دریافت می‌کند
+  isActive      Boolean     @default(true) // فعال یا غیرفعال
+  lastProcessed DateTime?   // آخرین باری که process شده
+  projectId     String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  project       Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  category      Category?   @relation(fields: [categoryId], references: [id])
+  participant   Participant @relation(fields: [participantId], references: [id])
+
+  @@index([projectId])
+  @@index([isActive])
+  @@index([participantId])
 }
