@@ -9,7 +9,31 @@ import { formatMoney } from '@/lib/utils/money'
 // ─────────────────────────────────────────────────────────────
 
 export const HEADER_TOKENS = {
-  // Project variant gradients (blue family)
+  // Travel variant gradients (sky/blue family - adventure & journey)
+  travel: {
+    gradient: 'from-sky-400 via-blue-500 to-blue-600',
+    gradientSimple: 'from-sky-500 to-blue-600',
+    textPrimary: 'text-white',
+    textSecondary: 'text-sky-100',
+    textMuted: 'text-sky-200/70',
+    cardBg: 'bg-white/15',
+    cardBgHover: 'hover:bg-white/20',
+    border: 'border-white/20',
+  },
+
+  // Personal variant gradients (emerald/teal family - personal finance & growth)
+  personal: {
+    gradient: 'from-emerald-500 via-teal-500 to-cyan-600',
+    gradientSimple: 'from-emerald-500 to-teal-600',
+    textPrimary: 'text-white',
+    textSecondary: 'text-emerald-100',
+    textMuted: 'text-emerald-200/70',
+    cardBg: 'bg-white/15',
+    cardBgHover: 'hover:bg-white/20',
+    border: 'border-white/20',
+  },
+
+  // Project variant gradients (blue family) - legacy, can be removed
   project: {
     gradient: 'from-sky-400 via-blue-500 to-indigo-500',
     gradientSimple: 'from-blue-500 to-blue-600',
@@ -21,7 +45,7 @@ export const HEADER_TOKENS = {
     border: 'border-white/20',
   },
 
-  // Hangout variant gradients (purple/pink family - casual & friendly)
+  // Hangout/Gathering variant gradients (purple/pink family - casual & friendly)
   hangout: {
     gradient: 'from-purple-500 via-pink-500 to-rose-500',
     gradientSimple: 'from-purple-500 to-pink-500',
@@ -70,7 +94,7 @@ export const HEADER_TOKENS = {
 // Types
 // ─────────────────────────────────────────────────────────────
 
-export type HeaderVariant = 'project' | 'hangout' | 'action' | 'form'
+export type HeaderVariant = 'travel' | 'personal' | 'project' | 'hangout' | 'action' | 'form'
 export type ActionTone = 'default' | 'success' | 'danger' | 'warning'
 
 export interface ProjectMeta {
@@ -170,11 +194,13 @@ export function UnifiedHeader({
   onBack,
   className,
 }: UnifiedHeaderProps) {
+  const isTravel = variant === 'travel'
+  const isPersonal = variant === 'personal'
   const isProject = variant === 'project'
   const isHangout = variant === 'hangout'
   const isAction = variant === 'action'
   const isForm = variant === 'form'
-  const isGradientVariant = isProject || isHangout
+  const isGradientVariant = isTravel || isPersonal || isProject || isHangout
 
   // ── Container styles ──────────────────────────────────────
   const containerStyles = cn('relative', isGradientVariant && 'overflow-hidden', className)
@@ -225,19 +251,31 @@ export function UnifiedHeader({
     if (isHangout) {
       return 'text-sm text-purple-100'
     }
-    return 'text-sm text-blue-100' // project
+    if (isPersonal) {
+      return 'text-sm text-emerald-100'
+    }
+    if (isTravel) {
+      return 'text-sm text-sky-100'
+    }
+    return 'text-sm text-blue-100' // project (legacy)
   }
 
   // ── Render project meta badge ─────────────────────────────
   const renderProjectMeta = () => {
     if (!projectMeta || !isGradientVariant) return null
 
+    const getMemberLabel = () => {
+      if (isHangout) return 'نفر'
+      if (isPersonal) return 'عضو'
+      return 'هم‌سفر' // travel, project
+    }
+
     return (
       <div className="flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-full px-3 py-1.5">
         {projectMeta.membersCount && (
           <>
             <span className="text-base">👥</span>
-            <span className="text-sm font-medium">{projectMeta.membersCount} {isHangout ? 'نفر' : 'هم‌سفر'}</span>
+            <span className="text-sm font-medium">{projectMeta.membersCount} {getMemberLabel()}</span>
           </>
         )}
       </div>
@@ -247,6 +285,24 @@ export function UnifiedHeader({
   return (
     <div className={containerStyles}>
       {/* Decorative elements - for gradient variants */}
+      {isTravel && (
+        <>
+          <div className={cn('absolute inset-0 bg-gradient-to-br', HEADER_TOKENS.travel.gradient)} />
+          <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/4 blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-36 h-36 bg-sky-300/20 rounded-full translate-y-1/2 -translate-x-1/4 blur-2xl" />
+          <div className="absolute top-1/2 right-1/4 w-24 h-24 bg-blue-300/15 rounded-full blur-xl" />
+        </>
+      )}
+
+      {isPersonal && (
+        <>
+          <div className={cn('absolute inset-0 bg-gradient-to-br', HEADER_TOKENS.personal.gradient)} />
+          <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/4 blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-36 h-36 bg-emerald-300/20 rounded-full translate-y-1/2 -translate-x-1/4 blur-2xl" />
+          <div className="absolute top-1/2 right-1/4 w-24 h-24 bg-teal-300/15 rounded-full blur-xl" />
+        </>
+      )}
+
       {isProject && (
         <>
           <div className={cn('absolute inset-0 bg-gradient-to-br', HEADER_TOKENS.project.gradient)} />

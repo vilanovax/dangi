@@ -192,3 +192,45 @@ export function getPersianPeriodBounds(periodKey: string): {
 
   return { startDate, endDate }
 }
+
+/**
+ * Convert Date to Persian date string for display
+ * @param date - JavaScript Date object
+ * @param format - Format string (default: "DD MMMM YYYY")
+ * @returns Persian date string
+ */
+export function formatPersianDate(
+  date: Date | string,
+  format: string = 'DD MMMM YYYY'
+): string {
+  try {
+    // Lazy load to avoid SSR issues
+    const DateObject = require('react-date-object').default
+    const persian = require('react-date-object/calendars/persian').default
+    const persian_fa = require('react-date-object/locales/persian_fa').default
+
+    const dateObj = new DateObject(date)
+    dateObj.convert(persian, persian_fa)
+    return dateObj.format(format)
+  } catch (error) {
+    console.error('Error formatting Persian date:', error)
+    return new Date(date).toLocaleDateString('fa-IR')
+  }
+}
+
+/**
+ * Convert Persian date string to JavaScript Date
+ * @param persianDate - Persian date string or DateObject
+ * @returns JavaScript Date object
+ */
+export function parsePersianDate(persianDate: any): Date {
+  try {
+    if (persianDate?.toDate) {
+      return persianDate.toDate()
+    }
+    return new Date(persianDate)
+  } catch (error) {
+    console.error('Error parsing Persian date:', error)
+    return new Date()
+  }
+}

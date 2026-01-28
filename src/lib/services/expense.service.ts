@@ -55,11 +55,22 @@ export async function createExpense(projectId: string, input: ExpenseInput) {
   // Calculate shares based on split type
   // If customShares provided, use MANUAL mode; otherwise use project's default
   const effectiveSplitType: SplitType = customShares ? 'MANUAL' : (project.splitType as SplitType)
+
+  // For MANUAL split type without customShares, auto-generate equal shares
+  // This is common in family finance where we just track participation, not complex splits
+  const effectiveCustomShares = customShares ||
+    (effectiveSplitType === 'MANUAL'
+      ? participantsForSplit.map(p => ({
+          participantId: p.id,
+          amount: amount / participantsForSplit.length
+        }))
+      : undefined)
+
   const shares = calculateSplit({
     amount,
     participants: participantsForSplit,
     splitType: effectiveSplitType,
-    customShares,
+    customShares: effectiveCustomShares,
   })
 
   // Create expense with shares in a transaction
@@ -217,11 +228,22 @@ export async function updateExpense(
       throw new Error('At least one participant must be included in the split')
     }
 
+    const effectiveSplitType = expense.project.splitType as SplitType
+
+    // For MANUAL split type without customShares, auto-generate equal shares
+    const effectiveCustomShares = input.customShares ||
+      (effectiveSplitType === 'MANUAL'
+        ? participantsForSplit.map(p => ({
+            participantId: p.id,
+            amount: newAmount / participantsForSplit.length
+          }))
+        : undefined)
+
     const shares = calculateSplit({
       amount: newAmount,
       participants: participantsForSplit,
-      splitType: expense.project.splitType as SplitType,
-      customShares: input.customShares,
+      splitType: effectiveSplitType,
+      customShares: effectiveCustomShares,
     })
 
     // Delete old shares and create new ones

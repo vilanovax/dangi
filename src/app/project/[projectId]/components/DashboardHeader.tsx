@@ -13,12 +13,12 @@ interface DashboardHeaderProps {
 }
 
 /**
- * Travel dashboard header - uses UnifiedHeader with variant="project"
+ * Travel dashboard header - uses UnifiedHeader with variant="travel"
  *
  * UX Intent:
  * - Project name as hero, not total amount
  * - Total expenses shown contextually with helper text
- * - Soft gradients and rounded shapes for travel vibe
+ * - Sky blue gradients for travel/journey vibe
  * - Tappable total card links to summary
  */
 export function DashboardHeader({
@@ -32,7 +32,7 @@ export function DashboardHeader({
 
   return (
     <UnifiedHeader
-      variant="project"
+      variant="travel"
       title={projectName}
       projectMeta={{ membersCount: participantCount }}
       showBack
