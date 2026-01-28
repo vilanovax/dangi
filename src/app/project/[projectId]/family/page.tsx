@@ -157,7 +157,18 @@ export default async function FamilyDashboardPage({ params }: PageProps) {
           background: 'linear-gradient(180deg, #FF8A00 0%, #FFA94D 100%)'
         }}
       >
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
+          {/* دکمه بازگشت به صفحه اصلی */}
+          <Link
+            href="/"
+            className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors flex-shrink-0"
+            title="بازگشت به صفحه اصلی"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+            </svg>
+          </Link>
+
           <div className="flex-1">
             <div className="flex items-center gap-3">
               <h1 className="font-bold" style={{ fontSize: '20px' }}>خانواده خرج</h1>
@@ -169,9 +180,12 @@ export default async function FamilyDashboardPage({ params }: PageProps) {
               خلاصه مالی این ماه 📊
             </p>
           </div>
+
+          {/* دکمه تنظیمات */}
           <Link
             href={`/project/${projectId}/family/settings`}
             className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors flex-shrink-0"
+            title="تنظیمات"
           >
             <span className="text-base">⚙️</span>
           </Link>
