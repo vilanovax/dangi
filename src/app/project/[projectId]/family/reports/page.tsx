@@ -69,11 +69,11 @@ export default function ReportsOverviewPage() {
           const data = await res.json()
           setReport({
             periodKey,
-            totalIncome: data.stats.totalIncome,
-            totalExpenses: data.stats.totalExpenses,
-            netSavings: data.stats.netSavings,
-            savingsRate: data.stats.savingsRate,
-            topExpenses: data.stats.topExpenses || [],
+            totalIncome: data.totalIncome,
+            totalExpenses: data.totalExpenses,
+            netSavings: data.netSavings,
+            savingsRate: data.savingsRate,
+            topExpenses: data.topExpenses || [],
           })
         }
       } catch (err) {

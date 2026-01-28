@@ -27,7 +27,7 @@ export default function PeriodDetailReportPage() {
         if (!res.ok) throw new Error('خطا در دریافت گزارش')
 
         const data = await res.json()
-        setStats(data.stats)
+        setStats(data)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'خطا در بارگذاری')
       } finally {
