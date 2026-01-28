@@ -2,6 +2,7 @@
 
 import { BudgetProgressBar } from './BudgetProgressBar'
 import type { CategoryBudgetStatus } from '@/types/family'
+import { familyTheme } from '@/styles/family-theme'
 
 interface BudgetTrackerCardProps {
   budgets: CategoryBudgetStatus[]
@@ -21,16 +22,31 @@ export function BudgetTrackerCard({
   const overBudgetCount = budgets.filter((b) => b.isOverBudget).length
 
   return (
-    <div className="h-screen w-full bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 flex flex-col p-6 snap-start overflow-y-auto">
+    <div
+      className="h-screen w-full flex flex-col p-6 snap-start overflow-y-auto"
+      style={{ backgroundColor: familyTheme.colors.background }}
+    >
       {/* Header */}
       <div className="text-center mb-6 pt-6">
-        <h2 className="text-3xl font-bold text-stone-800 mb-2">
+        <h2
+          className="font-bold mb-2"
+          style={{
+            fontSize: '28px',
+            fontWeight: familyTheme.typography.pageTitle.weight,
+            color: familyTheme.colors.textPrimary
+          }}
+        >
           پیگیری بودجه
         </h2>
-        <p className="text-sm text-stone-600">
+        <p
+          style={{
+            fontSize: familyTheme.typography.body.size,
+            color: familyTheme.colors.textSecondary
+          }}
+        >
           {budgets.length} دسته‌بندی
           {overBudgetCount > 0 && (
-            <span className="text-red-600 mr-1">
+            <span style={{ color: familyTheme.colors.danger, marginRight: '4px' }}>
               · {overBudgetCount} بیش از حد
             </span>
           )}
@@ -38,31 +54,79 @@ export function BudgetTrackerCard({
       </div>
 
       {/* Overall stats */}
-      <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-6 shadow-lg mb-6">
+      <div
+        className="rounded-3xl p-6 mb-6"
+        style={{
+          backgroundColor: familyTheme.colors.card,
+          boxShadow: familyTheme.card.shadow
+        }}
+      >
         <div className="flex items-center justify-between mb-4">
           <div>
-            <div className="text-xs text-stone-600 mb-1">کل بودجه</div>
-            <div className="text-2xl font-bold text-stone-800">
+            <div
+              className="mb-1"
+              style={{
+                fontSize: familyTheme.typography.small.size,
+                color: familyTheme.colors.textSecondary
+              }}
+            >
+              کل بودجه
+            </div>
+            <div
+              className="font-bold"
+              style={{
+                fontSize: '24px',
+                fontWeight: familyTheme.typography.cardNumber.weight,
+                color: familyTheme.colors.textPrimary
+              }}
+            >
               {totalBudget.toLocaleString('fa-IR')}
             </div>
           </div>
           <div className="text-left">
-            <div className="text-xs text-stone-600 mb-1">مصرف شده</div>
-            <div className="text-2xl font-bold text-amber-600">
+            <div
+              className="mb-1"
+              style={{
+                fontSize: familyTheme.typography.small.size,
+                color: familyTheme.colors.textSecondary
+              }}
+            >
+              مصرف شده
+            </div>
+            <div
+              className="font-bold"
+              style={{
+                fontSize: '24px',
+                fontWeight: familyTheme.typography.cardNumber.weight,
+                color: familyTheme.colors.primary
+              }}
+            >
               {totalSpent.toLocaleString('fa-IR')}
             </div>
           </div>
         </div>
 
         {/* Overall progress bar */}
-        <div className="relative h-3 bg-stone-100 rounded-full overflow-hidden">
+        <div
+          className="relative h-3 rounded-full overflow-hidden"
+          style={{ backgroundColor: familyTheme.colors.divider }}
+        >
           <div
-            className="absolute top-0 right-0 h-full rounded-full transition-all duration-500 bg-gradient-to-l from-amber-500 to-orange-500"
-            style={{ width: `${Math.min(budgetUtilization, 100)}%` }}
+            className="absolute top-0 right-0 h-full rounded-full transition-all duration-500"
+            style={{
+              width: `${Math.min(budgetUtilization, 100)}%`,
+              backgroundColor: familyTheme.colors.primary
+            }}
           />
         </div>
 
-        <div className="text-center mt-2 text-sm font-medium text-stone-700">
+        <div
+          className="text-center mt-2 font-medium"
+          style={{
+            fontSize: familyTheme.typography.body.size,
+            color: familyTheme.colors.textPrimary
+          }}
+        >
           {budgetUtilization.toFixed(0)}% استفاده شده
         </div>
       </div>
@@ -70,17 +134,42 @@ export function BudgetTrackerCard({
       {/* Budget list */}
       <div className="flex-1 overflow-y-auto">
         {budgets.length === 0 ? (
-          <div className="bg-white/70 rounded-2xl p-8 text-center">
+          <div
+            className="rounded-2xl p-8 text-center"
+            style={{
+              backgroundColor: familyTheme.colors.card,
+              boxShadow: familyTheme.card.shadow
+            }}
+          >
             <span className="text-5xl mb-4 block">🎯</span>
-            <p className="text-stone-600 mb-4">
+            <p
+              className="mb-4"
+              style={{
+                fontSize: familyTheme.typography.body.size,
+                color: familyTheme.colors.textSecondary
+              }}
+            >
               هنوز بودجه‌ای تنظیم نشده است
             </p>
-            <button className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2 rounded-full text-sm font-medium transition-colors">
+            <button
+              className="text-white px-6 py-2 rounded-full font-medium transition-colors hover:opacity-90"
+              style={{
+                fontSize: familyTheme.typography.body.size,
+                backgroundColor: familyTheme.colors.primary
+              }}
+            >
               تنظیم بودجه
             </button>
           </div>
         ) : (
-          <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-6 shadow-lg divide-y divide-stone-100">
+          <div
+            className="rounded-3xl p-6 divide-y"
+            style={{
+              backgroundColor: familyTheme.colors.card,
+              boxShadow: familyTheme.card.shadow,
+              borderColor: familyTheme.colors.divider
+            }}
+          >
             {budgets.map((budget) => (
               <BudgetProgressBar
                 key={budget.categoryId}

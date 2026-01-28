@@ -1,5 +1,7 @@
 'use client'
 
+import { familyTheme } from '@/styles/family-theme'
+
 // Simple relative time formatter
 function getRelativeTime(date: Date): string {
   const now = new Date()
@@ -80,13 +82,28 @@ export function RecentActivityCard({
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
   return (
-    <div className="h-screen w-full bg-gradient-to-br from-orange-50 via-yellow-50 to-amber-50 flex flex-col p-6 snap-start overflow-y-auto">
+    <div
+      className="h-screen w-full flex flex-col p-6 snap-start overflow-y-auto"
+      style={{ backgroundColor: familyTheme.colors.background }}
+    >
       {/* Header */}
       <div className="text-center mb-6 pt-6">
-        <h2 className="text-3xl font-bold text-stone-800 mb-2">
+        <h2
+          className="font-bold mb-2"
+          style={{
+            fontSize: '28px',
+            fontWeight: familyTheme.typography.pageTitle.weight,
+            color: familyTheme.colors.textPrimary
+          }}
+        >
           فعالیت اخیر
         </h2>
-        <p className="text-sm text-stone-600">
+        <p
+          style={{
+            fontSize: familyTheme.typography.body.size,
+            color: familyTheme.colors.textSecondary
+          }}
+        >
           {allTransactions.length} تراکنش اخیر
         </p>
       </div>
@@ -94,29 +111,47 @@ export function RecentActivityCard({
       {/* Transactions list */}
       <div className="flex-1 overflow-y-auto space-y-3">
         {allTransactions.length === 0 ? (
-          <div className="bg-white/70 rounded-2xl p-8 text-center">
+          <div
+            className="rounded-2xl p-8 text-center"
+            style={{
+              backgroundColor: familyTheme.colors.card,
+              boxShadow: familyTheme.card.shadow
+            }}
+          >
             <span className="text-5xl mb-4 block">📋</span>
-            <p className="text-stone-600">هنوز تراکنشی ثبت نشده است</p>
+            <p
+              style={{
+                fontSize: familyTheme.typography.body.size,
+                color: familyTheme.colors.textSecondary
+              }}
+            >
+              هنوز تراکنشی ثبت نشده است
+            </p>
           </div>
         ) : (
           allTransactions.map((transaction) => (
             <div
               key={transaction.id}
-              className={`rounded-2xl p-4 shadow-md backdrop-blur-sm ${
-                transaction.type === 'INCOME'
-                  ? 'bg-green-100/80'
-                  : 'bg-red-100/80'
-              }`}
+              className="rounded-2xl p-4"
+              style={{
+                backgroundColor:
+                  transaction.type === 'INCOME'
+                    ? familyTheme.colors.successSoft
+                    : familyTheme.colors.dangerSoft,
+                boxShadow: familyTheme.card.shadow
+              }}
             >
               <div className="flex items-start justify-between">
                 {/* Left: Icon & Info */}
                 <div className="flex items-start gap-3 flex-1">
                   <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      transaction.type === 'INCOME'
-                        ? 'bg-green-200'
-                        : 'bg-red-200'
-                    }`}
+                    className="w-10 h-10 rounded-full flex items-center justify-center"
+                    style={{
+                      backgroundColor:
+                        transaction.type === 'INCOME'
+                          ? familyTheme.colors.success + '40'
+                          : familyTheme.colors.danger + '40'
+                    }}
                   >
                     <span className="text-lg">
                       {transaction.categoryIcon ||
@@ -125,10 +160,22 @@ export function RecentActivityCard({
                   </div>
 
                   <div className="flex-1">
-                    <div className="font-medium text-stone-800 mb-1">
+                    <div
+                      className="font-medium mb-1"
+                      style={{
+                        fontSize: familyTheme.typography.body.size,
+                        color: familyTheme.colors.textPrimary
+                      }}
+                    >
                       {transaction.title}
                     </div>
-                    <div className="text-xs text-stone-600 space-x-reverse space-x-2">
+                    <div
+                      className="space-x-reverse space-x-2"
+                      style={{
+                        fontSize: familyTheme.typography.small.size,
+                        color: familyTheme.colors.textSecondary
+                      }}
+                    >
                       {transaction.categoryName && (
                         <span>{transaction.categoryName}</span>
                       )}
@@ -143,16 +190,26 @@ export function RecentActivityCard({
                 {/* Right: Amount */}
                 <div className="text-left">
                   <div
-                    className={`text-lg font-bold ${
-                      transaction.type === 'INCOME'
-                        ? 'text-green-700'
-                        : 'text-red-700'
-                    }`}
+                    className="font-bold"
+                    style={{
+                      fontSize: familyTheme.typography.subtitle.size,
+                      color:
+                        transaction.type === 'INCOME'
+                          ? familyTheme.colors.success
+                          : familyTheme.colors.danger
+                    }}
                   >
                     {transaction.type === 'INCOME' ? '+' : '-'}
                     {transaction.amount.toLocaleString('fa-IR')}
                   </div>
-                  <div className="text-xs text-stone-600">{currency}</div>
+                  <div
+                    style={{
+                      fontSize: familyTheme.typography.small.size,
+                      color: familyTheme.colors.textSecondary
+                    }}
+                  >
+                    {currency}
+                  </div>
                 </div>
               </div>
             </div>
