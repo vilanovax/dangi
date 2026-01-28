@@ -14,8 +14,10 @@ interface ProjectCardProps {
   totalExpenses: number
   myBalance: number
   currency: string
+  isArchived?: boolean
   onDelete?: (id: string) => void
   onExport?: (id: string) => void
+  onArchive?: (id: string, isArchived: boolean) => void
   isDragging?: boolean
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>
 }
@@ -32,8 +34,10 @@ export function ProjectCard({
   totalExpenses,
   myBalance,
   currency,
+  isArchived = false,
   onDelete,
   onExport,
+  onArchive,
   isDragging,
   dragHandleProps,
 }: ProjectCardProps) {
@@ -43,7 +47,9 @@ export function ProjectCard({
 
   const [showMenu, setShowMenu] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [archiving, setArchiving] = useState(false)
   const longPressTimer = useRef<NodeJS.Timeout | null>(null)
 
   const handleLongPressStart = () => {
@@ -93,6 +99,26 @@ export function ProjectCard({
       }
     } catch (error) {
       console.error('Error exporting project:', error)
+    }
+  }
+
+  const handleArchive = async () => {
+    setArchiving(true)
+    try {
+      const res = await fetch(`/api/projects/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isArchived: !isArchived })
+      })
+      if (res.ok) {
+        setShowArchiveConfirm(false)
+        setShowMenu(false)
+        onArchive?.(id, !isArchived)
+      }
+    } catch (error) {
+      console.error('Error archiving project:', error)
+    } finally {
+      setArchiving(false)
     }
   }
 
@@ -293,6 +319,32 @@ export function ProjectCard({
             </div>
           </Link>
 
+          {/* Archive/Unarchive */}
+          <button
+            onClick={() => {
+              setShowMenu(false)
+              setShowArchiveConfirm(true)
+            }}
+            className="w-full flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-amber-500/5 to-orange-500/5 hover:from-amber-500/10 hover:to-orange-500/10 transition-all duration-300 group"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/25 group-hover:scale-110 transition-transform">
+              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+              </svg>
+            </div>
+            <div className="flex-1 text-right">
+              <p className="font-semibold text-amber-700 dark:text-amber-300">
+                {isArchived ? 'فعال‌سازی پروژه' : 'آرشیو پروژه'}
+              </p>
+              <p className="text-sm text-amber-600/70 dark:text-amber-400/70">
+                {isArchived ? 'بازگشت به پروژه‌های فعال' : 'انتقال به آرشیو'}
+              </p>
+            </div>
+            <svg className="w-5 h-5 text-amber-300 group-hover:text-amber-400 group-hover:-translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+
           {/* Delete */}
           <button
             onClick={() => {
@@ -348,6 +400,48 @@ export function ProjectCard({
               className="flex-1 !bg-gradient-to-r !from-red-500 !to-rose-600 hover:!from-red-600 hover:!to-rose-700"
             >
               حذف پروژه
+            </Button>
+          </div>
+        </div>
+      </BottomSheet>
+
+      {/* Archive Confirmation */}
+      <BottomSheet
+        isOpen={showArchiveConfirm}
+        onClose={() => setShowArchiveConfirm(false)}
+        title={isArchived ? 'فعال‌سازی پروژه' : 'آرشیو پروژه'}
+      >
+        <div className="space-y-4">
+          <div className="p-6 bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-3xl text-center border border-amber-500/20">
+            <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-amber-500 to-orange-600 rounded-3xl flex items-center justify-center shadow-xl shadow-amber-500/30">
+              <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+              </svg>
+            </div>
+            <p className="text-lg font-bold text-amber-800 dark:text-amber-200 mb-2">
+              {isArchived ? `فعال‌سازی "${name}"؟` : `آرشیو "${name}"؟`}
+            </p>
+            <p className="text-sm text-amber-600/70 dark:text-amber-400/70">
+              {isArchived
+                ? 'این پروژه به لیست پروژه‌های فعال منتقل می‌شود.'
+                : 'این پروژه از لیست پروژه‌های فعال حذف و به آرشیو منتقل می‌شود. می‌توانید در هر زمان آن را فعال کنید.'}
+            </p>
+          </div>
+
+          <div className="flex gap-3">
+            <Button
+              variant="secondary"
+              onClick={() => setShowArchiveConfirm(false)}
+              className="flex-1"
+            >
+              انصراف
+            </Button>
+            <Button
+              onClick={handleArchive}
+              loading={archiving}
+              className="flex-1 !bg-gradient-to-r !from-amber-500 !to-orange-600 hover:!from-amber-600 hover:!to-orange-700"
+            >
+              {isArchived ? 'فعال‌سازی' : 'آرشیو کردن'}
             </Button>
           </div>
         </div>

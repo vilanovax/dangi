@@ -120,6 +120,20 @@ export default function HomePage() {
     [orderedProjects, refresh, saveOrder]
   )
 
+  const handleProjectArchive = useCallback(
+    (id: string, isArchived: boolean) => {
+      // Optimistic update: update local state immediately
+      const newProjects = orderedProjects.map((p) =>
+        p.id === id ? { ...p, isArchived } : p
+      )
+      setOrderedProjects(newProjects)
+      saveOrder(newProjects)
+      // Refresh to ensure sync with server
+      refresh()
+    },
+    [orderedProjects, refresh, saveOrder]
+  )
+
   // ── Drag & Drop Handlers ──────────────────────────────────
 
   const handleDragStart = useCallback((index: number, e: React.TouchEvent | React.MouseEvent) => {
@@ -334,7 +348,9 @@ export default function HomePage() {
                       totalExpenses={project.totalExpenses}
                       myBalance={project.myBalance}
                       currency={project.currency}
+                      isArchived={project.isArchived}
                       onDelete={handleProjectDelete}
+                      onArchive={handleProjectArchive}
                       isDragging={draggedIndex === index}
                     />
                   </div>
@@ -383,7 +399,9 @@ export default function HomePage() {
                           totalExpenses={project.totalExpenses}
                           myBalance={project.myBalance}
                           currency={project.currency}
+                          isArchived={project.isArchived}
                           onDelete={handleProjectDelete}
+                          onArchive={handleProjectArchive}
                           isDragging={false}
                         />
                       </div>
