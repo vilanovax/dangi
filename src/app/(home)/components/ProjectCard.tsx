@@ -8,6 +8,8 @@ import { BottomSheet, Button } from '@/components/ui'
 interface ProjectCardProps {
   id: string
   name: string
+  template: string
+  templateName: string
   templateIcon: string
   participantCount: number
   expenseCount: number
@@ -23,11 +25,19 @@ interface ProjectCardProps {
 }
 
 /**
- * Modern project card with glassmorphism and gradient effects
+ * Status-first project card design
+ *
+ * UX Intent:
+ * - Status is the hero element (most prominent)
+ * - Template-based gradient backgrounds
+ * - Clear visual hierarchy: Status > Balance > Total > Meta
+ * - Friendly, non-accounting tone
  */
 export function ProjectCard({
   id,
   name,
+  template,
+  templateName,
   templateIcon,
   participantCount,
   expenseCount,
@@ -41,9 +51,10 @@ export function ProjectCard({
   isDragging,
   dragHandleProps,
 }: ProjectCardProps) {
-  const isCreditor = myBalance > 0
-  const isDebtor = myBalance < 0
+  // Status logic
   const isSettled = myBalance === 0
+  const isDebtor = myBalance < 0
+  const isCreditor = myBalance > 0
 
   const [showMenu, setShowMenu] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -122,31 +133,16 @@ export function ProjectCard({
     }
   }
 
-  // Generate unique gradient based on project name
-  const getProjectGradient = () => {
-    const gradients = [
-      'from-blue-500/10 to-indigo-500/10',
-      'from-emerald-500/10 to-teal-500/10',
-      'from-orange-500/10 to-amber-500/10',
-      'from-pink-500/10 to-rose-500/10',
-      'from-violet-500/10 to-purple-500/10',
-      'from-cyan-500/10 to-sky-500/10',
-    ]
-    const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
-    return gradients[hash % gradients.length]
-  }
-
-  const getIconGradient = () => {
-    const gradients = [
-      'from-blue-500 to-indigo-600',
-      'from-emerald-500 to-teal-600',
-      'from-orange-500 to-amber-600',
-      'from-pink-500 to-rose-600',
-      'from-violet-500 to-purple-600',
-      'from-cyan-500 to-sky-600',
-    ]
-    const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
-    return gradients[hash % gradients.length]
+  // Template-based gradient mapping
+  const getTemplateGradient = () => {
+    const gradients: Record<string, string> = {
+      travel: 'from-sky-400/10 via-blue-500/10 to-cyan-500/10',
+      building: 'from-purple-400/10 via-pink-500/10 to-rose-500/10',
+      gathering: 'from-amber-400/10 via-orange-500/10 to-yellow-500/10',
+      personal: 'from-emerald-400/10 via-teal-500/10 to-cyan-500/10',
+      family: 'from-amber-400/10 via-orange-500/10 to-red-500/10',
+    }
+    return gradients[template] || gradients.travel
   }
 
   return (
@@ -173,106 +169,91 @@ export function ProjectCard({
         )}
 
         <Link href={`/project/${id}`}>
-          <div className={`relative overflow-hidden bg-gradient-to-br ${getProjectGradient()} bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-3xl p-5 shadow-sm hover:shadow-xl transition-all duration-500 active:scale-[0.98] border border-white/50 dark:border-gray-800/50`}>
+          <div className={`relative overflow-hidden bg-gradient-to-br ${getTemplateGradient()} bg-white dark:bg-gray-900 backdrop-blur-xl rounded-3xl p-5 shadow-sm hover:shadow-xl transition-all duration-500 active:scale-[0.98] border border-white/50 dark:border-gray-800/50`}>
             {/* Decorative Elements */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-white/40 to-transparent dark:from-white/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+            <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-white/30 to-transparent dark:from-white/5 rounded-full blur-2xl -translate-y-1/2 -translate-x-1/2" />
 
-            <div className="relative flex items-start gap-4">
-              {/* Icon with Gradient Background */}
-              <div className="relative flex-shrink-0">
-                <div className={`absolute inset-0 bg-gradient-to-br ${getIconGradient()} rounded-2xl blur-lg opacity-40`} />
-                <div className={`relative w-14 h-14 rounded-2xl bg-gradient-to-br ${getIconGradient()} flex items-center justify-center text-3xl shadow-lg`}>
-                  {templateIcon}
-                </div>
+            {/* Top Row: Title + Template Badge */}
+            <div className="relative flex items-start justify-between gap-3 mb-4">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white leading-tight flex-1">
+                {name}
+              </h3>
+
+              {/* Template Badge */}
+              <div className="flex-shrink-0 px-2.5 py-1 rounded-xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/30 dark:border-gray-700/30 flex items-center gap-1.5">
+                <span className="text-base">{templateIcon}</span>
+                <span className="text-xs font-medium text-gray-600 dark:text-gray-300">{templateName}</span>
               </div>
 
-              {/* Content */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white truncate">
-                    {name}
-                  </h3>
-
-                  {/* Menu Button */}
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      setShowMenu(true)
-                    }}
-                    className="p-2 -m-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 opacity-0 group-hover:opacity-100 transition-all"
-                  >
-                    <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
-                    </svg>
-                  </button>
-                </div>
-
-                {/* Stats */}
-                <div className="flex items-center gap-4 mt-2">
-                  <div className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
-                    <div className="w-6 h-6 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                    </div>
-                    <span>{participantCount} نفر</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
-                    <div className="w-6 h-6 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                      </svg>
-                    </div>
-                    <span>{expenseCount} هزینه</span>
-                  </div>
-                </div>
-              </div>
+              {/* Menu Button */}
+              <button
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  setShowMenu(true)
+                }}
+                className="p-2 -m-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 opacity-0 group-hover:opacity-100 transition-all"
+              >
+                <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+                </svg>
+              </button>
             </div>
 
-            {/* Footer Stats */}
-            <div className="relative flex items-center justify-between mt-4 pt-4 border-t border-gray-200/50 dark:border-gray-700/50">
-              {/* Total Expenses */}
+            {/* Hero: Status Badge */}
+            <div className="relative mb-3">
+              {isSettled ? (
+                <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500/15 to-green-500/15 border-2 border-emerald-500/30 shadow-sm">
+                  <span className="text-xl">🟢</span>
+                  <span className="text-base font-bold text-emerald-700 dark:text-emerald-300">حساب صافه</span>
+                </div>
+              ) : isDebtor ? (
+                <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-red-500/15 to-rose-500/15 border-2 border-red-500/30 shadow-sm">
+                  <span className="text-xl">🔴</span>
+                  <span className="text-base font-bold text-red-700 dark:text-red-300">بدهکاری</span>
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500/15 to-teal-500/15 border-2 border-emerald-500/30 shadow-sm">
+                  <span className="text-xl">🟢</span>
+                  <span className="text-base font-bold text-emerald-700 dark:text-emerald-300">طلبکاری</span>
+                </div>
+              )}
+            </div>
+
+            {/* Balance Text (if not settled) */}
+            {!isSettled && (
+              <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
+                {isDebtor
+                  ? `تو این پروژه ${formatMoney(Math.abs(myBalance), currency)} بدهکاری`
+                  : `تو این پروژه ${formatMoney(myBalance, currency)} طلبکاری`}
+              </p>
+            )}
+
+            {/* Bottom Row: Total Expenses + Meta */}
+            <div className="relative flex items-center justify-between pt-3 border-t border-gray-200/50 dark:border-gray-700/50">
+              {/* Total Expenses (Secondary) */}
               <div>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">مجموع هزینه‌ها</p>
-                <p className="text-base font-bold text-gray-700 dark:text-gray-200">
+                <p className="text-xs text-gray-400 dark:text-gray-500">مجموع خرج‌ها</p>
+                <p className="text-base font-bold text-gray-700 dark:text-gray-200 mt-0.5">
                   {formatMoney(totalExpenses, currency)}
                 </p>
               </div>
 
-              {/* Balance Badge */}
-              {isSettled ? (
-                <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-sm">
-                  <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                    <svg className="w-3 h-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">حسابا صافه</span>
+              {/* Meta Info */}
+              <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+                <div className="flex items-center gap-1.5">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span>{participantCount} نفر</span>
                 </div>
-              ) : isCreditor ? (
-                <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-gradient-to-r from-emerald-500/10 to-green-500/10 border border-emerald-500/20">
-                  <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                    <svg className="w-3 h-3 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-                    </svg>
-                  </div>
-                  <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                    {formatMoney(myBalance, currency)} طلب داری
-                  </span>
+                <div className="flex items-center gap-1.5">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  <span>{expenseCount} خرج</span>
                 </div>
-              ) : (
-                <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-gradient-to-r from-red-500/10 to-rose-500/10 border border-red-500/20">
-                  <div className="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center">
-                    <svg className="w-3 h-3 text-red-500 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                    </svg>
-                  </div>
-                  <span className="text-sm font-bold text-red-500 dark:text-red-400">
-                    باید {formatMoney(Math.abs(myBalance), currency)} بدی
-                  </span>
-                </div>
-              )}
+              </div>
             </div>
           </div>
         </Link>

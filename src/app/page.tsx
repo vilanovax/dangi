@@ -10,6 +10,8 @@ import {
   ProjectCard,
   EmptyState,
   CreateProjectSheet,
+  SortControl,
+  type SortOption,
 } from './(home)/components'
 
 // ─────────────────────────────────────────────────────────────
@@ -48,6 +50,9 @@ export default function HomePage() {
   // ── Modal State ─────────────────────────────────────────────
   const [showCreate, setShowCreate] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
+
+  // ── Sort State ──────────────────────────────────────────────
+  const [sortOption, setSortOption] = useState<SortOption>('newest')
 
   // ── Drag & Drop State ─────────────────────────────────────
   const [orderedProjects, setOrderedProjects] = useState<Project[]>([])
@@ -94,6 +99,41 @@ export default function HomePage() {
   const activeProjects = orderedProjects.filter((p) => !p.isArchived)
   const archivedProjects = orderedProjects.filter((p) => p.isArchived)
 
+  // ── Sort Projects ───────────────────────────────────────────
+  const sortedActiveProjects = useCallback(() => {
+    const sorted = [...activeProjects]
+
+    switch (sortOption) {
+      case 'newest':
+        // Keep current order (already sorted by manual reordering or creation date)
+        return sorted
+
+      case 'active':
+        // Sort by activity: unsettled projects first, then by absolute balance (highest activity)
+        return sorted.sort((a, b) => {
+          const aSettled = a.myBalance === 0
+          const bSettled = b.myBalance === 0
+
+          if (aSettled && !bSettled) return 1
+          if (!aSettled && bSettled) return -1
+
+          // Both unsettled: sort by absolute balance (highest first)
+          return Math.abs(b.myBalance) - Math.abs(a.myBalance)
+        })
+
+      case 'unsettled':
+        // Show only unsettled projects, sorted by absolute balance
+        return sorted
+          .filter(p => p.myBalance !== 0)
+          .sort((a, b) => Math.abs(b.myBalance) - Math.abs(a.myBalance))
+
+      default:
+        return sorted
+    }
+  }, [activeProjects, sortOption])
+
+  const displayProjects = sortedActiveProjects()
+
   // ── Handlers ────────────────────────────────────────────────
 
   const handleLogout = useCallback(async () => {
@@ -102,10 +142,13 @@ export default function HomePage() {
     router.refresh()
   }, [router, refresh])
 
-  const getTemplateIcon = useCallback(
+  const getTemplateInfo = useCallback(
     (templateId: string) => {
       const template = templates.find((t) => t.id === templateId)
-      return template?.icon || '📁'
+      return {
+        icon: template?.icon || '📁',
+        name: template?.nameFa || 'پروژه'
+      }
     },
     [templates]
   )
@@ -235,43 +278,50 @@ export default function HomePage() {
           // Projects List
           <div className="flex-1">
             {/* Section Header */}
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-3">
-                <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-purple-600 rounded-full" />
-                <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">
-                  پروژه‌های شما
-                </h2>
-                <span className="px-2.5 py-1 text-xs font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full">
-                  {activeProjects.length}
-                </span>
+            <div className="mb-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-purple-600 rounded-full" />
+                  <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">
+                    پروژه‌های شما
+                  </h2>
+                  <span className="px-2.5 py-1 text-xs font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full">
+                    {displayProjects.length}
+                  </span>
+                </div>
+
+                {activeProjects.length > 1 && !isReordering && (
+                  <button
+                    onClick={() => setIsReordering(true)}
+                    className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl text-gray-600 dark:text-gray-400 hover:shadow-md transition-all"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                    </svg>
+                    ترتیب
+                  </button>
+                )}
+
+                {isReordering && (
+                  <button
+                    onClick={() => setIsReordering(false)}
+                    className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25 transition-all"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    تمام
+                  </button>
+                )}
               </div>
 
-              {activeProjects.length > 1 && (
-                <button
-                  onClick={() => setIsReordering(!isReordering)}
-                  className={`flex items-center gap-2 text-sm px-4 py-2 rounded-xl transition-all duration-300 ${
-                    isReordering
-                      ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25'
-                      : 'bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl text-gray-600 dark:text-gray-400 hover:shadow-md'
-                  }`}
-                >
-                  {isReordering ? (
-                    <>
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      تمام
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                      </svg>
-                      ترتیب
-                    </>
-                  )}
-                </button>
-              )}
+              {/* Helper text + Sort Control */}
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-gray-400 dark:text-gray-500">آخرین وضعیت هر پروژه</p>
+                {!isReordering && activeProjects.length > 1 && (
+                  <SortControl value={sortOption} onChange={setSortOption} />
+                )}
+              </div>
             </div>
 
             {/* Active Projects Grid */}
@@ -283,7 +333,9 @@ export default function HomePage() {
               onMouseUp={handleDragEnd}
               onMouseLeave={handleDragEnd}
             >
-              {activeProjects.map((project, index) => (
+              {displayProjects.map((project, index) => {
+                const templateInfo = getTemplateInfo(project.template)
+                return (
                 <div
                   key={project.id}
                   data-project-index={index}
@@ -342,7 +394,9 @@ export default function HomePage() {
                     <ProjectCard
                       id={project.id}
                       name={project.name}
-                      templateIcon={getTemplateIcon(project.template)}
+                      template={project.template}
+                      templateName={templateInfo.name}
+                      templateIcon={templateInfo.icon}
                       participantCount={project.participantCount}
                       expenseCount={project.expenseCount}
                       totalExpenses={project.totalExpenses}
@@ -355,7 +409,8 @@ export default function HomePage() {
                     />
                   </div>
                 </div>
-              ))}
+              )}
+              )}
             </div>
 
             {/* Archived Projects Section */}
@@ -384,28 +439,33 @@ export default function HomePage() {
 
                 {showArchived && (
                   <div className="space-y-4 pb-28">
-                    {archivedProjects.map((project) => (
-                      <div key={project.id} className="relative opacity-75">
-                        {/* Archive Badge */}
-                        <div className="absolute -top-2 right-4 z-10 px-2 py-0.5 bg-amber-500 text-white text-xs font-medium rounded-full shadow-sm">
-                          📦 آرشیو شده
+                    {archivedProjects.map((project) => {
+                      const templateInfo = getTemplateInfo(project.template)
+                      return (
+                        <div key={project.id} className="relative opacity-75">
+                          {/* Archive Badge */}
+                          <div className="absolute -top-2 right-4 z-10 px-2 py-0.5 bg-amber-500 text-white text-xs font-medium rounded-full shadow-sm">
+                            📦 آرشیو شده
+                          </div>
+                          <ProjectCard
+                            id={project.id}
+                            name={project.name}
+                            template={project.template}
+                            templateName={templateInfo.name}
+                            templateIcon={templateInfo.icon}
+                            participantCount={project.participantCount}
+                            expenseCount={project.expenseCount}
+                            totalExpenses={project.totalExpenses}
+                            myBalance={project.myBalance}
+                            currency={project.currency}
+                            isArchived={project.isArchived}
+                            onDelete={handleProjectDelete}
+                            onArchive={handleProjectArchive}
+                            isDragging={false}
+                          />
                         </div>
-                        <ProjectCard
-                          id={project.id}
-                          name={project.name}
-                          templateIcon={getTemplateIcon(project.template)}
-                          participantCount={project.participantCount}
-                          expenseCount={project.expenseCount}
-                          totalExpenses={project.totalExpenses}
-                          myBalance={project.myBalance}
-                          currency={project.currency}
-                          isArchived={project.isArchived}
-                          onDelete={handleProjectDelete}
-                          onArchive={handleProjectArchive}
-                          isDragging={false}
-                        />
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </div>
@@ -435,6 +495,9 @@ export default function HomePage() {
                   <span className="font-bold">شروع پروژه جدید</span>
                 </span>
               </Button>
+              <p className="text-center text-xs text-gray-400 dark:text-gray-500 mt-2">
+                سفر، دورهمی، خونه یا ساختمان
+              </p>
             </div>
 
             {/* Join hint for new users */}

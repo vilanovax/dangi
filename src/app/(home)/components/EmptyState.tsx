@@ -8,7 +8,11 @@ interface EmptyStateProps {
 }
 
 /**
- * Modern empty state with glassmorphism and gradient effects
+ * Modern empty state with new microcopy
+ *
+ * UX Intent:
+ * - Friendly, encouraging tone
+ * - Clear call-to-action
  */
 export function EmptyState({ type }: EmptyStateProps) {
   if (type === 'guest') {
@@ -78,7 +82,7 @@ export function EmptyState({ type }: EmptyStateProps) {
     )
   }
 
-  // No projects state
+  // No projects state - NEW MICROCOPY
   return (
     <div className="flex-1 flex flex-col items-center justify-center text-center py-8 relative">
       {/* Animated Background */}
@@ -97,12 +101,12 @@ export function EmptyState({ type }: EmptyStateProps) {
         </div>
       </div>
 
-      {/* Text */}
+      {/* Text - NEW MICROCOPY */}
       <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-gray-700 to-gray-500 dark:from-gray-200 dark:to-gray-400 bg-clip-text text-transparent">
-        هنوز پروژه‌ای نداری
+        هنوز پروژه‌ای نساختی 😊
       </h2>
       <p className="text-gray-500 dark:text-gray-400 mb-2 max-w-xs">
-        اولین پروژه‌ات رو بساز و شروع کن!
+        با اولین پروژه شروع کن
       </p>
 
       {/* Arrow pointing to button */}
