@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui'
+import { familyTheme } from '@/styles/family-theme'
 
 interface RecurringTransaction {
   id: string
@@ -105,9 +106,12 @@ export default function RecurringTransactionsPage() {
   const inactiveCount = transactions.filter((t) => !t.isActive).length
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-violet-50 to-indigo-50">
+    <div className="min-h-screen" style={{ backgroundColor: familyTheme.colors.background }}>
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-500 to-violet-600 text-white p-6 shadow-lg">
+      <div
+        className="text-white p-6 shadow-lg"
+        style={{ background: familyTheme.gradients.infoHeader }}
+      >
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-4">
             <button
@@ -117,8 +121,19 @@ export default function RecurringTransactionsPage() {
               ←
             </button>
             <div>
-              <h1 className="text-2xl font-bold">تراکنش‌های تکراری</h1>
-              <p className="text-purple-100 text-sm">
+              <h1
+                className="font-bold"
+                style={{
+                  fontSize: familyTheme.typography.pageTitle.size,
+                  fontWeight: familyTheme.typography.pageTitle.weight
+                }}
+              >
+                تراکنش‌های تکراری
+              </h1>
+              <p
+                className="text-white/90"
+                style={{ fontSize: familyTheme.typography.body.size }}
+              >
                 {activeCount} فعال · {inactiveCount} غیرفعال
               </p>
             </div>
@@ -127,7 +142,11 @@ export default function RecurringTransactionsPage() {
             onClick={() =>
               router.push(`/project/${projectId}/family/recurring/add`)
             }
-            className="bg-white text-purple-600 px-4 py-2 rounded-full font-medium hover:bg-purple-50 transition-colors"
+            className="bg-white px-4 py-2 rounded-full font-medium hover:opacity-90 transition-opacity"
+            style={{
+              color: familyTheme.colors.info,
+              fontSize: familyTheme.typography.body.size
+            }}
           >
             + افزودن
           </button>
@@ -135,35 +154,44 @@ export default function RecurringTransactionsPage() {
       </div>
 
       {/* Filter tabs */}
-      <div className="bg-white border-b border-stone-200 sticky top-0 z-10">
+      <div
+        className="border-b sticky top-0 z-10"
+        style={{
+          backgroundColor: familyTheme.colors.card,
+          borderColor: familyTheme.colors.divider
+        }}
+      >
         <div className="flex gap-2 p-4 max-w-2xl mx-auto">
           <button
             onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              filter === 'all'
-                ? 'bg-purple-500 text-white'
-                : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-            }`}
+            className="px-4 py-2 rounded-full font-medium transition-colors"
+            style={{
+              fontSize: familyTheme.typography.small.size,
+              backgroundColor: filter === 'all' ? familyTheme.colors.info : familyTheme.colors.background,
+              color: filter === 'all' ? '#FFFFFF' : familyTheme.colors.textSecondary
+            }}
           >
             همه ({transactions.length})
           </button>
           <button
             onClick={() => setFilter('active')}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              filter === 'active'
-                ? 'bg-green-500 text-white'
-                : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-            }`}
+            className="px-4 py-2 rounded-full font-medium transition-colors"
+            style={{
+              fontSize: familyTheme.typography.small.size,
+              backgroundColor: filter === 'active' ? familyTheme.colors.success : familyTheme.colors.background,
+              color: filter === 'active' ? '#FFFFFF' : familyTheme.colors.textSecondary
+            }}
           >
             فعال ({activeCount})
           </button>
           <button
             onClick={() => setFilter('inactive')}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              filter === 'inactive'
-                ? 'bg-stone-400 text-white'
-                : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-            }`}
+            className="px-4 py-2 rounded-full font-medium transition-colors"
+            style={{
+              fontSize: familyTheme.typography.small.size,
+              backgroundColor: filter === 'inactive' ? familyTheme.colors.textSecondary : familyTheme.colors.background,
+              color: filter === 'inactive' ? '#FFFFFF' : familyTheme.colors.textSecondary
+            }}
           >
             غیرفعال ({inactiveCount})
           </button>
@@ -173,17 +201,39 @@ export default function RecurringTransactionsPage() {
       {/* Content */}
       <div className="p-6 max-w-2xl mx-auto">
         {loading ? (
-          <div className="text-center py-12 text-stone-600">
+          <div
+            className="text-center py-12"
+            style={{ color: familyTheme.colors.textSecondary }}
+          >
             در حال بارگذاری...
           </div>
         ) : error ? (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+          <div
+            className="px-4 py-3 rounded-xl"
+            style={{
+              backgroundColor: familyTheme.colors.dangerSoft,
+              border: `1px solid ${familyTheme.colors.danger}33`,
+              color: familyTheme.colors.danger
+            }}
+          >
             {error}
           </div>
         ) : filteredTransactions.length === 0 ? (
-          <div className="bg-white rounded-2xl p-12 text-center">
+          <div
+            className="rounded-2xl p-12 text-center"
+            style={{
+              backgroundColor: familyTheme.colors.card,
+              boxShadow: familyTheme.card.shadow
+            }}
+          >
             <span className="text-6xl mb-4 block">🔄</span>
-            <p className="text-stone-600 mb-4">
+            <p
+              className="mb-4"
+              style={{
+                fontSize: familyTheme.typography.body.size,
+                color: familyTheme.colors.textSecondary
+              }}
+            >
               {filter === 'all'
                 ? 'هنوز تراکنش تکراری ثبت نشده است'
                 : filter === 'active'
@@ -195,7 +245,11 @@ export default function RecurringTransactionsPage() {
                 onClick={() =>
                   router.push(`/project/${projectId}/family/recurring/add`)
                 }
-                className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded-full"
+                className="text-white px-6 py-2 rounded-full"
+                style={{
+                  backgroundColor: familyTheme.colors.info,
+                  fontSize: familyTheme.typography.body.size
+                }}
               >
                 افزودن اولین تراکنش
               </Button>
@@ -206,9 +260,13 @@ export default function RecurringTransactionsPage() {
             {filteredTransactions.map((transaction) => (
               <div
                 key={transaction.id}
-                className={`bg-white rounded-2xl p-4 shadow-md transition-all ${
+                className={`rounded-2xl p-4 transition-all ${
                   transaction.isActive ? 'opacity-100' : 'opacity-60'
                 }`}
+                style={{
+                  backgroundColor: familyTheme.colors.card,
+                  boxShadow: familyTheme.card.shadow
+                }}
               >
                 <div className="flex items-start justify-between gap-4">
                   {/* Content */}
@@ -219,23 +277,42 @@ export default function RecurringTransactionsPage() {
                           {transaction.category.icon}
                         </span>
                       )}
-                      <span className="font-bold text-stone-800">
+                      <span
+                        className="font-bold"
+                        style={{ color: familyTheme.colors.textPrimary }}
+                      >
                         {transaction.title}
                       </span>
                       <span
-                        className={`text-xs px-2 py-0.5 rounded-full ${
-                          transaction.type === 'INCOME'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-red-100 text-red-700'
-                        }`}
+                        className="px-2 py-0.5 rounded-full"
+                        style={{
+                          fontSize: familyTheme.typography.small.size,
+                          backgroundColor:
+                            transaction.type === 'INCOME'
+                              ? familyTheme.colors.successSoft
+                              : familyTheme.colors.dangerSoft,
+                          color:
+                            transaction.type === 'INCOME'
+                              ? familyTheme.colors.success
+                              : familyTheme.colors.danger
+                        }}
                       >
                         {transaction.type === 'INCOME' ? 'درآمد' : 'هزینه'}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-4 text-sm text-stone-600 mb-2">
+                    <div
+                      className="flex items-center gap-4 mb-2"
+                      style={{
+                        fontSize: familyTheme.typography.body.size,
+                        color: familyTheme.colors.textSecondary
+                      }}
+                    >
                       <div>
-                        <span className="font-bold text-stone-800">
+                        <span
+                          className="font-bold"
+                          style={{ color: familyTheme.colors.textPrimary }}
+                        >
                           {transaction.amount.toLocaleString('fa-IR')}
                         </span>{' '}
                         تومان
@@ -247,7 +324,12 @@ export default function RecurringTransactionsPage() {
                     </div>
 
                     {transaction.category && (
-                      <div className="text-xs text-stone-500">
+                      <div
+                        style={{
+                          fontSize: familyTheme.typography.small.size,
+                          color: familyTheme.colors.textSecondary
+                        }}
+                      >
                         {transaction.category.name}
                       </div>
                     )}
@@ -258,9 +340,12 @@ export default function RecurringTransactionsPage() {
                     {/* Toggle switch */}
                     <button
                       onClick={() => handleToggle(transaction.id)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        transaction.isActive ? 'bg-green-500' : 'bg-stone-300'
-                      }`}
+                      className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+                      style={{
+                        backgroundColor: transaction.isActive
+                          ? familyTheme.colors.success
+                          : familyTheme.colors.divider
+                      }}
                       title={
                         transaction.isActive
                           ? 'کلیک برای غیرفعال کردن'
@@ -281,7 +366,11 @@ export default function RecurringTransactionsPage() {
                       onClick={() =>
                         handleDelete(transaction.id, transaction.title)
                       }
-                      className="text-red-500 hover:text-red-700 text-sm"
+                      className="hover:opacity-70"
+                      style={{
+                        fontSize: familyTheme.typography.small.size,
+                        color: familyTheme.colors.danger
+                      }}
                     >
                       حذف
                     </button>

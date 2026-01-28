@@ -3,6 +3,7 @@
 import { BottomSheet } from '@/components/ui/BottomSheet'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { familyTheme } from '@/styles/family-theme'
 
 interface Transaction {
   id: string
@@ -40,9 +41,6 @@ export function TransactionDetailSheet({
   if (!transaction) return null
 
   const isIncome = transaction.type === 'INCOME'
-  const bgColor = isIncome ? 'bg-green-50' : 'bg-red-50'
-  const textColor = isIncome ? 'text-green-700' : 'text-red-700'
-  const iconBgColor = isIncome ? 'bg-green-100' : 'bg-red-100'
 
   const handleEdit = () => {
     onClose()
@@ -98,36 +96,81 @@ export function TransactionDetailSheet({
       <BottomSheet isOpen={isOpen} onClose={onClose}>
         <div className="py-4 pb-28">
           {/* Warning Icon */}
-          <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center animate-pulse">
+          <div
+            className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center animate-pulse"
+            style={{ backgroundColor: familyTheme.colors.dangerSoft }}
+          >
             <span className="text-4xl">⚠️</span>
           </div>
 
           {/* Title */}
-          <h3 className="text-2xl font-bold text-center text-stone-800 mb-3">
+          <h3
+            className="font-bold text-center mb-3"
+            style={{
+              fontSize: familyTheme.typography.pageTitle.size,
+              fontWeight: familyTheme.typography.pageTitle.weight,
+              color: familyTheme.colors.textPrimary
+            }}
+          >
             حذف تراکنش
           </h3>
 
           {/* Message */}
-          <p className="text-center text-stone-600 mb-6 px-4 text-base leading-relaxed">
+          <p
+            className="text-center mb-6 px-4 leading-relaxed"
+            style={{
+              fontSize: familyTheme.typography.body.size,
+              color: familyTheme.colors.textSecondary
+            }}
+          >
             مطمئنی می‌خوای این تراکنش رو حذف کنی؟<br />
             این عمل قابل بازگشت نیست.
           </p>
 
           {/* Transaction Preview */}
-          <div className={`${bgColor} rounded-xl p-4 mb-6 mx-4 border-2 ${isIncome ? 'border-green-200' : 'border-red-200'}`}>
+          <div
+            className="rounded-xl p-4 mb-6 mx-4 border-2"
+            style={{
+              backgroundColor: isIncome ? familyTheme.colors.successSoft : familyTheme.colors.dangerSoft,
+              borderColor: isIncome ? familyTheme.colors.success + '40' : familyTheme.colors.danger + '40'
+            }}
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className={`w-12 h-12 rounded-full ${iconBgColor} flex items-center justify-center flex-shrink-0`}>
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{
+                    backgroundColor: isIncome ? familyTheme.colors.success + '40' : familyTheme.colors.danger + '40'
+                  }}
+                >
                   <span className="text-xl">{transaction.categoryIcon || (isIncome ? '💰' : '💸')}</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-bold text-stone-800 truncate">{transaction.title}</div>
+                  <div
+                    className="font-bold truncate"
+                    style={{ color: familyTheme.colors.textPrimary }}
+                  >
+                    {transaction.title}
+                  </div>
                   {transaction.categoryName && (
-                    <div className="text-xs text-stone-600">{transaction.categoryName}</div>
+                    <div
+                      style={{
+                        fontSize: familyTheme.typography.small.size,
+                        color: familyTheme.colors.textSecondary
+                      }}
+                    >
+                      {transaction.categoryName}
+                    </div>
                   )}
                 </div>
               </div>
-              <div className={`font-bold ${textColor} text-lg flex-shrink-0`}>
+              <div
+                className="font-bold flex-shrink-0"
+                style={{
+                  fontSize: familyTheme.typography.subtitle.size,
+                  color: isIncome ? familyTheme.colors.success : familyTheme.colors.danger
+                }}
+              >
                 {isIncome ? '+' : '−'}
                 {(transaction.amount / 10).toLocaleString('fa-IR')}
               </div>
@@ -135,19 +178,36 @@ export function TransactionDetailSheet({
           </div>
 
           {/* Actions - با padding کافی */}
-          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 p-4 pb-24">
+          <div
+            className="fixed bottom-0 left-0 right-0 border-t p-4 pb-24"
+            style={{
+              backgroundColor: familyTheme.colors.card,
+              borderColor: familyTheme.colors.divider
+            }}
+          >
             <div className="flex gap-3 max-w-2xl mx-auto">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 disabled={deleting}
-                className="flex-1 py-4 bg-stone-200 text-stone-700 rounded-xl font-bold hover:bg-stone-300 transition-colors disabled:opacity-50 shadow-lg text-base"
+                className="flex-1 py-4 rounded-xl font-bold hover:opacity-80 transition-colors disabled:opacity-50"
+                style={{
+                  backgroundColor: familyTheme.colors.divider,
+                  color: familyTheme.colors.textPrimary,
+                  fontSize: familyTheme.typography.body.size,
+                  boxShadow: familyTheme.card.shadow
+                }}
               >
                 انصراف
               </button>
               <button
                 onClick={handleDelete}
                 disabled={deleting}
-                className="flex-1 py-4 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-xl font-bold hover:from-red-600 hover:to-rose-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg text-base"
+                className="flex-1 py-4 text-white rounded-xl font-bold hover:opacity-90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                style={{
+                  backgroundColor: familyTheme.colors.danger,
+                  fontSize: familyTheme.typography.body.size,
+                  boxShadow: familyTheme.card.shadow
+                }}
               >
                 {deleting ? (
                   <>
@@ -175,27 +235,58 @@ export function TransactionDetailSheet({
     <BottomSheet isOpen={isOpen} onClose={onClose}>
       <div className="py-2 pb-24">
         {/* Hero Section - Amount */}
-        <div className={`${bgColor} rounded-2xl p-6 text-center mb-5`}>
-          <div className={`w-16 h-16 mx-auto mb-3 rounded-full ${iconBgColor} flex items-center justify-center`}>
+        <div
+          className="rounded-2xl p-6 text-center mb-5"
+          style={{
+            backgroundColor: isIncome ? familyTheme.colors.successSoft : familyTheme.colors.dangerSoft
+          }}
+        >
+          <div
+            className="w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center"
+            style={{
+              backgroundColor: isIncome ? familyTheme.colors.success + '40' : familyTheme.colors.danger + '40'
+            }}
+          >
             <span className="text-3xl">{transaction.categoryIcon || (isIncome ? '💰' : '💸')}</span>
           </div>
           {isAggregated && (
             <div className="mb-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white/80">
+              <span
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-bold bg-white/80"
+                style={{ fontSize: familyTheme.typography.small.size }}
+              >
                 <span>🔄</span>
                 <span>{transaction.count} مورد تکراری</span>
               </span>
             </div>
           )}
-          <div className={`text-4xl font-bold ${textColor} mb-1`}>
+          <div
+            className="font-bold mb-1"
+            style={{
+              fontSize: '36px',
+              fontWeight: familyTheme.typography.heroNumber.weight,
+              color: isIncome ? familyTheme.colors.success : familyTheme.colors.danger
+            }}
+          >
             {isIncome ? '+' : '−'}
             {(displayAmount / 10).toLocaleString('fa-IR')}
           </div>
-          <div className="text-sm text-stone-600">
+          <div
+            style={{
+              fontSize: familyTheme.typography.body.size,
+              color: familyTheme.colors.textSecondary
+            }}
+          >
             {isAggregated ? 'جمع کل' : 'تومان'}
           </div>
           {isAggregated && (
-            <div className="text-xs text-stone-500 mt-1">
+            <div
+              className="mt-1"
+              style={{
+                fontSize: familyTheme.typography.small.size,
+                color: familyTheme.colors.textSecondary
+              }}
+            >
               هر مورد: {(transaction.amount / 10).toLocaleString('fa-IR')} تومان
             </div>
           )}
@@ -205,42 +296,111 @@ export function TransactionDetailSheet({
         <div className="space-y-4 px-2">
           {/* Title */}
           <div>
-            <div className="text-xs text-stone-500 mb-1">عنوان</div>
-            <div className="text-base font-semibold text-stone-800">{transaction.title}</div>
+            <div
+              className="mb-1"
+              style={{
+                fontSize: familyTheme.typography.small.size,
+                color: familyTheme.colors.textSecondary
+              }}
+            >
+              عنوان
+            </div>
+            <div
+              className="font-semibold"
+              style={{
+                fontSize: familyTheme.typography.body.size,
+                color: familyTheme.colors.textPrimary
+              }}
+            >
+              {transaction.title}
+            </div>
           </div>
 
           {/* Category */}
           {transaction.categoryName && (
             <div>
-              <div className="text-xs text-stone-500 mb-1">دسته‌بندی</div>
+              <div
+                className="mb-1"
+                style={{
+                  fontSize: familyTheme.typography.small.size,
+                  color: familyTheme.colors.textSecondary
+                }}
+              >
+                دسته‌بندی
+              </div>
               <div className="flex items-center gap-2">
                 <span className="text-lg">{transaction.categoryIcon}</span>
-                <span className="text-base text-stone-800">{transaction.categoryName}</span>
+                <span
+                  style={{
+                    fontSize: familyTheme.typography.body.size,
+                    color: familyTheme.colors.textPrimary
+                  }}
+                >
+                  {transaction.categoryName}
+                </span>
               </div>
             </div>
           )}
 
           {/* Date */}
           <div>
-            <div className="text-xs text-stone-500 mb-1">تاریخ</div>
-            <div className="text-base text-stone-800">{formatDate(transaction.date)}</div>
+            <div
+              className="mb-1"
+              style={{
+                fontSize: familyTheme.typography.small.size,
+                color: familyTheme.colors.textSecondary
+              }}
+            >
+              تاریخ
+            </div>
+            <div
+              style={{
+                fontSize: familyTheme.typography.body.size,
+                color: familyTheme.colors.textPrimary
+              }}
+            >
+              {formatDate(transaction.date)}
+            </div>
           </div>
 
           {/* Person */}
           <div>
-            <div className="text-xs text-stone-500 mb-1">
+            <div
+              className="mb-1"
+              style={{
+                fontSize: familyTheme.typography.small.size,
+                color: familyTheme.colors.textSecondary
+              }}
+            >
               {isIncome ? 'دریافت‌کننده' : 'پرداخت‌کننده'}
             </div>
-            <div className="text-base text-stone-800">{transaction.personName}</div>
+            <div
+              style={{
+                fontSize: familyTheme.typography.body.size,
+                color: familyTheme.colors.textPrimary
+              }}
+            >
+              {transaction.personName}
+            </div>
           </div>
 
           {/* Type Badge */}
           <div>
-            <div className="text-xs text-stone-500 mb-1">نوع</div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium"
+            <div
+              className="mb-1"
               style={{
-                backgroundColor: isIncome ? '#D1FAE5' : '#FEE2E2',
-                color: isIncome ? '#065F46' : '#991B1B'
+                fontSize: familyTheme.typography.small.size,
+                color: familyTheme.colors.textSecondary
+              }}
+            >
+              نوع
+            </div>
+            <div
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium"
+              style={{
+                fontSize: familyTheme.typography.body.size,
+                backgroundColor: isIncome ? familyTheme.colors.successSoft : familyTheme.colors.dangerSoft,
+                color: isIncome ? familyTheme.colors.success : familyTheme.colors.danger
               }}
             >
               <span>{isIncome ? '💰' : '💸'}</span>
@@ -250,18 +410,34 @@ export function TransactionDetailSheet({
         </div>
 
         {/* Action Buttons - با فاصله کافی از bottom navigation */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 p-4 pb-24">
+        <div
+          className="fixed bottom-0 left-0 right-0 border-t p-4 pb-24"
+          style={{
+            backgroundColor: familyTheme.colors.card,
+            borderColor: familyTheme.colors.divider
+          }}
+        >
           <div className="flex gap-3 max-w-2xl mx-auto">
             <button
               onClick={handleEdit}
-              className="flex-1 py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold hover:from-amber-600 hover:to-orange-600 transition-all shadow-lg flex items-center justify-center gap-2 text-base"
+              className="flex-1 py-4 text-white rounded-xl font-bold hover:opacity-90 transition-all flex items-center justify-center gap-2"
+              style={{
+                backgroundColor: familyTheme.colors.primary,
+                fontSize: familyTheme.typography.body.size,
+                boxShadow: familyTheme.card.shadow
+              }}
             >
               <span className="text-xl">✏️</span>
               <span>ویرایش</span>
             </button>
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              className="flex-1 py-4 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-xl font-bold hover:from-red-600 hover:to-rose-600 transition-all shadow-lg flex items-center justify-center gap-2 text-base"
+              className="flex-1 py-4 text-white rounded-xl font-bold hover:opacity-90 transition-all flex items-center justify-center gap-2"
+              style={{
+                backgroundColor: familyTheme.colors.danger,
+                fontSize: familyTheme.typography.body.size,
+                boxShadow: familyTheme.card.shadow
+              }}
             >
               <span className="text-xl">🗑</span>
               <span>حذف</span>
