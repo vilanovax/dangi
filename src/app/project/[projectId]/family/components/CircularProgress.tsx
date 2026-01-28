@@ -1,5 +1,7 @@
 'use client'
 
+import { familyTheme } from '@/styles/family-theme'
+
 interface CircularProgressProps {
   percentage: number // 0-100
   size?: number // diameter in pixels
@@ -33,7 +35,7 @@ export function CircularProgress({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#FDE68A"
+          stroke={familyTheme.colors.primarySoft}
           strokeWidth={strokeWidth}
         />
         {/* Progress circle */}
@@ -42,7 +44,7 @@ export function CircularProgress({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={isPositive ? '#4ADE80' : '#FF6B6B'}
+          stroke={isPositive ? familyTheme.colors.success : familyTheme.colors.danger}
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
           strokeDashoffset={offset}
@@ -55,13 +57,34 @@ export function CircularProgress({
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <div className="text-center">
           <div
-            className={`text-2xl font-bold ${isPositive ? 'text-green-600' : 'text-red-600'}`}
+            className="font-bold"
+            style={{
+              fontSize: '24px',
+              fontWeight: familyTheme.typography.cardNumber.weight,
+              color: isPositive ? familyTheme.colors.success : familyTheme.colors.danger
+            }}
           >
             {isPositive ? '+' : ''}
             {netBalance.toLocaleString('fa-IR')}
           </div>
-          <div className="text-xs text-stone-600 mt-1">{currency}</div>
-          <div className="text-xs text-stone-500 mt-2">خالص</div>
+          <div
+            className="mt-1"
+            style={{
+              fontSize: familyTheme.typography.small.size,
+              color: familyTheme.colors.textSecondary
+            }}
+          >
+            {currency}
+          </div>
+          <div
+            className="mt-2"
+            style={{
+              fontSize: familyTheme.typography.small.size,
+              color: familyTheme.colors.textTertiary
+            }}
+          >
+            خالص
+          </div>
         </div>
       </div>
     </div>
