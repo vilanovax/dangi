@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <script>
+    const theme = localStorage.getItem('dangi_theme') || 'system';
+    const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    }
+    console.log('Theme:', theme, 'isDark:', isDark, 'classList:', document.documentElement.classList);
+  </script>
+</head>
+<body>
+  <div style="padding: 20px;">
+    <h1 class="text-gray-900 dark:text-white">Test Dark Mode</h1>
+    <p class="bg-white dark:bg-gray-900 p-4">This should change in dark mode</p>
+    <button onclick="document.documentElement.classList.toggle('dark')">Toggle Dark</button>
+  </div>
+</body>
+</html>

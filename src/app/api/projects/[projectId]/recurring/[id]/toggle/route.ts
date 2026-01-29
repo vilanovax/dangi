@@ -9,10 +9,10 @@ import { projectService } from '@/lib/services/project.service'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { projectId: string; id: string } }
+  { params }: { params: Promise<{ projectId: string; id: string }> }
 ) {
   try {
-    const { projectId, id } = params
+    const { projectId, id } = await params
 
     // Verify project exists
     const project = await projectService.getById(projectId)

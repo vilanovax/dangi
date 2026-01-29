@@ -3,7 +3,7 @@ import type { TemplateDefinition } from '@/lib/types/domain'
 export const personalTemplate: TemplateDefinition = {
   id: 'personal',
   name: 'Personal Finance',
-  nameFa: 'مالی شخصی',
+  nameFa: 'هم خانه',
   defaultSplitType: 'EQUAL',
   icon: '💰',
   periodRequired: false,

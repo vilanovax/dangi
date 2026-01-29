@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button, Card, BottomSheet, Avatar } from '@/components/ui'
@@ -9,6 +9,7 @@ import { formatMoney } from '@/lib/utils/money'
 import { deserializeAvatar, type Avatar as AvatarData } from '@/lib/types/avatar'
 import type { CategoryBreakdown, ParticipantExpenseBreakdown } from '@/types'
 import { CategoryBreakdownCard, ParticipantExpenseBreakdownCard } from './components'
+import { useProject, useProjectSummary, useCreateSettlement } from '@/hooks/useProjects'
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -80,51 +81,27 @@ export default function SummaryPage() {
   const router = useRouter()
   const projectId = params.projectId as string
 
-  // ── Data State ──────────────────────────────────────────────
-  const [summary, setSummary] = useState<ProjectSummary | null>(null)
-  const [chargeInfo, setChargeInfo] = useState<ChargeInfo | null>(null)
-  const [categoryBreakdown, setCategoryBreakdown] = useState<CategoryBreakdown[]>([])
-  const [participantExpenseBreakdown, setParticipantExpenseBreakdown] = useState<ParticipantExpenseBreakdown[]>([])
-  const [project, setProject] = useState<Project | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<TabType>('balance')
+  // ── React Query Hooks ───────────────────────────────────────
+  const { data: projectData, isLoading: projectLoading } = useProject(projectId)
+  const { data: summaryData, isLoading: summaryLoading } = useProjectSummary(projectId)
+  const createSettlementMutation = useCreateSettlement(projectId)
 
-  // ── Quick Settlement State ──────────────────────────────────
+  // ── UI State ────────────────────────────────────────────────
+  const [activeTab, setActiveTab] = useState<TabType>('balance')
   const [showQuickSettle, setShowQuickSettle] = useState(false)
   const [selectedSettlement, setSelectedSettlement] = useState<Settlement | null>(null)
-  const [submitting, setSubmitting] = useState(false)
 
-  // ── Fetch Data ──────────────────────────────────────────────
+  // ── Extract Data from Query Results ─────────────────────────
+  const project = useMemo(() => projectData?.project || null, [projectData])
+  const summary = useMemo(() => summaryData?.summary || null, [summaryData])
+  const chargeInfo = useMemo(() => summaryData?.chargeInfo || null, [summaryData])
+  const categoryBreakdown = useMemo(() => summaryData?.categoryBreakdown || [], [summaryData])
+  const participantExpenseBreakdown = useMemo(
+    () => summaryData?.participantExpenseBreakdown || [],
+    [summaryData]
+  )
 
-  const fetchData = useCallback(async () => {
-    try {
-      const [summaryRes, projectRes] = await Promise.all([
-        fetch(`/api/projects/${projectId}/summary`),
-        fetch(`/api/projects/${projectId}`),
-      ])
-
-      if (summaryRes.ok) {
-        const data = await summaryRes.json()
-        setSummary(data.summary)
-        setChargeInfo(data.chargeInfo)
-        setCategoryBreakdown(data.categoryBreakdown || [])
-        setParticipantExpenseBreakdown(data.participantExpenseBreakdown || [])
-      }
-
-      if (projectRes.ok) {
-        const data = await projectRes.json()
-        setProject(data.project)
-      }
-    } catch (error) {
-      console.error('Error fetching data:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [projectId])
-
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
+  const loading = projectLoading || summaryLoading
 
   // ── Handlers ────────────────────────────────────────────────
 
@@ -145,29 +122,18 @@ export default function SummaryPage() {
   const confirmQuickSettle = useCallback(async () => {
     if (!selectedSettlement) return
 
-    setSubmitting(true)
     try {
-      const res = await fetch(`/api/projects/${projectId}/settlements`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fromId: selectedSettlement.fromId,
-          toId: selectedSettlement.toId,
-          amount: selectedSettlement.amount,
-          note: 'تسویه سریع از صفحه خلاصه',
-        }),
+      await createSettlementMutation.mutateAsync({
+        fromId: selectedSettlement.fromId,
+        toId: selectedSettlement.toId,
+        amount: selectedSettlement.amount,
+        note: 'تسویه سریع از صفحه خلاصه',
       })
-
-      if (res.ok) {
-        handleCloseQuickSettle()
-        fetchData()
-      }
+      handleCloseQuickSettle()
     } catch (error) {
       console.error('Error creating settlement:', error)
-    } finally {
-      setSubmitting(false)
     }
-  }, [selectedSettlement, projectId, handleCloseQuickSettle, fetchData])
+  }, [selectedSettlement, createSettlementMutation, handleCloseQuickSettle])
 
   // ── Helper: Get Participant Avatar ──────────────────────────
 
@@ -636,7 +602,11 @@ export default function SummaryPage() {
               <Button variant="secondary" onClick={handleCloseQuickSettle} className="flex-1">
                 انصراف
               </Button>
-              <Button onClick={confirmQuickSettle} loading={submitting} className="flex-1">
+              <Button
+                onClick={confirmQuickSettle}
+                loading={createSettlementMutation.isPending}
+                className="flex-1"
+              >
                 تأیید تسویه
               </Button>
             </div>

@@ -11,10 +11,10 @@ import type { CreateRecurringTransactionInput } from '@/types/family'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { projectId: string } }
+  { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
-    const { projectId } = params
+    const { projectId } = await params
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type') // 'INCOME' | 'EXPENSE' | null (all)
     const isActive = searchParams.get('active') // 'true' | 'false' | null (all)
@@ -70,10 +70,10 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { projectId: string } }
+  { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
-    const { projectId } = params
+    const { projectId } = await params
     const body = await request.json()
 
     // Verify project exists

@@ -11,10 +11,10 @@ import { projectService } from '@/lib/services/project.service'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { projectId: string; id: string } }
+  { params }: { params: Promise<{ projectId: string; id: string }> }
 ) {
   try {
-    const { projectId, id } = params
+    const { projectId, id } = await params
 
     // Verify project exists
     const project = await projectService.getById(projectId)
@@ -70,10 +70,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { projectId: string; id: string } }
+  { params }: { params: Promise<{ projectId: string; id: string }> }
 ) {
   try {
-    const { projectId, id } = params
+    const { projectId, id } = await params
     const body = await request.json()
 
     // Verify project exists
@@ -166,10 +166,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { projectId: string; id: string } }
+  { params }: { params: Promise<{ projectId: string; id: string }> }
 ) {
   try {
-    const { projectId, id } = params
+    const { projectId, id } = await params
 
     // Verify project exists
     const project = await projectService.getById(projectId)

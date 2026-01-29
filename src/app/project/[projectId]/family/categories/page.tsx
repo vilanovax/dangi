@@ -3,7 +3,12 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui'
-import { familyTheme } from '@/styles/family-theme'
+import {
+  getBackgroundClass,
+  getHeaderGradient,
+  getCardBackgroundClass,
+  getTextColorClass,
+} from '@/styles/family-theme'
 
 interface Category {
   id: string
@@ -158,22 +163,16 @@ export default function CategoriesPage() {
 
   if (loading) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center"
-        style={{ backgroundColor: familyTheme.colors.background }}
-      >
-        <div style={{ color: familyTheme.colors.textSecondary }}>در حال بارگذاری...</div>
+      <div className={`min-h-screen flex items-center justify-center ${getBackgroundClass()}`}>
+        <div className={getTextColorClass('secondary')}>در حال بارگذاری...</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: familyTheme.colors.background }}>
+    <div className={`min-h-screen ${getBackgroundClass()}`}>
       {/* Header */}
-      <div
-        className="text-white p-6 shadow-lg"
-        style={{ background: familyTheme.gradients.primaryHeader }}
-      >
+      <div className={`text-white p-6 shadow-lg ${getHeaderGradient('primary')}`}>
         <div className="flex items-center gap-4 mb-2">
           <button
             onClick={() => router.back()}
@@ -181,20 +180,11 @@ export default function CategoriesPage() {
           >
             ←
           </button>
-          <h1
-            className="font-bold"
-            style={{
-              fontSize: familyTheme.typography.pageTitle.size,
-              fontWeight: familyTheme.typography.pageTitle.weight
-            }}
-          >
+          <h1 className="text-[22px] font-bold">
             مدیریت دسته‌بندی‌ها
           </h1>
         </div>
-        <p
-          className="text-white/90 mr-14"
-          style={{ fontSize: familyTheme.typography.body.size }}
-        >
+        <p className="text-white/90 mr-14 text-[14px]">
           دسته‌بندی‌های هزینه را مدیریت کنید
         </p>
       </div>
@@ -204,12 +194,7 @@ export default function CategoriesPage() {
         {!showAddForm && !editingId && (
           <button
             onClick={startAdd}
-            className="w-full text-white py-4 rounded-2xl font-bold transition-all"
-            style={{
-              backgroundColor: familyTheme.colors.danger,
-              boxShadow: familyTheme.card.shadow,
-              fontSize: familyTheme.typography.body.size
-            }}
+            className="w-full bg-[#EF4444] dark:bg-[#F87171] text-white py-4 rounded-2xl font-bold text-[14px] shadow-sm transition-all"
           >
             ➕ افزودن دسته‌بندی جدید
           </button>
@@ -217,55 +202,26 @@ export default function CategoriesPage() {
 
         {/* Add form */}
         {showAddForm && (
-          <div
-            className="rounded-2xl p-6 space-y-4"
-            style={{
-              backgroundColor: familyTheme.colors.card,
-              boxShadow: familyTheme.card.shadow
-            }}
-          >
-            <h3
-              className="font-bold"
-              style={{
-                fontSize: familyTheme.typography.subtitle.size,
-                color: familyTheme.colors.textPrimary
-              }}
-            >
+          <div className={`rounded-2xl p-6 space-y-4 shadow-sm ${getCardBackgroundClass()}`}>
+            <h3 className={`font-bold text-[15px] ${getTextColorClass('primary')}`}>
               دسته‌بندی جدید
             </h3>
 
             <div>
-              <label
-                className="block font-medium mb-2"
-                style={{
-                  fontSize: familyTheme.typography.body.size,
-                  color: familyTheme.colors.textPrimary
-                }}
-              >
-                نام <span style={{ color: familyTheme.colors.danger }}>*</span>
+              <label className={`block font-medium mb-2 text-[14px] ${getTextColorClass('primary')}`}>
+                نام <span className={getTextColorClass('danger')}>*</span>
               </label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="مثلاً: خوراک و خواربار"
-                className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent"
-                style={{
-                  backgroundColor: familyTheme.colors.background,
-                  borderColor: familyTheme.colors.divider,
-                  fontSize: familyTheme.typography.body.size
-                }}
+                className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 text-[14px]"
               />
             </div>
 
             <div>
-              <label
-                className="block font-medium mb-2"
-                style={{
-                  fontSize: familyTheme.typography.body.size,
-                  color: familyTheme.colors.textPrimary
-                }}
-              >
+              <label className={`block font-medium mb-2 text-[14px] ${getTextColorClass('primary')}`}>
                 آیکون (ایموجی)
               </label>
               <input
@@ -273,26 +229,13 @@ export default function CategoriesPage() {
                 value={icon}
                 onChange={(e) => setIcon(e.target.value)}
                 placeholder="🍎"
-                className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent"
-                style={{
-                  backgroundColor: familyTheme.colors.background,
-                  borderColor: familyTheme.colors.divider,
-                  fontSize: familyTheme.typography.body.size
-                }}
+                className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 text-[14px]"
                 maxLength={2}
               />
             </div>
 
             {error && (
-              <div
-                className="px-4 py-3 rounded-xl"
-                style={{
-                  backgroundColor: familyTheme.colors.dangerSoft,
-                  border: `1px solid ${familyTheme.colors.danger}33`,
-                  color: familyTheme.colors.danger,
-                  fontSize: familyTheme.typography.body.size
-                }}
-              >
+              <div className="px-4 py-3 rounded-xl bg-[#FEECEC] dark:bg-[#2D1212] border border-[#EF4444]/20 dark:border-[#F87171]/20 text-[#EF4444] dark:text-[#F87171] text-[14px]">
                 {error}
               </div>
             )}
@@ -300,11 +243,7 @@ export default function CategoriesPage() {
             <div className="flex gap-3">
               <Button
                 onClick={handleAdd}
-                className="flex-1 text-white py-3 rounded-xl font-bold"
-                style={{
-                  backgroundColor: familyTheme.colors.danger,
-                  fontSize: familyTheme.typography.body.size
-                }}
+                className="flex-1 bg-[#EF4444] dark:bg-[#F87171] text-white py-3 rounded-xl font-bold text-[14px]"
               >
                 ذخیره
               </Button>
@@ -315,12 +254,7 @@ export default function CategoriesPage() {
                   setIcon('')
                   setError('')
                 }}
-                className="flex-1 py-3 rounded-xl font-bold"
-                style={{
-                  backgroundColor: familyTheme.colors.divider,
-                  color: familyTheme.colors.textPrimary,
-                  fontSize: familyTheme.typography.body.size
-                }}
+                className="flex-1 bg-[#E5E7EB] dark:bg-[#334155] py-3 rounded-xl font-bold text-[14px]"
               >
                 انصراف
               </Button>
@@ -333,72 +267,38 @@ export default function CategoriesPage() {
           {categories.map((category) => (
             <div
               key={category.id}
-              className="rounded-2xl p-4"
-              style={{
-                backgroundColor: familyTheme.colors.card,
-                boxShadow: familyTheme.card.shadow
-              }}
+              className={`rounded-2xl p-4 shadow-sm ${getCardBackgroundClass()}`}
             >
               {editingId === category.id ? (
                 // Edit mode
                 <div className="space-y-4">
                   <div>
-                    <label
-                      className="block font-medium mb-2"
-                      style={{
-                        fontSize: familyTheme.typography.body.size,
-                        color: familyTheme.colors.textPrimary
-                      }}
-                    >
-                      نام <span style={{ color: familyTheme.colors.danger }}>*</span>
+                    <label className={`block font-medium mb-2 text-[14px] ${getTextColorClass('primary')}`}>
+                      نام <span className={getTextColorClass('danger')}>*</span>
                     </label>
                     <input
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent"
-                      style={{
-                        backgroundColor: familyTheme.colors.background,
-                        borderColor: familyTheme.colors.divider,
-                        fontSize: familyTheme.typography.body.size
-                      }}
+                      className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 text-[14px]"
                     />
                   </div>
 
                   <div>
-                    <label
-                      className="block font-medium mb-2"
-                      style={{
-                        fontSize: familyTheme.typography.body.size,
-                        color: familyTheme.colors.textPrimary
-                      }}
-                    >
+                    <label className={`block font-medium mb-2 text-[14px] ${getTextColorClass('primary')}`}>
                       آیکون (ایموجی)
                     </label>
                     <input
                       type="text"
                       value={icon}
                       onChange={(e) => setIcon(e.target.value)}
-                      className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent"
-                      style={{
-                        backgroundColor: familyTheme.colors.background,
-                        borderColor: familyTheme.colors.divider,
-                        fontSize: familyTheme.typography.body.size
-                      }}
+                      className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 text-[14px]"
                       maxLength={2}
                     />
                   </div>
 
                   {error && (
-                    <div
-                      className="px-4 py-3 rounded-xl"
-                      style={{
-                        backgroundColor: familyTheme.colors.dangerSoft,
-                        border: `1px solid ${familyTheme.colors.danger}33`,
-                        color: familyTheme.colors.danger,
-                        fontSize: familyTheme.typography.body.size
-                      }}
-                    >
+                    <div className="px-4 py-3 rounded-xl bg-[#FEECEC] dark:bg-[#2D1212] border border-[#EF4444]/20 dark:border-[#F87171]/20 text-[#EF4444] dark:text-[#F87171] text-[14px]">
                       {error}
                     </div>
                   )}
@@ -406,22 +306,13 @@ export default function CategoriesPage() {
                   <div className="flex gap-3">
                     <Button
                       onClick={() => handleEdit(category.id)}
-                      className="flex-1 text-white py-3 rounded-xl font-bold"
-                      style={{
-                        backgroundColor: familyTheme.colors.danger,
-                        fontSize: familyTheme.typography.body.size
-                      }}
+                      className="flex-1 bg-[#EF4444] dark:bg-[#F87171] text-white py-3 rounded-xl font-bold text-[14px]"
                     >
                       ذخیره
                     </Button>
                     <Button
                       onClick={cancelEdit}
-                      className="flex-1 py-3 rounded-xl font-bold"
-                      style={{
-                        backgroundColor: familyTheme.colors.divider,
-                        color: familyTheme.colors.textPrimary,
-                        fontSize: familyTheme.typography.body.size
-                      }}
+                      className="flex-1 bg-[#E5E7EB] dark:bg-[#334155] py-3 rounded-xl font-bold text-[14px]"
                     >
                       انصراف
                     </Button>
@@ -432,36 +323,20 @@ export default function CategoriesPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">{category.icon || '📝'}</span>
-                    <span
-                      className="font-medium"
-                      style={{
-                        fontSize: familyTheme.typography.body.size,
-                        color: familyTheme.colors.textPrimary
-                      }}
-                    >
+                    <span className={`font-medium text-[14px] ${getTextColorClass('primary')}`}>
                       {category.name}
                     </span>
                   </div>
                   <div className="flex gap-2">
                     <button
                       onClick={() => startEdit(category)}
-                      className="px-4 py-2 rounded-lg font-medium hover:opacity-80 transition-colors"
-                      style={{
-                        backgroundColor: familyTheme.colors.infoSoft,
-                        color: familyTheme.colors.info,
-                        fontSize: familyTheme.typography.small.size
-                      }}
+                      className="px-4 py-2 rounded-lg font-medium hover:opacity-80 transition-colors bg-[#EEF2FF] dark:bg-[#1E1B3A] text-[#4F6EF7] dark:text-[#818CF8] text-[12px]"
                     >
                       ✏️ ویرایش
                     </button>
                     <button
                       onClick={() => handleDelete(category.id)}
-                      className="px-4 py-2 rounded-lg font-medium hover:opacity-80 transition-colors"
-                      style={{
-                        backgroundColor: familyTheme.colors.dangerSoft,
-                        color: familyTheme.colors.danger,
-                        fontSize: familyTheme.typography.small.size
-                      }}
+                      className="px-4 py-2 rounded-lg font-medium hover:opacity-80 transition-colors bg-[#FEECEC] dark:bg-[#2D1212] text-[#EF4444] dark:text-[#F87171] text-[12px]"
                     >
                       🗑️ حذف
                     </button>
@@ -473,30 +348,14 @@ export default function CategoriesPage() {
         </div>
 
         {categories.length === 0 && !showAddForm && (
-          <div
-            className="rounded-2xl p-12 text-center"
-            style={{
-              backgroundColor: familyTheme.colors.card,
-              boxShadow: familyTheme.card.shadow
-            }}
-          >
+          <div className={`rounded-2xl p-12 text-center shadow-sm ${getCardBackgroundClass()}`}>
             <span className="text-6xl mb-4 block">📁</span>
-            <p
-              className="mb-4"
-              style={{
-                fontSize: familyTheme.typography.body.size,
-                color: familyTheme.colors.textSecondary
-              }}
-            >
+            <p className={`mb-4 text-[14px] ${getTextColorClass('secondary')}`}>
               هنوز دسته‌بندی‌ای ایجاد نشده است
             </p>
             <button
               onClick={startAdd}
-              className="font-medium hover:underline"
-              style={{
-                fontSize: familyTheme.typography.body.size,
-                color: familyTheme.colors.danger
-              }}
+              className={`font-medium hover:underline text-[14px] ${getTextColorClass('danger')}`}
             >
               اولین دسته‌بندی را بسازید
             </button>

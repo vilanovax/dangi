@@ -3,7 +3,13 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { familyTheme } from '@/styles/family-theme'
+import {
+  familyTheme,
+  getBackgroundClass,
+  getHeaderGradient,
+  getCardBackgroundClass,
+  getTextColorClass,
+} from '@/styles/family-theme'
 
 interface BudgetItem {
   categoryId: string
@@ -71,12 +77,9 @@ export default function BudgetsPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: familyTheme.colors.background }}>
+    <div className={`min-h-screen ${getBackgroundClass()}`}>
       {/* Header */}
-      <div
-        className="text-white p-5 shadow-lg sticky top-0 z-10"
-        style={{ background: familyTheme.gradients.primaryHeader }}
-      >
+      <div className={`text-white p-5 shadow-lg sticky top-0 z-10 ${getHeaderGradient('primary')}`}>
         <div className="flex items-center gap-3">
           <Link
             href={`/project/${projectId}/family`}
@@ -85,19 +88,10 @@ export default function BudgetsPage() {
             →
           </Link>
           <div>
-            <h1
-              className="font-bold"
-              style={{
-                fontSize: familyTheme.typography.pageTitle.size,
-                fontWeight: familyTheme.typography.pageTitle.weight
-              }}
-            >
+            <h1 className="text-[22px] font-bold">
               بودجه این ماه
             </h1>
-            <p
-              className="text-white/80 mt-0.5"
-              style={{ fontSize: familyTheme.typography.small.size }}
-            >
+            <p className="text-white/80 mt-0.5 text-xs">
               کنترل و مدیریت خرج‌ها
             </p>
           </div>
@@ -108,57 +102,27 @@ export default function BudgetsPage() {
       <div className="p-4 space-y-4">
         {loading ? (
           <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-amber-200 border-t-amber-600"></div>
-            <p className="text-stone-600 mt-4">در حال بارگذاری...</p>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-amber-200 dark:border-amber-900 border-t-amber-600 dark:border-t-amber-400"></div>
+            <p className={`mt-4 text-sm ${getTextColorClass('secondary')}`}>در حال بارگذاری...</p>
           </div>
         ) : (
           <>
             {/* Overall Budget Card */}
             {!hasBudget ? (
               /* Empty state - بودجه تنظیم نشده */
-              <div
-                className="rounded-3xl p-8 text-center"
-                style={{
-                  backgroundColor: familyTheme.colors.card,
-                  boxShadow: familyTheme.card.shadow,
-                  border: `1px solid ${familyTheme.colors.divider}`
-                }}
-              >
-                <div
-                  className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: familyTheme.colors.primarySoft }}
-                >
+              <div className={`rounded-3xl p-8 text-center shadow-lg border border-gray-200 dark:border-gray-700 ${getCardBackgroundClass()}`}>
+                <div className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center bg-[#FFF3E0] dark:bg-[#2D1F0D]">
                   <span className="text-4xl">🎯</span>
                 </div>
-                <h2
-                  className="font-bold mb-2"
-                  style={{
-                    fontSize: familyTheme.typography.pageTitle.size,
-                    fontWeight: familyTheme.typography.pageTitle.weight,
-                    color: familyTheme.colors.textPrimary
-                  }}
-                >
+                <h2 className={`text-[22px] font-bold mb-2 ${getTextColorClass('primary')}`}>
                   هنوز بودجه‌ای برای این ماه تعیین نکردی
                 </h2>
-                <p
-                  className="mb-6 leading-relaxed"
-                  style={{
-                    fontSize: familyTheme.typography.body.size,
-                    color: familyTheme.colors.textSecondary
-                  }}
-                >
+                <p className={`mb-6 leading-relaxed text-sm ${getTextColorClass('secondary')}`}>
                   با تنظیم بودجه، خرج‌هات شفاف‌تر می‌شن
                 </p>
                 <button
                   onClick={() => router.push(`/project/${projectId}/family/budgets/set`)}
-                  className="px-8 text-white rounded-xl hover:shadow-lg transition-all inline-flex items-center gap-2"
-                  style={{
-                    height: familyTheme.button.height,
-                    backgroundColor: familyTheme.colors.primary,
-                    fontSize: familyTheme.button.fontSize,
-                    fontWeight: familyTheme.button.fontWeight,
-                    borderRadius: familyTheme.button.borderRadius
-                  }}
+                  className="px-8 text-white rounded-2xl hover:shadow-lg transition-all inline-flex items-center gap-2 h-[52px] bg-[#FF8A00] dark:bg-[#FFA94D] text-[15px] font-bold"
                 >
                   <span>🎯</span>
                   <span>تنظیم بودجه</span>
@@ -166,98 +130,48 @@ export default function BudgetsPage() {
               </div>
             ) : (
               /* Budget exists - نمایش وضعیت بودجه */
-              <div
-                className="rounded-3xl p-6"
-                style={{
-                  backgroundColor: familyTheme.colors.card,
-                  boxShadow: familyTheme.card.shadow,
-                  border: `1px solid ${familyTheme.colors.divider}`
-                }}
-              >
+              <div className={`rounded-3xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 ${getCardBackgroundClass()}`}>
                 <div className="text-center mb-6">
-                  <div
-                    className="mb-2"
-                    style={{
-                      fontSize: familyTheme.typography.body.size,
-                      color: familyTheme.colors.textSecondary
-                    }}
-                  >
+                  <div className={`mb-2 text-sm ${getTextColorClass('secondary')}`}>
                     بودجه کل ماه
                   </div>
-                  <div
-                    className="font-bold mb-2"
-                    style={{
-                      fontSize: '48px',
-                      fontWeight: familyTheme.typography.heroNumber.weight,
-                      color: familyTheme.colors.primary
-                    }}
-                  >
+                  <div className="text-[48px] font-extrabold mb-2 text-[#FF8A00] dark:text-[#FFA94D]">
                     {overallPercentage.toFixed(0)}%
                   </div>
-                  <div
-                    className="font-medium"
-                    style={{
-                      fontSize: familyTheme.typography.body.size,
-                      color: familyTheme.colors.textSecondary
-                    }}
-                  >
+                  <div className={`font-medium text-sm ${getTextColorClass('secondary')}`}>
                     {getBudgetStatusMessage()}
                   </div>
                 </div>
 
                 <div className="space-y-3 mb-4">
                   <div className="flex items-center justify-between">
-                    <span style={{ fontSize: familyTheme.typography.body.size, color: familyTheme.colors.textSecondary }}>
+                    <span className={`text-sm ${getTextColorClass('secondary')}`}>
                       خرج شده
                     </span>
-                    <span
-                      className="font-bold"
-                      style={{
-                        fontSize: familyTheme.typography.body.size,
-                        fontWeight: familyTheme.typography.cardNumber.weight,
-                        color: familyTheme.colors.danger
-                      }}
-                    >
+                    <span className={`text-sm font-bold ${getTextColorClass('danger')}`}>
                       {(totalSpent / 10).toLocaleString('fa-IR')} تومان
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span style={{ fontSize: familyTheme.typography.body.size, color: familyTheme.colors.textSecondary }}>
+                    <span className={`text-sm ${getTextColorClass('secondary')}`}>
                       بودجه کل
                     </span>
-                    <span
-                      className="font-bold"
-                      style={{
-                        fontSize: familyTheme.typography.body.size,
-                        fontWeight: familyTheme.typography.cardNumber.weight,
-                        color: familyTheme.colors.success
-                      }}
-                    >
+                    <span className={`text-sm font-bold ${getTextColorClass('success')}`}>
                       {(totalBudget / 10).toLocaleString('fa-IR')} تومان
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span style={{ fontSize: familyTheme.typography.body.size, color: familyTheme.colors.textSecondary }}>
+                    <span className={`text-sm ${getTextColorClass('secondary')}`}>
                       باقی‌مانده
                     </span>
-                    <span
-                      className="font-bold"
-                      style={{
-                        fontSize: familyTheme.typography.body.size,
-                        fontWeight: familyTheme.typography.cardNumber.weight,
-                        color: totalBudget - totalSpent >= 0 ? familyTheme.colors.info : familyTheme.colors.danger
-                      }}
-                    >
+                    <span className={`text-sm font-bold ${totalBudget - totalSpent >= 0 ? getTextColorClass('info') : getTextColorClass('danger')}`}>
                       {((totalBudget - totalSpent) / 10).toLocaleString('fa-IR')} تومان
                     </span>
                   </div>
                 </div>
 
                 {/* Overall Progress Bar */}
-                <div
-                  className="h-3 rounded-full overflow-hidden"
-                  style={{ backgroundColor: familyTheme.colors.divider }}
-                >
+                <div className="h-3 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700">
                   <div
                     className={`h-full transition-all ${getProgressColor(overallPercentage)}`}
                     style={{ width: `${Math.min(overallPercentage, 100)}%` }}
@@ -270,23 +184,12 @@ export default function BudgetsPage() {
             {hasBudget && budgets.length > 0 && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between mb-2">
-                  <h2
-                    className="font-bold"
-                    style={{
-                      fontSize: familyTheme.typography.subtitle.size,
-                      fontWeight: familyTheme.typography.pageTitle.weight,
-                      color: familyTheme.colors.textPrimary
-                    }}
-                  >
+                  <h2 className={`text-[15px] font-bold ${getTextColorClass('primary')}`}>
                     بودجه دسته‌ها
                   </h2>
                   <button
                     onClick={() => router.push(`/project/${projectId}/family/budgets/set`)}
-                    className="font-medium hover:opacity-80"
-                    style={{
-                      fontSize: familyTheme.typography.body.size,
-                      color: familyTheme.colors.primary
-                    }}
+                    className="text-sm font-medium hover:opacity-80 text-[#FF8A00] dark:text-[#FFA94D]"
                   >
                     ویرایش
                   </button>
@@ -295,56 +198,28 @@ export default function BudgetsPage() {
                 {budgets.map((budget) => (
                   <div
                     key={budget.categoryId}
-                    className="rounded-xl p-4"
-                    style={{
-                      backgroundColor: familyTheme.colors.card,
-                      boxShadow: familyTheme.card.shadow
-                    }}
+                    className={`rounded-2xl p-4 shadow-sm ${getCardBackgroundClass()}`}
                   >
                     <div className="flex items-center gap-3 mb-3">
-                      <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center"
-                        style={{ backgroundColor: familyTheme.colors.primarySoft }}
-                      >
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-[#FFF3E0] dark:bg-[#2D1F0D]">
                         <span className="text-xl">{budget.categoryIcon || '📦'}</span>
                       </div>
                       <div className="flex-1">
-                        <div
-                          className="font-medium"
-                          style={{
-                            fontSize: familyTheme.typography.body.size,
-                            color: familyTheme.colors.textPrimary
-                          }}
-                        >
+                        <div className={`font-medium text-sm ${getTextColorClass('primary')}`}>
                           {budget.categoryName}
                         </div>
-                        <div
-                          className="mt-0.5"
-                          style={{
-                            fontSize: familyTheme.typography.small.size,
-                            color: familyTheme.colors.textSecondary
-                          }}
-                        >
+                        <div className={`mt-0.5 text-xs ${getTextColorClass('secondary')}`}>
                           {(budget.spent / 10).toLocaleString('fa-IR')} از{' '}
                           {(budget.limit / 10).toLocaleString('fa-IR')} تومان
                         </div>
                       </div>
-                      <div
-                        className={`font-bold ${getProgressTextColor(budget.percentage)}`}
-                        style={{
-                          fontSize: familyTheme.typography.subtitle.size,
-                          fontWeight: familyTheme.typography.cardNumber.weight
-                        }}
-                      >
+                      <div className={`text-[15px] font-bold ${getProgressTextColor(budget.percentage)}`}>
                         {budget.percentage.toFixed(0)}%
                       </div>
                     </div>
 
                     {/* Progress Bar */}
-                    <div
-                      className="h-2 rounded-full overflow-hidden"
-                      style={{ backgroundColor: familyTheme.colors.divider }}
-                    >
+                    <div className="h-2 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700">
                       <div
                         className={`h-full transition-all ${getProgressColor(budget.percentage)}`}
                         style={{ width: `${Math.min(budget.percentage, 100)}%` }}
@@ -356,16 +231,10 @@ export default function BudgetsPage() {
             )}
 
             {/* Info Box */}
-            <div
-              className="rounded-xl p-4"
-              style={{
-                backgroundColor: familyTheme.colors.infoSoft,
-                border: `1px solid ${familyTheme.colors.info}33`
-              }}
-            >
+            <div className="rounded-2xl p-4 bg-[#EEF2FF] dark:bg-[#1E1B3A] border border-[#4F6EF7]/20 dark:border-[#818CF8]/20">
               <div className="flex items-start gap-2">
                 <span className="text-base">💡</span>
-                <div style={{ fontSize: familyTheme.typography.small.size, color: familyTheme.colors.info }}>
+                <div className={`text-xs ${getTextColorClass('info')}`}>
                   <p className="font-medium mb-1">نکته:</p>
                   <p>
                     بودجه‌بندی به شما کمک می‌کند مخارج ماهانه را کنترل کنید و از هزینه‌های

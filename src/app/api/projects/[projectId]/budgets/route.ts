@@ -12,10 +12,10 @@ import { getCurrentPeriod, parsePeriodKey } from '@/lib/utils/jalali'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { projectId: string } }
+  { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
-    const { projectId } = params
+    const { projectId } = await params
     const { searchParams } = new URL(request.url)
     const periodKey = searchParams.get('period') || getCurrentPeriod()
 
@@ -70,10 +70,10 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { projectId: string } }
+  { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
-    const { projectId } = params
+    const { projectId } = await params
     const body = await request.json()
 
     // Verify project exists

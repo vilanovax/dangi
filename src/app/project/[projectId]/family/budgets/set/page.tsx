@@ -4,7 +4,13 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui'
 import { getCurrentPeriodKey } from '@/lib/utils/persian-date'
-import { familyTheme } from '@/styles/family-theme'
+import {
+  familyTheme,
+  getBackgroundClass,
+  getHeaderGradient,
+  getCardBackgroundClass,
+  getTextColorClass,
+} from '@/styles/family-theme'
 
 interface Category {
   id: string
@@ -159,11 +165,8 @@ export default function SetBudgetsPage() {
 
   if (fetchLoading) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center"
-        style={{ backgroundColor: familyTheme.colors.background }}
-      >
-        <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-amber-200 border-t-amber-600"></div>
+      <div className={`min-h-screen flex items-center justify-center ${getBackgroundClass()}`}>
+        <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-amber-200 dark:border-amber-900 border-t-amber-600 dark:border-t-amber-400"></div>
       </div>
     )
   }
@@ -171,34 +174,15 @@ export default function SetBudgetsPage() {
   // Success overlay
   if (showSuccess) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center p-4"
-        style={{ backgroundColor: familyTheme.colors.background }}
-      >
-        <div
-          className="rounded-3xl p-8 text-center max-w-sm"
-          style={{
-            backgroundColor: familyTheme.colors.card,
-            boxShadow: familyTheme.card.shadow
-          }}
-        >
-          <div
-            className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center animate-bounce"
-            style={{ backgroundColor: familyTheme.colors.successSoft }}
-          >
+      <div className={`min-h-screen flex items-center justify-center p-4 ${getBackgroundClass()}`}>
+        <div className={`rounded-3xl p-8 text-center max-w-sm shadow-lg ${getCardBackgroundClass()}`}>
+          <div className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center animate-bounce bg-[#EAFBF1] dark:bg-[#0F2417]">
             <span className="text-4xl">✓</span>
           </div>
-          <h2
-            className="font-bold mb-2"
-            style={{
-              fontSize: familyTheme.typography.pageTitle.size,
-              fontWeight: familyTheme.typography.pageTitle.weight,
-              color: familyTheme.colors.textPrimary
-            }}
-          >
+          <h2 className={`text-[22px] font-bold mb-2 ${getTextColorClass('primary')}`}>
             بودجه این ماه ذخیره شد
           </h2>
-          <p style={{ fontSize: familyTheme.typography.body.size, color: familyTheme.colors.textSecondary }}>
+          <p className={`text-sm ${getTextColorClass('secondary')}`}>
             حالا می‌تونی خرج‌هات رو راحت‌تر کنترل کنی 👌
           </p>
         </div>
@@ -229,12 +213,9 @@ export default function SetBudgetsPage() {
   const totalBudgetAmount = Object.values(budgets).reduce((sum, amount) => sum + amount, 0)
 
   return (
-    <div className="min-h-screen pb-20" style={{ backgroundColor: familyTheme.colors.background }}>
+    <div className={`min-h-screen pb-20 ${getBackgroundClass()}`}>
       {/* Header */}
-      <div
-        className="text-white p-5 shadow-lg sticky top-0 z-10"
-        style={{ background: familyTheme.gradients.primaryHeader }}
-      >
+      <div className={`text-white p-5 shadow-lg sticky top-0 z-10 ${getHeaderGradient('primary')}`}>
         <div className="flex items-center gap-3 mb-2">
           <button
             onClick={() => router.back()}
@@ -244,19 +225,10 @@ export default function SetBudgetsPage() {
             ←
           </button>
           <div>
-            <h1
-              className="font-bold"
-              style={{
-                fontSize: familyTheme.typography.pageTitle.size,
-                fontWeight: familyTheme.typography.pageTitle.weight
-              }}
-            >
+            <h1 className="text-[22px] font-bold">
               تنظیم بودجه
             </h1>
-            <p
-              className="text-white/80 mt-0.5"
-              style={{ fontSize: familyTheme.typography.small.size }}
-            >
+            <p className="text-white/80 mt-0.5 text-xs">
               {monthName} {year}
             </p>
           </div>
@@ -267,33 +239,14 @@ export default function SetBudgetsPage() {
       <div className="p-4 max-w-2xl mx-auto">
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Info card - دوستانه */}
-          <div
-            className="rounded-2xl p-5"
-            style={{
-              backgroundColor: familyTheme.colors.card,
-              boxShadow: familyTheme.card.shadow
-            }}
-          >
+          <div className={`rounded-2xl p-5 shadow-lg ${getCardBackgroundClass()}`}>
             <div className="flex items-start gap-3">
               <span className="text-3xl">🎯</span>
               <div>
-                <h3
-                  className="font-bold mb-2"
-                  style={{
-                    fontSize: familyTheme.typography.subtitle.size,
-                    fontWeight: familyTheme.typography.pageTitle.weight,
-                    color: familyTheme.colors.textPrimary
-                  }}
-                >
+                <h3 className={`text-[15px] font-bold mb-2 ${getTextColorClass('primary')}`}>
                   مشخص کن این ماه حداکثر چقدر می‌خوای خرج کنی
                 </h3>
-                <p
-                  className="leading-relaxed"
-                  style={{
-                    fontSize: familyTheme.typography.body.size,
-                    color: familyTheme.colors.textSecondary
-                  }}
-                >
+                <p className={`leading-relaxed text-sm ${getTextColorClass('secondary')}`}>
                   نگران نباش، هر وقت خواستی می‌تونی تغییرش بدی 😊
                   بودجه فقط یه راهنماست تا آخر ماه غافلگیر نشی.
                 </p>
@@ -303,49 +256,20 @@ export default function SetBudgetsPage() {
 
           {/* Total Budget Summary - جمع کل */}
           {totalBudgetAmount > 0 && (
-            <div
-              className="rounded-2xl p-5 sticky top-20 z-10"
-              style={{
-                backgroundColor: familyTheme.colors.card,
-                boxShadow: familyTheme.card.shadow,
-                border: `2px solid ${familyTheme.colors.primary}`
-              }}
-            >
+            <div className={`rounded-2xl p-5 sticky top-20 z-10 shadow-lg border-2 border-[#FF8A00] dark:border-[#FFA94D] ${getCardBackgroundClass()}`}>
               <div className="flex items-center justify-between">
                 <div>
-                  <div
-                    className="mb-1"
-                    style={{
-                      fontSize: familyTheme.typography.small.size,
-                      color: familyTheme.colors.textSecondary
-                    }}
-                  >
+                  <div className={`mb-1 text-xs ${getTextColorClass('secondary')}`}>
                     جمع بودجه‌های این ماه
                   </div>
-                  <div
-                    className="font-black"
-                    style={{
-                      fontSize: familyTheme.typography.heroNumber.size,
-                      fontWeight: familyTheme.typography.heroNumber.weight,
-                      color: familyTheme.colors.primary
-                    }}
-                  >
+                  <div className="text-[32px] font-black text-[#FF8A00] dark:text-[#FFA94D]">
                     {totalBudgetAmount.toLocaleString('fa-IR')}
                   </div>
-                  <div
-                    className="mt-0.5"
-                    style={{
-                      fontSize: familyTheme.typography.small.size,
-                      color: familyTheme.colors.textTertiary
-                    }}
-                  >
+                  <div className="mt-0.5 text-xs text-gray-400 dark:text-gray-600">
                     تومان
                   </div>
                 </div>
-                <div
-                  className="w-16 h-16 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: familyTheme.colors.primarySoft }}
-                >
+                <div className="w-16 h-16 rounded-full flex items-center justify-center bg-[#FFF3E0] dark:bg-[#2D1F0D]">
                   <span className="text-3xl">💰</span>
                 </div>
               </div>
@@ -361,41 +285,21 @@ export default function SetBudgetsPage() {
               return (
                 <div
                   key={category.id}
-                  className="rounded-2xl p-5 hover:shadow-md transition-shadow"
-                  style={{
-                    backgroundColor: familyTheme.colors.card,
-                    boxShadow: familyTheme.card.shadow
-                  }}
+                  className={`rounded-2xl p-5 hover:shadow-md transition-shadow shadow-sm ${getCardBackgroundClass()}`}
                 >
                   {/* Category header */}
                   <div className="flex items-center gap-3 mb-3">
                     {category.icon && (
-                      <div
-                        className="w-12 h-12 rounded-full flex items-center justify-center"
-                        style={{ backgroundColor: familyTheme.colors.primarySoft }}
-                      >
+                      <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#FFF3E0] dark:bg-[#2D1F0D]">
                         <span className="text-2xl">{category.icon}</span>
                       </div>
                     )}
                     <div className="flex-1">
-                      <div
-                        className="font-bold"
-                        style={{
-                          fontSize: familyTheme.typography.body.size,
-                          fontWeight: familyTheme.typography.cardNumber.weight,
-                          color: familyTheme.colors.textPrimary
-                        }}
-                      >
+                      <div className={`text-sm font-bold ${getTextColorClass('primary')}`}>
                         {category.name}
                       </div>
                       {CATEGORY_HINTS[category.name] && (
-                        <div
-                          className="mt-0.5"
-                          style={{
-                            fontSize: familyTheme.typography.small.size,
-                            color: familyTheme.colors.textSecondary
-                          }}
-                        >
+                        <div className={`mt-0.5 text-xs ${getTextColorClass('secondary')}`}>
                           {CATEGORY_HINTS[category.name]}
                         </div>
                       )}
@@ -404,23 +308,10 @@ export default function SetBudgetsPage() {
 
                   {/* Amount display */}
                   <div className="text-center mb-4">
-                    <div
-                      className="font-black"
-                      style={{
-                        fontSize: familyTheme.typography.heroNumber.size,
-                        fontWeight: familyTheme.typography.heroNumber.weight,
-                        color: familyTheme.colors.primary
-                      }}
-                    >
+                    <div className="text-[32px] font-black text-[#FF8A00] dark:text-[#FFA94D]">
                       {currentBudget.toLocaleString('fa-IR')}
                     </div>
-                    <div
-                      className="mt-1"
-                      style={{
-                        fontSize: familyTheme.typography.small.size,
-                        color: familyTheme.colors.textSecondary
-                      }}
-                    >
+                    <div className={`mt-1 text-xs ${getTextColorClass('secondary')}`}>
                       تومان
                     </div>
                   </div>
@@ -436,7 +327,7 @@ export default function SetBudgetsPage() {
                       onChange={(e) =>
                         handleSliderChange(category.id, parseInt(e.target.value))
                       }
-                      className="w-full h-2 bg-amber-100 rounded-lg appearance-none cursor-pointer
+                      className="w-full h-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg appearance-none cursor-pointer
                         [&::-webkit-slider-thumb]:appearance-none
                         [&::-webkit-slider-thumb]:w-5
                         [&::-webkit-slider-thumb]:h-5
@@ -464,7 +355,7 @@ export default function SetBudgetsPage() {
                         key={amount}
                         type="button"
                         onClick={() => handleBudgetChange(category.id, amount)}
-                        className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg text-[11px] font-medium transition-colors"
+                        className="px-2.5 py-1 bg-amber-50 dark:bg-amber-900/30 hover:bg-amber-100 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-400 rounded-lg text-[11px] font-medium transition-colors"
                         disabled={loading}
                       >
                         {(amount / 1000000).toFixed(amount >= 1000000 ? 0 : 1)}M
@@ -474,7 +365,7 @@ export default function SetBudgetsPage() {
                       <button
                         type="button"
                         onClick={() => handleBudgetChange(category.id, 0)}
-                        className="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-[11px] font-medium transition-colors"
+                        className="px-2.5 py-1 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg text-[11px] font-medium transition-colors"
                         disabled={loading}
                       >
                         × پاک
@@ -483,9 +374,9 @@ export default function SetBudgetsPage() {
                   </div>
 
                   {/* Manual input */}
-                  <div className="mt-3 pt-3 border-t border-stone-100">
+                  <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-stone-500">یا دقیق وارد کن:</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">یا دقیق وارد کن:</span>
                       <input
                         type="number"
                         value={currentBudget || ''}
@@ -496,7 +387,7 @@ export default function SetBudgetsPage() {
                           )
                         }
                         placeholder="0"
-                        className="flex-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm"
+                        className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm text-gray-900 dark:text-gray-100"
                         disabled={loading}
                       />
                     </div>
@@ -511,7 +402,7 @@ export default function SetBudgetsPage() {
             <button
               type="button"
               onClick={() => setShowAllCategories(true)}
-              className="w-full bg-white hover:bg-stone-50 rounded-2xl p-3.5 shadow-sm transition-all text-stone-700 font-medium flex items-center justify-center gap-2 text-sm"
+              className={`w-full rounded-2xl p-3.5 shadow-sm transition-all font-medium flex items-center justify-center gap-2 text-sm ${getCardBackgroundClass()} ${getTextColorClass('primary')} hover:opacity-80`}
             >
               <span>➕</span>
               <span>افزودن دسته دیگر ({otherCategories.length})</span>
@@ -519,14 +410,14 @@ export default function SetBudgetsPage() {
           )}
 
           {categories.length === 0 && (
-            <div className="bg-white rounded-2xl p-8 text-center text-stone-600">
+            <div className={`rounded-2xl p-8 text-center ${getCardBackgroundClass()} ${getTextColorClass('secondary')}`}>
               هیچ دسته‌بندی‌ای یافت نشد
             </div>
           )}
 
           {/* Error message */}
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+            <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl text-sm">
               {error}
             </div>
           )}
@@ -536,15 +427,7 @@ export default function SetBudgetsPage() {
             <button
               type="submit"
               disabled={loading || categories.length === 0}
-              className="w-full text-white py-4 rounded-2xl font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:opacity-90"
-              style={{
-                backgroundColor: familyTheme.colors.primary,
-                fontSize: familyTheme.typography.subtitle.size,
-                fontWeight: familyTheme.typography.pageTitle.weight,
-                boxShadow: familyTheme.card.shadow,
-                height: familyTheme.button.height,
-                borderRadius: familyTheme.button.borderRadius
-              }}
+              className="w-full text-white py-4 rounded-2xl font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:opacity-90 h-[52px] shadow-lg bg-[#FF8A00] dark:bg-[#FFA94D] text-[15px]"
             >
               {loading ? (
                 <div className="flex items-center justify-center gap-2">

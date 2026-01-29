@@ -5,7 +5,13 @@ import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui'
 import { PersianDatePicker } from '@/components/ui/PersianDatePicker'
 import { formatPersianDate } from '@/lib/utils/persian-date'
-import { familyTheme } from '@/styles/family-theme'
+import {
+  familyTheme,
+  getBackgroundClass,
+  getHeaderGradient,
+  getCardBackgroundClass,
+  getTextColorClass,
+} from '@/styles/family-theme'
 
 interface Participant {
   id: string
@@ -161,13 +167,10 @@ export default function AddExpensePage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: familyTheme.colors.background }}>
+    <div className={`min-h-screen ${getBackgroundClass()}`}>
       {/* Success Toast */}
       {success && (
-        <div
-          className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 text-white px-6 py-3 rounded-2xl shadow-2xl animate-in slide-in-from-top-4"
-          style={{ backgroundColor: familyTheme.colors.success }}
-        >
+        <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 bg-[#22C55E] dark:bg-[#4ADE80] text-white px-6 py-3 rounded-2xl shadow-2xl animate-in slide-in-from-top-4">
           <div className="flex items-center gap-2 font-bold">
             <span>ثبت شد!</span>
             <span>💸</span>
@@ -176,10 +179,7 @@ export default function AddExpensePage() {
       )}
 
       {/* Header */}
-      <div
-        className="text-white p-6 shadow-lg"
-        style={{ background: familyTheme.gradients.primaryHeader }}
-      >
+      <div className={`text-white p-6 shadow-lg ${getHeaderGradient('primary')}`}>
         <div className="flex items-center gap-4 mb-2">
           <button
             onClick={() => router.back()}
@@ -187,20 +187,11 @@ export default function AddExpensePage() {
           >
             ←
           </button>
-          <h1
-            className="font-bold"
-            style={{
-              fontSize: familyTheme.typography.pageTitle.size,
-              fontWeight: familyTheme.typography.pageTitle.weight
-            }}
-          >
+          <h1 className="text-[22px] font-bold">
             ثبت هزینه
           </h1>
         </div>
-        <p
-          className="text-white/90 mr-14"
-          style={{ fontSize: familyTheme.typography.body.size }}
-        >
+        <p className="text-white/90 mr-14 text-sm">
           امروز چی خرج کردی؟ 😊
         </p>
       </div>
@@ -209,22 +200,9 @@ export default function AddExpensePage() {
       <div className="p-6 max-w-2xl mx-auto">
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* 1. مبلغ (Hero Field) */}
-          <div
-            className="rounded-3xl p-8"
-            style={{
-              backgroundColor: familyTheme.colors.card,
-              boxShadow: familyTheme.card.shadow,
-              border: `1px solid ${familyTheme.colors.divider}`
-            }}
-          >
-            <label
-              className="block font-medium mb-3"
-              style={{
-                fontSize: familyTheme.typography.body.size,
-                color: familyTheme.colors.textSecondary
-              }}
-            >
-              مبلغ <span style={{ color: familyTheme.colors.danger }}>*</span>
+          <div className={`rounded-3xl p-8 shadow-sm border border-gray-200 dark:border-gray-700 ${getCardBackgroundClass()}`}>
+            <label className={`block font-medium mb-3 text-sm ${getTextColorClass('secondary')}`}>
+              مبلغ <span className={getTextColorClass('danger')}>*</span>
             </label>
             <div className="relative">
               <input
@@ -232,73 +210,34 @@ export default function AddExpensePage() {
                 value={formatNumberWithCommas(amount)}
                 onChange={handleAmountChange}
                 placeholder="مبلغ را وارد کن"
-                className="w-full font-bold bg-transparent border-none focus:outline-none text-right placeholder:text-stone-300"
-                style={{
-                  fontSize: '36px',
-                  fontWeight: familyTheme.typography.heroNumber.weight,
-                  color: familyTheme.colors.textPrimary
-                }}
+                className={`w-full font-bold bg-transparent border-none focus:outline-none text-right placeholder:text-gray-300 dark:placeholder:text-gray-600 text-[36px] ${getTextColorClass('primary')}`}
                 disabled={loading}
                 autoFocus
               />
-              <div
-                className="mt-1"
-                style={{
-                  fontSize: familyTheme.typography.body.size,
-                  color: familyTheme.colors.textTertiary
-                }}
-              >
+              <div className={`mt-1 text-sm text-gray-400 dark:text-gray-500`}>
                 تومان
               </div>
             </div>
           </div>
 
           {/* 2. عنوان */}
-          <div
-            className="rounded-2xl p-5"
-            style={{
-              backgroundColor: familyTheme.colors.card,
-              boxShadow: familyTheme.card.shadow
-            }}
-          >
-            <label
-              className="block font-medium mb-2"
-              style={{
-                fontSize: familyTheme.typography.body.size,
-                color: familyTheme.colors.textPrimary
-              }}
-            >
-              عنوان <span style={{ color: familyTheme.colors.danger }}>*</span>
+          <div className={`rounded-2xl p-5 shadow-sm ${getCardBackgroundClass()}`}>
+            <label className={`block font-medium mb-2 text-sm ${getTextColorClass('primary')}`}>
+              عنوان <span className={getTextColorClass('danger')}>*</span>
             </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="مثلاً: شام بیرون 🍕"
-              className="w-full px-4 py-3 bg-stone-50 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent"
-              style={{
-                borderColor: familyTheme.colors.divider,
-                fontSize: familyTheme.typography.body.size
-              }}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF8A00] dark:focus:ring-[#FFA94D] focus:border-transparent text-sm text-gray-900 dark:text-gray-100"
               disabled={loading}
             />
           </div>
 
           {/* 3. نوع هزینه */}
-          <div
-            className="rounded-2xl p-5"
-            style={{
-              backgroundColor: familyTheme.colors.card,
-              boxShadow: familyTheme.card.shadow
-            }}
-          >
-            <label
-              className="block font-medium mb-3"
-              style={{
-                fontSize: familyTheme.typography.body.size,
-                color: familyTheme.colors.textPrimary
-              }}
-            >
+          <div className={`rounded-2xl p-5 shadow-sm ${getCardBackgroundClass()}`}>
+            <label className={`block font-medium mb-3 text-sm ${getTextColorClass('primary')}`}>
               این هزینه برای کیه؟
             </label>
             <div className="grid grid-cols-2 gap-3">
@@ -306,14 +245,11 @@ export default function AddExpensePage() {
                 type="button"
                 onClick={() => setExpenseType('personal')}
                 disabled={loading}
-                className="py-4 px-4 rounded-xl font-medium transition-all"
-                style={{
-                  backgroundColor: expenseType === 'personal' ? familyTheme.colors.primary : '#F5F5F4',
-                  color: expenseType === 'personal' ? '#FFFFFF' : familyTheme.colors.textSecondary,
-                  boxShadow: expenseType === 'personal' ? familyTheme.card.shadow : 'none',
-                  transform: expenseType === 'personal' ? 'scale(1.05)' : 'scale(1)',
-                  fontSize: familyTheme.typography.body.size
-                }}
+                className={`py-4 px-4 rounded-xl font-medium transition-all text-sm ${
+                  expenseType === 'personal'
+                    ? 'bg-[#FF8A00] dark:bg-[#FFA94D] text-white shadow-sm scale-105'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                }`}
               >
                 <div className="text-2xl mb-1">👤</div>
                 <div>فقط من</div>
@@ -322,26 +258,17 @@ export default function AddExpensePage() {
                 type="button"
                 onClick={() => setExpenseType('family')}
                 disabled={loading}
-                className="py-4 px-4 rounded-xl font-medium transition-all"
-                style={{
-                  backgroundColor: expenseType === 'family' ? familyTheme.colors.primary : '#F5F5F4',
-                  color: expenseType === 'family' ? '#FFFFFF' : familyTheme.colors.textSecondary,
-                  boxShadow: expenseType === 'family' ? familyTheme.card.shadow : 'none',
-                  transform: expenseType === 'family' ? 'scale(1.05)' : 'scale(1)',
-                  fontSize: familyTheme.typography.body.size
-                }}
+                className={`py-4 px-4 rounded-xl font-medium transition-all text-sm ${
+                  expenseType === 'family'
+                    ? 'bg-[#FF8A00] dark:bg-[#FFA94D] text-white shadow-sm scale-105'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                }`}
               >
                 <div className="text-2xl mb-1">👥</div>
                 <div>خانواده</div>
               </button>
             </div>
-            <p
-              className="mt-3"
-              style={{
-                fontSize: familyTheme.typography.small.size,
-                color: familyTheme.colors.textSecondary
-              }}
-            >
+            <p className={`mt-3 text-xs ${getTextColorClass('secondary')}`}>
               {expenseType === 'personal'
                 ? 'فقط خودت این هزینه رو می‌بینی'
                 : 'این هزینه برای همه اعضای خانواده ثبت می‌شه'}
@@ -349,31 +276,15 @@ export default function AddExpensePage() {
           </div>
 
           {/* 4. دسته‌بندی */}
-          <div
-            className="rounded-2xl p-5"
-            style={{
-              backgroundColor: familyTheme.colors.card,
-              boxShadow: familyTheme.card.shadow
-            }}
-          >
+          <div className={`rounded-2xl p-5 shadow-sm ${getCardBackgroundClass()}`}>
             <div className="flex items-center justify-between mb-2">
-              <label
-                className="block font-medium"
-                style={{
-                  fontSize: familyTheme.typography.body.size,
-                  color: familyTheme.colors.textPrimary
-                }}
-              >
+              <label className={`block font-medium text-sm ${getTextColorClass('primary')}`}>
                 دسته‌بندی
               </label>
               <button
                 type="button"
                 onClick={() => router.push(`/project/${projectId}/family/categories`)}
-                className="font-medium hover:opacity-80"
-                style={{
-                  fontSize: familyTheme.typography.small.size,
-                  color: familyTheme.colors.danger
-                }}
+                className={`font-medium hover:opacity-80 text-xs ${getTextColorClass('danger')}`}
               >
                 مدیریت
               </button>
@@ -381,11 +292,7 @@ export default function AddExpensePage() {
             <select
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
-              className="w-full px-4 py-3 bg-stone-50 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent"
-              style={{
-                borderColor: familyTheme.colors.divider,
-                fontSize: familyTheme.typography.body.size
-              }}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF8A00] dark:focus:ring-[#FFA94D] focus:border-transparent text-sm text-gray-900 dark:text-gray-100"
               disabled={loading}
             >
               <option value="">بدون دسته‌بندی</option>
@@ -395,32 +302,14 @@ export default function AddExpensePage() {
                 </option>
               ))}
             </select>
-            <p
-              className="mt-2"
-              style={{
-                fontSize: familyTheme.typography.small.size,
-                color: familyTheme.colors.textSecondary
-              }}
-            >
+            <p className={`mt-2 text-xs ${getTextColorClass('secondary')}`}>
               برای گزارش دقیق‌تر می‌تونی دسته انتخاب کنی
             </p>
           </div>
 
           {/* 5. تاریخ */}
-          <div
-            className="rounded-2xl p-5"
-            style={{
-              backgroundColor: familyTheme.colors.card,
-              boxShadow: familyTheme.card.shadow
-            }}
-          >
-            <label
-              className="block font-medium mb-2"
-              style={{
-                fontSize: familyTheme.typography.body.size,
-                color: familyTheme.colors.textPrimary
-              }}
-            >
+          <div className={`rounded-2xl p-5 shadow-sm ${getCardBackgroundClass()}`}>
+            <label className={`block font-medium mb-2 text-sm ${getTextColorClass('primary')}`}>
               تاریخ
             </label>
             <div className="space-y-2">
@@ -435,11 +324,7 @@ export default function AddExpensePage() {
                   type="button"
                   onClick={setToday}
                   disabled={loading}
-                  className="flex-1 px-3 py-2 bg-stone-100 hover:bg-stone-200 font-medium rounded-lg transition-colors"
-                  style={{
-                    fontSize: familyTheme.typography.small.size,
-                    color: familyTheme.colors.textPrimary
-                  }}
+                  className={`flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 font-medium rounded-lg transition-colors text-xs ${getTextColorClass('primary')}`}
                 >
                   امروز
                 </button>
@@ -447,11 +332,7 @@ export default function AddExpensePage() {
                   type="button"
                   onClick={setYesterday}
                   disabled={loading}
-                  className="flex-1 px-3 py-2 bg-stone-100 hover:bg-stone-200 font-medium rounded-lg transition-colors"
-                  style={{
-                    fontSize: familyTheme.typography.small.size,
-                    color: familyTheme.colors.textPrimary
-                  }}
+                  className={`flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 font-medium rounded-lg transition-colors text-xs ${getTextColorClass('primary')}`}
                 >
                   دیروز
                 </button>
@@ -460,20 +341,8 @@ export default function AddExpensePage() {
           </div>
 
           {/* 6. توضیحات */}
-          <div
-            className="rounded-2xl p-5"
-            style={{
-              backgroundColor: familyTheme.colors.card,
-              boxShadow: familyTheme.card.shadow
-            }}
-          >
-            <label
-              className="block font-medium mb-2"
-              style={{
-                fontSize: familyTheme.typography.body.size,
-                color: familyTheme.colors.textPrimary
-              }}
-            >
+          <div className={`rounded-2xl p-5 shadow-sm ${getCardBackgroundClass()}`}>
+            <label className={`block font-medium mb-2 text-sm ${getTextColorClass('primary')}`}>
               توضیحات (اختیاری)
             </label>
             <textarea
@@ -481,31 +350,16 @@ export default function AddExpensePage() {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="مثلاً خرید هفتگی یا هزینه سفر ✈️"
               rows={3}
-              className="w-full px-4 py-3 bg-stone-50 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent resize-none"
-              style={{
-                borderColor: familyTheme.colors.divider,
-                fontSize: familyTheme.typography.body.size
-              }}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF8A00] dark:focus:ring-[#FFA94D] focus:border-transparent resize-none text-sm text-gray-900 dark:text-gray-100"
               disabled={loading}
             />
           </div>
 
           {/* 7. نوت */}
-          <div
-            className="rounded-xl p-3"
-            style={{
-              backgroundColor: familyTheme.colors.primarySoft,
-              border: `1px solid ${familyTheme.colors.primary}33`
-            }}
-          >
+          <div className="rounded-2xl p-3 bg-[#FFF3E0] dark:bg-[#2D1F0D] border border-[#FF8A00]/20 dark:border-[#FFA94D]/20">
             <div className="flex items-start gap-2">
               <span className="text-base">💡</span>
-              <div
-                style={{
-                  fontSize: familyTheme.typography.small.size,
-                  color: familyTheme.colors.primary
-                }}
-              >
+              <div className={`text-xs text-[#FF8A00] dark:text-[#FFA94D]`}>
                 {expenseType === 'personal'
                   ? 'این هزینه فقط به نام شما ثبت می‌شود.'
                   : 'این هزینه در حساب خانوادگی ثبت می‌شود و همه اعضا آن را می‌بینند.'}
@@ -515,7 +369,7 @@ export default function AddExpensePage() {
 
           {/* Error message */}
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+            <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl text-sm">
               {error}
             </div>
           )}
@@ -524,15 +378,7 @@ export default function AddExpensePage() {
           <button
             type="submit"
             disabled={loading || !title.trim() || !amount}
-            className="w-full text-white py-4 rounded-2xl font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
-            style={{
-              backgroundColor: familyTheme.colors.danger,
-              fontSize: familyTheme.typography.subtitle.size,
-              fontWeight: familyTheme.typography.pageTitle.weight,
-              boxShadow: familyTheme.card.shadow,
-              height: familyTheme.button.height,
-              borderRadius: familyTheme.button.borderRadius
-            }}
+            className="w-full text-white py-4 rounded-2xl font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] h-[52px] shadow-sm bg-[#EF4444] dark:bg-[#F87171] text-[15px]"
           >
             {loading
               ? 'در حال ثبت...'

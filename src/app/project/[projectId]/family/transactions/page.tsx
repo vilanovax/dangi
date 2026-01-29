@@ -4,7 +4,13 @@ import { useState, useEffect } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { TransactionDetailSheet } from '../components'
-import { familyTheme } from '@/styles/family-theme'
+import {
+  familyTheme,
+  getBackgroundClass,
+  getHeaderGradient,
+  getCardBackgroundClass,
+  getTextColorClass,
+} from '@/styles/family-theme'
 
 interface Transaction {
   id: string
@@ -174,12 +180,9 @@ export default function TransactionsPage() {
   const totalCount = filteredTransactions.length
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: familyTheme.colors.background }}>
+    <div className={`min-h-screen ${getBackgroundClass()}`}>
       {/* Header - Minimal */}
-      <div
-        className="text-white p-5 shadow-lg sticky top-0 z-10"
-        style={{ background: familyTheme.gradients.primaryHeader }}
-      >
+      <div className={`text-white p-5 shadow-lg sticky top-0 z-10 ${getHeaderGradient('primary')}`}>
         <div className="flex items-center gap-3 mb-3">
           <Link
             href={`/project/${projectId}/family`}
@@ -188,19 +191,10 @@ export default function TransactionsPage() {
             →
           </Link>
           <div>
-            <h1
-              className="font-bold"
-              style={{
-                fontSize: familyTheme.typography.pageTitle.size,
-                fontWeight: familyTheme.typography.pageTitle.weight
-              }}
-            >
+            <h1 className="text-[22px] font-bold">
               تراکنش‌ها
             </h1>
-            <p
-              className="text-white/80 mt-0.5"
-              style={{ fontSize: familyTheme.typography.small.size }}
-            >
+            <p className="text-white/80 mt-0.5 text-xs">
               همه تراکنش‌های این ماه
             </p>
           </div>
@@ -210,37 +204,31 @@ export default function TransactionsPage() {
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
           <button
             onClick={() => setFilter('all')}
-            className="flex-shrink-0 px-4 py-1.5 rounded-full font-medium transition-all"
-            style={{
-              fontSize: familyTheme.typography.small.size,
-              backgroundColor: filter === 'all' ? '#FFFFFF' : 'rgba(255, 255, 255, 0.2)',
-              color: filter === 'all' ? familyTheme.colors.primary : '#FFFFFF',
-              boxShadow: filter === 'all' ? '0 4px 12px rgba(0, 0, 0, 0.1)' : 'none'
-            }}
+            className={`flex-shrink-0 px-4 py-1.5 rounded-full font-medium transition-all text-xs ${
+              filter === 'all'
+                ? 'bg-white dark:bg-gray-800 text-[#FF8A00] dark:text-[#FFA94D] shadow-md'
+                : 'bg-white/20 text-white'
+            }`}
           >
             همه
           </button>
           <button
             onClick={() => setFilter('expense')}
-            className="flex-shrink-0 px-4 py-1.5 rounded-full font-medium transition-all"
-            style={{
-              fontSize: familyTheme.typography.small.size,
-              backgroundColor: filter === 'expense' ? '#FFFFFF' : 'rgba(255, 255, 255, 0.2)',
-              color: filter === 'expense' ? familyTheme.colors.danger : '#FFFFFF',
-              boxShadow: filter === 'expense' ? '0 4px 12px rgba(0, 0, 0, 0.1)' : 'none'
-            }}
+            className={`flex-shrink-0 px-4 py-1.5 rounded-full font-medium transition-all text-xs ${
+              filter === 'expense'
+                ? 'bg-white dark:bg-gray-800 text-[#EF4444] dark:text-[#F87171] shadow-md'
+                : 'bg-white/20 text-white'
+            }`}
           >
             هزینه‌ها
           </button>
           <button
             onClick={() => setFilter('income')}
-            className="flex-shrink-0 px-4 py-1.5 rounded-full font-medium transition-all"
-            style={{
-              fontSize: familyTheme.typography.small.size,
-              backgroundColor: filter === 'income' ? '#FFFFFF' : 'rgba(255, 255, 255, 0.2)',
-              color: filter === 'income' ? familyTheme.colors.success : '#FFFFFF',
-              boxShadow: filter === 'income' ? '0 4px 12px rgba(0, 0, 0, 0.1)' : 'none'
-            }}
+            className={`flex-shrink-0 px-4 py-1.5 rounded-full font-medium transition-all text-xs ${
+              filter === 'income'
+                ? 'bg-white dark:bg-gray-800 text-[#22C55E] dark:text-[#4ADE80] shadow-md'
+                : 'bg-white/20 text-white'
+            }`}
           >
             درآمدها
           </button>
@@ -252,15 +240,7 @@ export default function TransactionsPage() {
         {/* Count Badge */}
         {!loading && totalCount > 0 && (
           <div className="mb-3 text-center">
-            <span
-              className="inline-block px-3 py-1 rounded-full"
-              style={{
-                backgroundColor: familyTheme.colors.card,
-                fontSize: familyTheme.typography.small.size,
-                color: familyTheme.colors.textSecondary,
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
-              }}
-            >
+            <span className={`inline-block px-3 py-1 rounded-full text-xs shadow-sm ${getCardBackgroundClass()} ${getTextColorClass('secondary')}`}>
               {totalCount} تراکنش پیدا شد
             </span>
           </div>
@@ -268,53 +248,20 @@ export default function TransactionsPage() {
 
         {loading ? (
           <div className="text-center py-16">
-            <div
-              className="inline-block animate-spin rounded-full h-10 w-10 border-4"
-              style={{
-                borderColor: familyTheme.colors.primarySoft,
-                borderTopColor: familyTheme.colors.primary
-              }}
-            ></div>
-            <p
-              className="mt-4"
-              style={{
-                fontSize: familyTheme.typography.body.size,
-                color: familyTheme.colors.textSecondary
-              }}
-            >
+            <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-[#FFF3E0] dark:border-[#2D1F0D] border-t-[#FF8A00] dark:border-t-[#FFA94D]"></div>
+            <p className={`mt-4 text-sm ${getTextColorClass('secondary')}`}>
               در حال دریافت تراکنش‌ها…
             </p>
           </div>
         ) : totalCount === 0 ? (
-          <div
-            className="rounded-3xl p-12 text-center"
-            style={{
-              backgroundColor: familyTheme.colors.card,
-              boxShadow: familyTheme.card.shadow,
-              borderRadius: familyTheme.card.borderRadius
-            }}
-          >
-            <div
-              className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: familyTheme.colors.primarySoft }}
-            >
+          <div className={`rounded-3xl p-12 text-center shadow-lg ${getCardBackgroundClass()}`}>
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center bg-[#FFF3E0] dark:bg-[#2D1F0D]">
               <span className="text-4xl">📋</span>
             </div>
-            <p
-              className="font-medium mb-1"
-              style={{
-                fontSize: familyTheme.typography.body.size,
-                color: familyTheme.colors.textPrimary
-              }}
-            >
+            <p className={`font-medium mb-1 text-sm ${getTextColorClass('primary')}`}>
               هنوز تراکنشی ثبت نشده
             </p>
-            <p
-              style={{
-                fontSize: familyTheme.typography.small.size,
-                color: familyTheme.colors.textSecondary
-              }}
-            >
+            <p className={`text-xs ${getTextColorClass('secondary')}`}>
               از دکمه + شروع کن
             </p>
           </div>
@@ -323,13 +270,7 @@ export default function TransactionsPage() {
             {Object.entries(processedTransactions).map(([timeGroup, items]) => (
               <div key={timeGroup}>
                 {/* Time Group Header */}
-                <div
-                  className="font-medium px-2 mb-2"
-                  style={{
-                    fontSize: familyTheme.typography.small.size,
-                    color: familyTheme.colors.textSecondary
-                  }}
-                >
+                <div className={`font-medium px-2 mb-2 text-xs ${getTextColorClass('secondary')}`}>
                   {timeGroup}
                 </div>
 
@@ -339,23 +280,16 @@ export default function TransactionsPage() {
                     <div
                       key={transaction.id}
                       onClick={() => handleTransactionClick(transaction)}
-                      className="rounded-xl p-3 hover:shadow-lg transition-shadow cursor-pointer active:scale-98"
-                      style={{
-                        backgroundColor: familyTheme.colors.card,
-                        boxShadow: familyTheme.card.shadow,
-                        borderRadius: familyTheme.card.borderRadius
-                      }}
+                      className={`rounded-2xl p-3 hover:shadow-lg transition-shadow cursor-pointer active:scale-98 shadow-sm ${getCardBackgroundClass()}`}
                     >
                       <div className="flex items-center gap-3">
                         {/* Icon */}
                         <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                          style={{
-                            backgroundColor:
-                              transaction.type === 'INCOME'
-                                ? familyTheme.colors.successSoft
-                                : familyTheme.colors.dangerSoft
-                          }}
+                          className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                            transaction.type === 'INCOME'
+                              ? 'bg-[#EAFBF1] dark:bg-[#0F2417]'
+                              : 'bg-[#FEECEC] dark:bg-[#2D1212]'
+                          }`}
                         >
                           <span className="text-base">
                             {transaction.categoryIcon ||
@@ -365,44 +299,20 @@ export default function TransactionsPage() {
 
                         {/* Info */}
                         <div className="flex-1 min-w-0">
-                          <div
-                            className="font-semibold truncate"
-                            style={{
-                              fontSize: familyTheme.typography.body.size,
-                              color: familyTheme.colors.textPrimary
-                            }}
-                          >
+                          <div className={`font-semibold truncate text-sm ${getTextColorClass('primary')}`}>
                             {transaction.title}
                           </div>
                           <div className="flex items-center gap-1.5 mt-0.5">
                             {transaction.count > 1 && (
                               <>
-                                <span
-                                  className="font-medium"
-                                  style={{
-                                    fontSize: '10px',
-                                    color: familyTheme.colors.textSecondary
-                                  }}
-                                >
+                                <span className={`font-medium text-[10px] ${getTextColorClass('secondary')}`}>
                                   {transaction.count} بار
                                 </span>
-                                <span
-                                  style={{
-                                    fontSize: '8px',
-                                    color: familyTheme.colors.textTertiary
-                                  }}
-                                >
-                                  •
-                                </span>
+                                <span className="text-[8px] text-gray-400 dark:text-gray-600">•</span>
                               </>
                             )}
                             {transaction.categoryName && (
-                              <span
-                                style={{
-                                  fontSize: '10px',
-                                  color: familyTheme.colors.textSecondary
-                                }}
-                              >
+                              <span className={`text-[10px] ${getTextColorClass('secondary')}`}>
                                 {transaction.categoryName}
                               </span>
                             )}
@@ -412,25 +322,17 @@ export default function TransactionsPage() {
                         {/* Amount */}
                         <div className="text-left flex-shrink-0">
                           <div
-                            className="font-bold"
-                            style={{
-                              fontSize: familyTheme.typography.body.size,
-                              color:
-                                transaction.type === 'INCOME'
-                                  ? familyTheme.colors.success
-                                  : familyTheme.colors.danger
-                            }}
+                            className={`font-bold text-sm ${
+                              transaction.type === 'INCOME'
+                                ? getTextColorClass('success')
+                                : getTextColorClass('danger')
+                            }`}
                           >
                             {transaction.type === 'INCOME' ? '+' : '−'}
                             {(transaction.totalAmount / 10).toLocaleString('fa-IR')}
                           </div>
                           {transaction.count > 1 && (
-                            <div
-                              style={{
-                                fontSize: '9px',
-                                color: familyTheme.colors.textTertiary
-                              }}
-                            >
+                            <div className="text-[9px] text-gray-400 dark:text-gray-600">
                               جمع {transaction.count} مورد
                             </div>
                           )}

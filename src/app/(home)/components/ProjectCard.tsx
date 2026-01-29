@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, memo, useCallback } from 'react'
 import Link from 'next/link'
 import { formatMoney } from '@/lib/utils/money'
 import { BottomSheet, Button } from '@/components/ui'
@@ -32,8 +32,12 @@ interface ProjectCardProps {
  * - Template-based gradient backgrounds
  * - Clear visual hierarchy: Status > Balance > Total > Meta
  * - Friendly, non-accounting tone
+ *
+ * Performance:
+ * - Memoized with React.memo to prevent unnecessary re-renders
+ * - Callbacks wrapped with useCallback
  */
-export function ProjectCard({
+export const ProjectCard = memo(function ProjectCard({
   id,
   name,
   template,
@@ -61,22 +65,57 @@ export function ProjectCard({
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [archiving, setArchiving] = useState(false)
+  const [backingUp, setBackingUp] = useState(false)
   const longPressTimer = useRef<NodeJS.Timeout | null>(null)
 
-  const handleLongPressStart = () => {
+  const handleLongPressStart = useCallback(() => {
     longPressTimer.current = setTimeout(() => {
       setShowMenu(true)
     }, 500)
-  }
+  }, [])
 
-  const handleLongPressEnd = () => {
+  const handleLongPressEnd = useCallback(() => {
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current)
       longPressTimer.current = null
     }
-  }
+  }, [])
 
-  const handleDelete = async () => {
+  const handleBackupAndDelete = useCallback(async () => {
+    setBackingUp(true)
+    try {
+      // 1. دانلود بک‌آپ
+      const backupRes = await fetch(`/api/projects/${id}/backup`)
+      if (backupRes.ok) {
+        const blob = await backupRes.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${name.replace(/[^a-zA-Z0-9-_\u0600-\u06FF]/g, '_')}_backup_${new Date().toISOString().split('T')[0]}.json`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+
+        // 2. حذف پروژه بعد از بک‌آپ موفق
+        setBackingUp(false)
+        setDeleting(true)
+        const deleteRes = await fetch(`/api/projects/${id}`, { method: 'DELETE' })
+        if (deleteRes.ok) {
+          setShowDeleteConfirm(false)
+          setShowMenu(false)
+          onDelete?.(id)
+        }
+      }
+    } catch (error) {
+      console.error('Error backing up and deleting project:', error)
+    } finally {
+      setBackingUp(false)
+      setDeleting(false)
+    }
+  }, [id, name, onDelete])
+
+  const handleDelete = useCallback(async () => {
     setDeleting(true)
     try {
       const res = await fetch(`/api/projects/${id}`, { method: 'DELETE' })
@@ -90,9 +129,9 @@ export function ProjectCard({
     } finally {
       setDeleting(false)
     }
-  }
+  }, [id, onDelete])
 
-  const handleExport = async () => {
+  const handleExport = useCallback(async () => {
     try {
       const res = await fetch(`/api/projects/${id}/export`)
       if (res.ok) {
@@ -111,9 +150,9 @@ export function ProjectCard({
     } catch (error) {
       console.error('Error exporting project:', error)
     }
-  }
+  }, [id, name, onExport])
 
-  const handleArchive = async () => {
+  const handleArchive = useCallback(async () => {
     setArchiving(true)
     try {
       const res = await fetch(`/api/projects/${id}`, {
@@ -131,10 +170,10 @@ export function ProjectCard({
     } finally {
       setArchiving(false)
     }
-  }
+  }, [id, isArchived, onArchive])
 
   // Template-based gradient mapping
-  const getTemplateGradient = () => {
+  const getTemplateGradient = useCallback(() => {
     const gradients: Record<string, string> = {
       travel: 'from-sky-400/10 via-blue-500/10 to-cyan-500/10',
       building: 'from-purple-400/10 via-pink-500/10 to-rose-500/10',
@@ -143,7 +182,7 @@ export function ProjectCard({
       family: 'from-amber-400/10 via-orange-500/10 to-red-500/10',
     }
     return gradients[template] || gradients.travel
-  }
+  }, [template])
 
   return (
     <>
@@ -362,25 +401,63 @@ export function ProjectCard({
             <p className="text-lg font-bold text-red-800 dark:text-red-200 mb-2">
               حذف "{name}"؟
             </p>
-            <p className="text-sm text-red-600/70 dark:text-red-400/70">
+            <p className="text-sm text-red-600/70 dark:text-red-400/70 mb-3">
               این عمل غیرقابل بازگشت است و تمام هزینه‌ها و اطلاعات حذف خواهند شد.
             </p>
+            <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50">
+              <p className="text-xs text-blue-800 dark:text-blue-200">
+                💡 <strong>پیشنهاد:</strong> قبل از حذف، بک‌آپ بگیرید تا بتوانید در صورت نیاز پروژه را بازگردانی کنید.
+              </p>
+            </div>
           </div>
 
-          <div className="flex gap-3">
+          <div className="space-y-2">
+            {/* بک‌آپ و حذف (پیشنهادی) */}
+            <Button
+              onClick={handleBackupAndDelete}
+              loading={backingUp || deleting}
+              disabled={backingUp || deleting}
+              className="w-full !bg-gradient-to-r !from-blue-500 !to-indigo-600 hover:!from-blue-600 hover:!to-indigo-700"
+            >
+              {backingUp ? (
+                <>
+                  <svg className="w-5 h-5 mr-2 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  در حال دانلود بک‌آپ...
+                </>
+              ) : deleting ? (
+                'در حال حذف...'
+              ) : (
+                <>
+                  <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                  </svg>
+                  بک‌آپ و حذف (پیشنهادی)
+                </>
+              )}
+            </Button>
+
+            {/* فقط حذف */}
+            <Button
+              onClick={handleDelete}
+              loading={deleting && !backingUp}
+              disabled={backingUp || deleting}
+              variant="secondary"
+              className="w-full !text-red-600 dark:!text-red-400 hover:!bg-red-50 dark:hover:!bg-red-900/20"
+            >
+              فقط حذف کن
+            </Button>
+
+            {/* انصراف */}
             <Button
               variant="secondary"
               onClick={() => setShowDeleteConfirm(false)}
-              className="flex-1"
+              disabled={backingUp || deleting}
+              className="w-full"
             >
               انصراف
-            </Button>
-            <Button
-              onClick={handleDelete}
-              loading={deleting}
-              className="flex-1 !bg-gradient-to-r !from-red-500 !to-rose-600 hover:!from-red-600 hover:!to-rose-700"
-            >
-              حذف پروژه
             </Button>
           </div>
         </div>
@@ -429,4 +506,4 @@ export function ProjectCard({
       </BottomSheet>
     </>
   )
-}
+})

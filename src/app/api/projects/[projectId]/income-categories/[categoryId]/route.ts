@@ -10,10 +10,10 @@ import { projectService } from '@/lib/services/project.service'
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { projectId: string; categoryId: string } }
+  { params }: { params: Promise<{ projectId: string; categoryId: string }> }
 ) {
   try {
-    const { projectId, categoryId } = params
+    const { projectId, categoryId } = await params
     const body = await request.json()
 
     // Verify project exists
@@ -75,10 +75,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { projectId: string; categoryId: string } }
+  { params }: { params: Promise<{ projectId: string; categoryId: string }> }
 ) {
   try {
-    const { projectId, categoryId } = params
+    const { projectId, categoryId } = await params
 
     // Verify project exists
     const project = await projectService.getById(projectId)

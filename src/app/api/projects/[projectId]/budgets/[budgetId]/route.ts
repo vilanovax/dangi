@@ -11,10 +11,10 @@ import type { UpdateBudgetInput } from '@/types/family'
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { projectId: string; budgetId: string } }
+  { params }: { params: Promise<{ projectId: string; budgetId: string }> }
 ) {
   try {
-    const { projectId, budgetId } = params
+    const { projectId, budgetId } = await params
     const body = await request.json()
 
     // Verify project exists
@@ -67,10 +67,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { projectId: string; budgetId: string } }
+  { params }: { params: Promise<{ projectId: string; budgetId: string }> }
 ) {
   try {
-    const { projectId, budgetId } = params
+    const { projectId, budgetId } = await params
 
     // Verify project exists
     const project = await projectService.getById(projectId)

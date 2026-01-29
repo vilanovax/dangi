@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { InstallPrompt, OfflineBanner, ServiceWorkerRegistration } from '@/components/pwa'
 import { ClientErrorBoundary } from '@/components/ClientErrorBoundary'
+import { ThemeProvider } from '@/contexts/ThemeContext'
+import { QueryProvider } from '@/components/providers/QueryProvider'
 
 export const metadata: Metadata = {
   title: 'دنگی - تقسیم هزینه‌های گروهی',
@@ -32,20 +34,39 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="fa" dir="rtl">
+    <html lang="fa" dir="rtl" suppressHydrationWarning>
       <head>
         <link
           href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css"
           rel="stylesheet"
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  const theme = localStorage.getItem('dangi_theme') || 'system';
+                  const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                  if (isDark) {
+                    document.documentElement.classList.add('dark');
+                  }
+                } catch (e) {}
+              })()
+            `,
+          }}
+        />
       </head>
       <body className="min-h-dvh bg-gray-50 dark:bg-gray-950">
-        <ServiceWorkerRegistration />
-        <OfflineBanner />
-        <ClientErrorBoundary>
-          {children}
-        </ClientErrorBoundary>
-        <InstallPrompt />
+        <QueryProvider>
+          <ThemeProvider>
+            <ServiceWorkerRegistration />
+            <OfflineBanner />
+            <ClientErrorBoundary>
+              {children}
+            </ClientErrorBoundary>
+            <InstallPrompt />
+          </ThemeProvider>
+        </QueryProvider>
       </body>
     </html>
   )

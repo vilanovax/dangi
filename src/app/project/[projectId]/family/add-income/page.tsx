@@ -5,7 +5,13 @@ import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui'
 import { PersianDatePicker } from '@/components/ui/PersianDatePicker'
 import { formatPersianDate } from '@/lib/utils/persian-date'
-import { familyTheme } from '@/styles/family-theme'
+import {
+  familyTheme,
+  getBackgroundClass,
+  getHeaderGradient,
+  getCardBackgroundClass,
+  getTextColorClass,
+} from '@/styles/family-theme'
 
 interface Participant {
   id: string
@@ -149,13 +155,10 @@ export default function AddIncomePage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: familyTheme.colors.background }}>
+    <div className={`min-h-screen ${getBackgroundClass()}`}>
       {/* Success Toast */}
       {success && (
-        <div
-          className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 text-white px-6 py-3 rounded-2xl shadow-2xl animate-in slide-in-from-top-4"
-          style={{ backgroundColor: familyTheme.colors.success }}
-        >
+        <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 text-white px-6 py-3 rounded-2xl shadow-2xl animate-in slide-in-from-top-4 bg-[#22C55E] dark:bg-[#4ADE80]">
           <div className="flex items-center gap-2 font-bold">
             <span>ثبت شد!</span>
             <span>💰</span>
@@ -164,10 +167,7 @@ export default function AddIncomePage() {
       )}
 
       {/* Header */}
-      <div
-        className="text-white p-6 shadow-lg"
-        style={{ background: familyTheme.gradients.primaryHeader }}
-      >
+      <div className={`text-white p-6 shadow-lg ${getHeaderGradient('primary')}`}>
         <div className="flex items-center gap-4 mb-2">
           <button
             onClick={() => router.back()}
@@ -175,20 +175,11 @@ export default function AddIncomePage() {
           >
             ←
           </button>
-          <h1
-            className="font-bold"
-            style={{
-              fontSize: familyTheme.typography.pageTitle.size,
-              fontWeight: familyTheme.typography.pageTitle.weight
-            }}
-          >
+          <h1 className="text-[22px] font-bold">
             ثبت درآمد
           </h1>
         </div>
-        <p
-          className="text-white/90 mr-14"
-          style={{ fontSize: familyTheme.typography.body.size }}
-        >
+        <p className="text-white/90 mr-14 text-sm">
           امروز چی دریافت کردی؟ 💰
         </p>
       </div>
@@ -197,22 +188,9 @@ export default function AddIncomePage() {
       <div className="p-6 max-w-2xl mx-auto">
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* 1. مبلغ (Hero Field) */}
-          <div
-            className="rounded-3xl p-8"
-            style={{
-              backgroundColor: familyTheme.colors.card,
-              boxShadow: familyTheme.card.shadow,
-              border: `1px solid ${familyTheme.colors.divider}`
-            }}
-          >
-            <label
-              className="block font-medium mb-3"
-              style={{
-                fontSize: familyTheme.typography.body.size,
-                color: familyTheme.colors.textSecondary
-              }}
-            >
-              مبلغ <span style={{ color: familyTheme.colors.danger }}>*</span>
+          <div className={`rounded-3xl p-8 shadow-lg border border-gray-200 dark:border-gray-700 ${getCardBackgroundClass()}`}>
+            <label className={`block font-medium mb-3 text-sm ${getTextColorClass('secondary')}`}>
+              مبلغ <span className={getTextColorClass('danger')}>*</span>
             </label>
             <div className="relative">
               <input
@@ -220,83 +198,40 @@ export default function AddIncomePage() {
                 value={formatNumberWithCommas(amount)}
                 onChange={handleAmountChange}
                 placeholder="مبلغ را وارد کن"
-                className="w-full font-bold bg-transparent border-none focus:outline-none text-right placeholder:text-stone-300"
-                style={{
-                  fontSize: '36px',
-                  fontWeight: familyTheme.typography.heroNumber.weight,
-                  color: familyTheme.colors.success
-                }}
+                className={`w-full font-bold bg-transparent border-none focus:outline-none text-right text-[36px] placeholder:text-gray-300 dark:placeholder:text-gray-600 ${getTextColorClass('success')}`}
                 disabled={loading}
                 autoFocus
               />
-              <div
-                className="mt-1"
-                style={{
-                  fontSize: familyTheme.typography.body.size,
-                  color: familyTheme.colors.textTertiary
-                }}
-              >
+              <div className="mt-1 text-sm text-gray-400 dark:text-gray-600">
                 تومان
               </div>
             </div>
           </div>
 
           {/* 2. عنوان */}
-          <div
-            className="rounded-2xl p-5"
-            style={{
-              backgroundColor: familyTheme.colors.card,
-              boxShadow: familyTheme.card.shadow
-            }}
-          >
-            <label
-              className="block font-medium mb-2"
-              style={{
-                fontSize: familyTheme.typography.body.size,
-                color: familyTheme.colors.textPrimary
-              }}
-            >
-              عنوان <span style={{ color: familyTheme.colors.danger }}>*</span>
+          <div className={`rounded-2xl p-5 shadow-sm ${getCardBackgroundClass()}`}>
+            <label className={`block font-medium mb-2 text-sm ${getTextColorClass('primary')}`}>
+              عنوان <span className={getTextColorClass('danger')}>*</span>
             </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="مثلاً: حقوق ماهانه 💼"
-              className="w-full px-4 py-3 bg-stone-50 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent"
-              style={{
-                borderColor: familyTheme.colors.divider,
-                fontSize: familyTheme.typography.body.size
-              }}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm text-gray-900 dark:text-gray-100"
               disabled={loading}
             />
           </div>
 
           {/* 3. دسته‌بندی */}
-          <div
-            className="rounded-2xl p-5"
-            style={{
-              backgroundColor: familyTheme.colors.card,
-              boxShadow: familyTheme.card.shadow
-            }}
-          >
-            <label
-              className="block font-medium mb-2"
-              style={{
-                fontSize: familyTheme.typography.body.size,
-                color: familyTheme.colors.textPrimary
-              }}
-            >
+          <div className={`rounded-2xl p-5 shadow-sm ${getCardBackgroundClass()}`}>
+            <label className={`block font-medium mb-2 text-sm ${getTextColorClass('primary')}`}>
               دسته‌بندی
             </label>
             <select
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
-              className="w-full px-4 py-3 bg-stone-50 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent"
-              style={{
-                borderColor: familyTheme.colors.divider,
-                fontSize: familyTheme.typography.body.size
-              }}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm text-gray-900 dark:text-gray-100"
               disabled={loading}
             >
               <option value="">بدون دسته‌بندی</option>
@@ -309,20 +244,8 @@ export default function AddIncomePage() {
           </div>
 
           {/* 4. منبع درآمد */}
-          <div
-            className="rounded-2xl p-5"
-            style={{
-              backgroundColor: familyTheme.colors.card,
-              boxShadow: familyTheme.card.shadow
-            }}
-          >
-            <label
-              className="block font-medium mb-2"
-              style={{
-                fontSize: familyTheme.typography.body.size,
-                color: familyTheme.colors.textPrimary
-              }}
-            >
+          <div className={`rounded-2xl p-5 shadow-sm ${getCardBackgroundClass()}`}>
+            <label className={`block font-medium mb-2 text-sm ${getTextColorClass('primary')}`}>
               منبع درآمد (اختیاری)
             </label>
             <input
@@ -330,30 +253,14 @@ export default function AddIncomePage() {
               value={source}
               onChange={(e) => setSource(e.target.value)}
               placeholder="مثلاً: شرکت، فریلنس، سرمایه‌گذاری"
-              className="w-full px-4 py-3 bg-stone-50 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent"
-              style={{
-                borderColor: familyTheme.colors.divider,
-                fontSize: familyTheme.typography.body.size
-              }}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm text-gray-900 dark:text-gray-100"
               disabled={loading}
             />
           </div>
 
           {/* 5. تاریخ */}
-          <div
-            className="rounded-2xl p-5"
-            style={{
-              backgroundColor: familyTheme.colors.card,
-              boxShadow: familyTheme.card.shadow
-            }}
-          >
-            <label
-              className="block font-medium mb-2"
-              style={{
-                fontSize: familyTheme.typography.body.size,
-                color: familyTheme.colors.textPrimary
-              }}
-            >
+          <div className={`rounded-2xl p-5 shadow-sm ${getCardBackgroundClass()}`}>
+            <label className={`block font-medium mb-2 text-sm ${getTextColorClass('primary')}`}>
               تاریخ
             </label>
             <div className="space-y-2">
@@ -369,11 +276,7 @@ export default function AddIncomePage() {
                   type="button"
                   onClick={setToday}
                   disabled={loading}
-                  className="flex-1 px-3 py-2 bg-stone-100 hover:bg-stone-200 font-medium rounded-lg transition-colors"
-                  style={{
-                    fontSize: familyTheme.typography.small.size,
-                    color: familyTheme.colors.textPrimary
-                  }}
+                  className={`flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 font-medium rounded-lg transition-colors text-xs ${getTextColorClass('primary')}`}
                 >
                   امروز
                 </button>
@@ -381,11 +284,7 @@ export default function AddIncomePage() {
                   type="button"
                   onClick={setYesterday}
                   disabled={loading}
-                  className="flex-1 px-3 py-2 bg-stone-100 hover:bg-stone-200 font-medium rounded-lg transition-colors"
-                  style={{
-                    fontSize: familyTheme.typography.small.size,
-                    color: familyTheme.colors.textPrimary
-                  }}
+                  className={`flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 font-medium rounded-lg transition-colors text-xs ${getTextColorClass('primary')}`}
                 >
                   دیروز
                 </button>
@@ -394,20 +293,8 @@ export default function AddIncomePage() {
           </div>
 
           {/* 6. توضیحات */}
-          <div
-            className="rounded-2xl p-5"
-            style={{
-              backgroundColor: familyTheme.colors.card,
-              boxShadow: familyTheme.card.shadow
-            }}
-          >
-            <label
-              className="block font-medium mb-2"
-              style={{
-                fontSize: familyTheme.typography.body.size,
-                color: familyTheme.colors.textPrimary
-              }}
-            >
+          <div className={`rounded-2xl p-5 shadow-sm ${getCardBackgroundClass()}`}>
+            <label className={`block font-medium mb-2 text-sm ${getTextColorClass('primary')}`}>
               توضیحات (اختیاری)
             </label>
             <textarea
@@ -415,26 +302,16 @@ export default function AddIncomePage() {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="اگر نکته‌ای هست اینجا بنویس..."
               rows={3}
-              className="w-full px-4 py-3 bg-stone-50 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent resize-none"
-              style={{
-                borderColor: familyTheme.colors.divider,
-                fontSize: familyTheme.typography.body.size
-              }}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none text-sm text-gray-900 dark:text-gray-100"
               disabled={loading}
             />
           </div>
 
           {/* 7. نوت */}
-          <div
-            className="rounded-xl p-3"
-            style={{
-              backgroundColor: familyTheme.colors.successSoft,
-              border: `1px solid ${familyTheme.colors.success}33`
-            }}
-          >
+          <div className="rounded-xl p-3 bg-[#EAFBF1] dark:bg-[#0F2417] border border-[#22C55E]/20 dark:border-[#4ADE80]/20">
             <div className="flex items-start gap-2">
               <span className="text-base">💡</span>
-              <div style={{ fontSize: familyTheme.typography.small.size, color: familyTheme.colors.success }}>
+              <div className={`text-xs ${getTextColorClass('success')}`}>
                 این درآمد به نام شما ثبت می‌شود.
               </div>
             </div>
@@ -442,7 +319,7 @@ export default function AddIncomePage() {
 
           {/* Error message */}
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+            <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl text-sm">
               {error}
             </div>
           )}
@@ -451,15 +328,7 @@ export default function AddIncomePage() {
           <button
             type="submit"
             disabled={loading || !title.trim() || !amount}
-            className="w-full text-white py-4 rounded-2xl font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
-            style={{
-              backgroundColor: familyTheme.colors.success,
-              fontSize: familyTheme.typography.subtitle.size,
-              fontWeight: familyTheme.typography.pageTitle.weight,
-              boxShadow: familyTheme.card.shadow,
-              height: familyTheme.button.height,
-              borderRadius: familyTheme.button.borderRadius
-            }}
+            className="w-full text-white py-4 rounded-2xl font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] h-[52px] shadow-lg bg-[#22C55E] dark:bg-[#4ADE80] text-[15px]"
           >
             {loading ? 'در حال ثبت...' : '💰 ثبت درآمد'}
           </button>

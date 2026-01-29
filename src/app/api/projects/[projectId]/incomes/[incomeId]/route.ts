@@ -12,10 +12,10 @@ import type { UpdateIncomeInput } from '@/types/family'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { projectId: string; incomeId: string } }
+  { params }: { params: Promise<{ projectId: string; incomeId: string }> }
 ) {
   try {
-    const { projectId, incomeId } = params
+    const { projectId, incomeId } = await params
 
     // Verify project exists
     const project = await projectService.getById(projectId)
@@ -49,10 +49,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { projectId: string; incomeId: string } }
+  { params }: { params: Promise<{ projectId: string; incomeId: string }> }
 ) {
   try {
-    const { projectId, incomeId } = params
+    const { projectId, incomeId } = await params
     const body = await request.json()
 
     // Verify project exists
@@ -137,10 +137,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { projectId: string; incomeId: string } }
+  { params }: { params: Promise<{ projectId: string; incomeId: string }> }
 ) {
   try {
-    const { projectId, incomeId } = params
+    const { projectId, incomeId } = await params
 
     // Verify project exists
     const project = await projectService.getById(projectId)

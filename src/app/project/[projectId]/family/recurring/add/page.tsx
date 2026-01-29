@@ -3,7 +3,12 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui'
-import { familyTheme } from '@/styles/family-theme'
+import {
+  getBackgroundClass,
+  getHeaderGradient,
+  getCardBackgroundClass,
+  getTextColorClass,
+} from '@/styles/family-theme'
 
 interface Participant {
   id: string
@@ -132,12 +137,9 @@ export default function AddRecurringPage() {
   ]
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: familyTheme.colors.background }}>
+    <div className={`min-h-screen ${getBackgroundClass()}`}>
       {/* Header */}
-      <div
-        className="text-white p-6 shadow-lg"
-        style={{ background: familyTheme.gradients.infoHeader }}
-      >
+      <div className={`text-white p-6 shadow-lg ${getHeaderGradient('info')}`}>
         <div className="flex items-center gap-4 mb-2">
           <button
             onClick={() => router.back()}
@@ -145,20 +147,11 @@ export default function AddRecurringPage() {
           >
             ←
           </button>
-          <h1
-            className="font-bold"
-            style={{
-              fontSize: familyTheme.typography.pageTitle.size,
-              fontWeight: familyTheme.typography.pageTitle.weight
-            }}
-          >
+          <h1 className="text-[22px] font-bold">
             افزودن تراکنش تکراری
           </h1>
         </div>
-        <p
-          className="text-white/90 mr-14"
-          style={{ fontSize: familyTheme.typography.body.size }}
-        >
+        <p className="text-white/90 mr-14 text-[14px]">
           تراکنش تکراری جدید ایجاد کنید
         </p>
       </div>
@@ -167,46 +160,30 @@ export default function AddRecurringPage() {
       <div className="p-6 max-w-2xl mx-auto">
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Type selector */}
-          <div
-            className="rounded-2xl p-4"
-            style={{
-              backgroundColor: familyTheme.colors.card,
-              boxShadow: familyTheme.card.shadow
-            }}
-          >
-            <label
-              className="block font-medium mb-3"
-              style={{
-                fontSize: familyTheme.typography.body.size,
-                color: familyTheme.colors.textPrimary
-              }}
-            >
-              نوع تراکنش <span style={{ color: familyTheme.colors.danger }}>*</span>
+          <div className={`rounded-2xl p-4 shadow-sm ${getCardBackgroundClass()}`}>
+            <label className={`block font-medium mb-3 text-[14px] ${getTextColorClass('primary')}`}>
+              نوع تراکنش <span className={getTextColorClass('danger')}>*</span>
             </label>
             <div className="flex gap-3">
               <button
                 type="button"
                 onClick={() => setType('EXPENSE')}
-                className="flex-1 py-3 rounded-xl font-medium transition-all"
-                style={{
-                  fontSize: familyTheme.typography.body.size,
-                  backgroundColor: type === 'EXPENSE' ? familyTheme.colors.danger : familyTheme.colors.background,
-                  color: type === 'EXPENSE' ? '#FFFFFF' : familyTheme.colors.textSecondary,
-                  boxShadow: type === 'EXPENSE' ? familyTheme.card.shadow : 'none'
-                }}
+                className={`flex-1 py-3 rounded-xl font-medium transition-all text-[14px] ${
+                  type === 'EXPENSE'
+                    ? 'bg-[#EF4444] dark:bg-[#F87171] text-white shadow-sm'
+                    : 'bg-[#FFFDF8] dark:bg-[#0F172A] text-[#6B7280] dark:text-[#CBD5E1]'
+                }`}
               >
                 💸 هزینه
               </button>
               <button
                 type="button"
                 onClick={() => setType('INCOME')}
-                className="flex-1 py-3 rounded-xl font-medium transition-all"
-                style={{
-                  fontSize: familyTheme.typography.body.size,
-                  backgroundColor: type === 'INCOME' ? familyTheme.colors.success : familyTheme.colors.background,
-                  color: type === 'INCOME' ? '#FFFFFF' : familyTheme.colors.textSecondary,
-                  boxShadow: type === 'INCOME' ? familyTheme.card.shadow : 'none'
-                }}
+                className={`flex-1 py-3 rounded-xl font-medium transition-all text-[14px] ${
+                  type === 'INCOME'
+                    ? 'bg-[#22C55E] dark:bg-[#4ADE80] text-white shadow-sm'
+                    : 'bg-[#FFFDF8] dark:bg-[#0F172A] text-[#6B7280] dark:text-[#CBD5E1]'
+                }`}
               >
                 💰 درآمد
               </button>
@@ -214,21 +191,9 @@ export default function AddRecurringPage() {
           </div>
 
           {/* Title */}
-          <div
-            className="rounded-2xl p-4"
-            style={{
-              backgroundColor: familyTheme.colors.card,
-              boxShadow: familyTheme.card.shadow
-            }}
-          >
-            <label
-              className="block font-medium mb-2"
-              style={{
-                fontSize: familyTheme.typography.body.size,
-                color: familyTheme.colors.textPrimary
-              }}
-            >
-              عنوان <span style={{ color: familyTheme.colors.danger }}>*</span>
+          <div className={`rounded-2xl p-4 shadow-sm ${getCardBackgroundClass()}`}>
+            <label className={`block font-medium mb-2 text-[14px] ${getTextColorClass('primary')}`}>
+              عنوان <span className={getTextColorClass('danger')}>*</span>
             </label>
             <input
               type="text"
@@ -237,64 +202,30 @@ export default function AddRecurringPage() {
               placeholder={
                 type === 'INCOME' ? 'مثلاً: حقوق ماهانه' : 'مثلاً: اجاره خانه'
               }
-              className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent"
-              style={{
-                backgroundColor: familyTheme.colors.background,
-                borderColor: familyTheme.colors.divider,
-                fontSize: familyTheme.typography.body.size
-              }}
+              className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 text-[14px]"
               disabled={loading}
             />
           </div>
 
           {/* Amount */}
-          <div
-            className="rounded-2xl p-4"
-            style={{
-              backgroundColor: familyTheme.colors.card,
-              boxShadow: familyTheme.card.shadow
-            }}
-          >
-            <label
-              className="block font-medium mb-2"
-              style={{
-                fontSize: familyTheme.typography.body.size,
-                color: familyTheme.colors.textPrimary
-              }}
-            >
-              مبلغ <span style={{ color: familyTheme.colors.danger }}>*</span>
+          <div className={`rounded-2xl p-4 shadow-sm ${getCardBackgroundClass()}`}>
+            <label className={`block font-medium mb-2 text-[14px] ${getTextColorClass('primary')}`}>
+              مبلغ <span className={getTextColorClass('danger')}>*</span>
             </label>
             <input
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0"
-              className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent text-left"
-              style={{
-                backgroundColor: familyTheme.colors.background,
-                borderColor: familyTheme.colors.divider,
-                fontSize: familyTheme.typography.body.size
-              }}
+              className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent text-left bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 text-[14px]"
               disabled={loading}
             />
           </div>
 
           {/* Frequency */}
-          <div
-            className="rounded-2xl p-4"
-            style={{
-              backgroundColor: familyTheme.colors.card,
-              boxShadow: familyTheme.card.shadow
-            }}
-          >
-            <label
-              className="block font-medium mb-3"
-              style={{
-                fontSize: familyTheme.typography.body.size,
-                color: familyTheme.colors.textPrimary
-              }}
-            >
-              دوره تکرار <span style={{ color: familyTheme.colors.danger }}>*</span>
+          <div className={`rounded-2xl p-4 shadow-sm ${getCardBackgroundClass()}`}>
+            <label className={`block font-medium mb-3 text-[14px] ${getTextColorClass('primary')}`}>
+              دوره تکرار <span className={getTextColorClass('danger')}>*</span>
             </label>
             <div className="grid grid-cols-2 gap-3">
               {frequencyOptions.map((option) => (
@@ -306,13 +237,11 @@ export default function AddRecurringPage() {
                       option.value as 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY'
                     )
                   }
-                  className="py-3 rounded-xl font-medium transition-all"
-                  style={{
-                    fontSize: familyTheme.typography.body.size,
-                    backgroundColor: frequency === option.value ? familyTheme.colors.info : familyTheme.colors.background,
-                    color: frequency === option.value ? '#FFFFFF' : familyTheme.colors.textSecondary,
-                    boxShadow: frequency === option.value ? familyTheme.card.shadow : 'none'
-                  }}
+                  className={`py-3 rounded-xl font-medium transition-all text-[14px] ${
+                    frequency === option.value
+                      ? 'bg-[#4F6EF7] dark:bg-[#818CF8] text-white shadow-sm'
+                      : 'bg-[#FFFDF8] dark:bg-[#0F172A] text-[#6B7280] dark:text-[#CBD5E1]'
+                  }`}
                 >
                   {option.label}
                 </button>
@@ -321,32 +250,15 @@ export default function AddRecurringPage() {
           </div>
 
           {/* Participant */}
-          <div
-            className="rounded-2xl p-4"
-            style={{
-              backgroundColor: familyTheme.colors.card,
-              boxShadow: familyTheme.card.shadow
-            }}
-          >
-            <label
-              className="block font-medium mb-2"
-              style={{
-                fontSize: familyTheme.typography.body.size,
-                color: familyTheme.colors.textPrimary
-              }}
-            >
+          <div className={`rounded-2xl p-4 shadow-sm ${getCardBackgroundClass()}`}>
+            <label className={`block font-medium mb-2 text-[14px] ${getTextColorClass('primary')}`}>
               {type === 'INCOME' ? 'دریافت‌کننده' : 'پرداخت‌کننده'}{' '}
-              <span style={{ color: familyTheme.colors.danger }}>*</span>
+              <span className={getTextColorClass('danger')}>*</span>
             </label>
             <select
               value={participantId}
               onChange={(e) => setParticipantId(e.target.value)}
-              className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent"
-              style={{
-                backgroundColor: familyTheme.colors.background,
-                borderColor: familyTheme.colors.divider,
-                fontSize: familyTheme.typography.body.size
-              }}
+              className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 text-[14px]"
               disabled={loading}
             >
               <option value="">انتخاب کنید</option>
@@ -359,31 +271,14 @@ export default function AddRecurringPage() {
           </div>
 
           {/* Category */}
-          <div
-            className="rounded-2xl p-4"
-            style={{
-              backgroundColor: familyTheme.colors.card,
-              boxShadow: familyTheme.card.shadow
-            }}
-          >
-            <label
-              className="block font-medium mb-2"
-              style={{
-                fontSize: familyTheme.typography.body.size,
-                color: familyTheme.colors.textPrimary
-              }}
-            >
+          <div className={`rounded-2xl p-4 shadow-sm ${getCardBackgroundClass()}`}>
+            <label className={`block font-medium mb-2 text-[14px] ${getTextColorClass('primary')}`}>
               دسته‌بندی
             </label>
             <select
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
-              className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent"
-              style={{
-                backgroundColor: familyTheme.colors.background,
-                borderColor: familyTheme.colors.divider,
-                fontSize: familyTheme.typography.body.size
-              }}
+              className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 text-[14px]"
               disabled={loading}
             >
               <option value="">بدون دسته‌بندی</option>
@@ -396,51 +291,22 @@ export default function AddRecurringPage() {
           </div>
 
           {/* Start Date */}
-          <div
-            className="rounded-2xl p-4"
-            style={{
-              backgroundColor: familyTheme.colors.card,
-              boxShadow: familyTheme.card.shadow
-            }}
-          >
-            <label
-              className="block font-medium mb-2"
-              style={{
-                fontSize: familyTheme.typography.body.size,
-                color: familyTheme.colors.textPrimary
-              }}
-            >
-              تاریخ شروع <span style={{ color: familyTheme.colors.danger }}>*</span>
+          <div className={`rounded-2xl p-4 shadow-sm ${getCardBackgroundClass()}`}>
+            <label className={`block font-medium mb-2 text-[14px] ${getTextColorClass('primary')}`}>
+              تاریخ شروع <span className={getTextColorClass('danger')}>*</span>
             </label>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent"
-              style={{
-                backgroundColor: familyTheme.colors.background,
-                borderColor: familyTheme.colors.divider,
-                fontSize: familyTheme.typography.body.size
-              }}
+              className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 text-[14px]"
               disabled={loading}
             />
           </div>
 
           {/* End Date (optional) */}
-          <div
-            className="rounded-2xl p-4"
-            style={{
-              backgroundColor: familyTheme.colors.card,
-              boxShadow: familyTheme.card.shadow
-            }}
-          >
-            <label
-              className="block font-medium mb-2"
-              style={{
-                fontSize: familyTheme.typography.body.size,
-                color: familyTheme.colors.textPrimary
-              }}
-            >
+          <div className={`rounded-2xl p-4 shadow-sm ${getCardBackgroundClass()}`}>
+            <label className={`block font-medium mb-2 text-[14px] ${getTextColorClass('primary')}`}>
               تاریخ پایان (اختیاری)
             </label>
             <input
@@ -448,35 +314,17 @@ export default function AddRecurringPage() {
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
               min={startDate}
-              className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent"
-              style={{
-                backgroundColor: familyTheme.colors.background,
-                borderColor: familyTheme.colors.divider,
-                fontSize: familyTheme.typography.body.size
-              }}
+              className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 text-[14px]"
               disabled={loading}
             />
-            <p
-              className="mt-2"
-              style={{
-                fontSize: familyTheme.typography.small.size,
-                color: familyTheme.colors.textSecondary
-              }}
-            >
+            <p className={`mt-2 text-[12px] ${getTextColorClass('secondary')}`}>
               اگر خالی بگذارید، تراکنش به صورت نامحدود ادامه می‌یابد
             </p>
           </div>
 
           {/* Error message */}
           {error && (
-            <div
-              className="px-4 py-3 rounded-xl"
-              style={{
-                backgroundColor: familyTheme.colors.dangerSoft,
-                border: `1px solid ${familyTheme.colors.danger}33`,
-                color: familyTheme.colors.danger
-              }}
-            >
+            <div className="px-4 py-3 rounded-xl bg-[#FEECEC] dark:bg-[#2D1212] border border-[#EF4444]/20 dark:border-[#F87171]/20 text-[#EF4444] dark:text-[#F87171]">
               {error}
             </div>
           )}
@@ -485,12 +333,7 @@ export default function AddRecurringPage() {
           <Button
             type="submit"
             disabled={loading}
-            className="w-full text-white py-4 rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            style={{
-              backgroundColor: familyTheme.colors.info,
-              fontSize: familyTheme.typography.subtitle.size,
-              boxShadow: familyTheme.card.shadow
-            }}
+            className="w-full bg-[#4F6EF7] dark:bg-[#818CF8] text-white py-4 rounded-xl font-bold text-[15px] shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             {loading ? 'در حال ثبت...' : '🔄 ایجاد تراکنش تکراری'}
           </Button>

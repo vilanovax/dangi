@@ -11,6 +11,7 @@ import {
   EmptyState,
   CreateProjectSheet,
   SortControl,
+  ChecklistsSection,
   type SortOption,
 } from './(home)/components'
 
@@ -318,9 +319,10 @@ export default function HomePage() {
               {/* Helper text + Sort Control */}
               <div className="flex items-center justify-between">
                 <p className="text-xs text-gray-400 dark:text-gray-500">آخرین وضعیت هر پروژه</p>
-                {!isReordering && activeProjects.length > 1 && (
+                {/* Sort Control - فعلاً غیرفعال */}
+                {/* {!isReordering && activeProjects.length > 1 && (
                   <SortControl value={sortOption} onChange={setSortOption} />
-                )}
+                )} */}
               </div>
             </div>
 
@@ -470,6 +472,11 @@ export default function HomePage() {
                 )}
               </div>
             )}
+
+            {/* Checklists Section */}
+            <div className="mt-8">
+              <ChecklistsSection />
+            </div>
 
             {/* Spacer for fixed button */}
             {!showArchived && <div className="pb-28" />}

@@ -8,14 +8,16 @@ datasource db {
 
 // کاربر - احراز هویت ساده با موبایل و رمز عبور
 model User {
-  id           String        @id @default(cuid())
-  phone        String        @unique // شماره موبایل
-  password     String        // رمز عبور هش شده
-  name         String        // نام نمایشی
-  avatar       String?       // آواتار (JSON) - null یعنی auto
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  participants Participant[] // پروژه‌هایی که عضوشه
+  id              String           @id @default(cuid())
+  phone           String           @unique // شماره موبایل
+  password        String           // رمز عبور هش شده
+  name            String           // نام نمایشی
+  avatar          String?          // آواتار (JSON) - null یعنی auto
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  participants    Participant[]    // پروژه‌هایی که عضوشه
+  checklists      Checklist[]      // چک‌لیست‌های شخصی (standalone)
+  checklistShares ChecklistShare[] // چک‌لیست‌های به اشتراک گذاشته شده
 }
 
 model Project {
@@ -258,4 +260,66 @@ model RecurringTransaction {
   @@index([projectId])
   @@index([isActive])
   @@index([participantId])
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ✅ STANDALONE CHECKLIST SYSTEM
+// ═══════════════════════════════════════════════════════════════
+
+// چک‌لیست - مستقل از پروژه، برای مدیریت کارها و خریدها
+model Checklist {
+  id          String           @id @default(cuid())
+  title       String           // عنوان چک‌لیست
+  description String?          // توضیحات (اختیاری)
+  category    String           // دسته: "travel" | "gathering" | "personal-finance"
+  icon        String?          // آیکون emoji (مثلاً "✈️")
+  color       String?          // رنگ hex (مثلاً "#3b82f6")
+  userId      String           // مالک چک‌لیست
+  shareCode   String           @unique @default(cuid()) // کد اشتراک‌گذاری
+  isArchived  Boolean          @default(false) // آرشیو شده
+  archivedAt  DateTime?        // تاریخ آرشیو
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items       ChecklistItem[]  // آیتم‌های چک‌لیست
+  shares      ChecklistShare[] // اشتراک‌گذاری با دیگران
+
+  @@index([userId, isArchived, createdAt(sort: Desc)]) // لیست چک‌لیست‌های فعال کاربر
+  @@index([userId, category]) // فیلتر بر اساس دسته
+  @@index([shareCode]) // پیدا کردن با shareCode
+}
+
+// آیتم چک‌لیست - هر کار یا خرید در چک‌لیست
+model ChecklistItem {
+  id          String    @id @default(cuid())
+  text        String    // متن آیتم (مثلاً "خرید شیر")
+  isChecked   Boolean   @default(false) // انجام شده؟
+  note        String?   // یادداشت اختیاری (مثلاً "2 لیتری بگیر")
+  order       Int       @default(0) // ترتیب نمایش
+  checklistId String    // متعلق به کدام چک‌لیست
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  checklist   Checklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+
+  @@index([checklistId, order]) // مرتب‌سازی آیتم‌ها
+  @@index([checklistId, isChecked]) // فیلتر انجام شده/نشده
+}
+
+// اشتراک‌گذاری چک‌لیست - دسترسی دیگران به چک‌لیست
+model ChecklistShare {
+  id          String    @id @default(cuid())
+  checklistId String    // کدام چک‌لیست
+  userId      String?   // با کدام کاربر (null = لینک عمومی)
+  permission  String    // نوع دسترسی: "VIEW" | "EDIT"
+  expiresAt   DateTime? // تاریخ انقضا (null = بدون انقضا)
+  createdAt   DateTime  @default(now())
+
+  checklist   Checklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([checklistId, userId]) // هر کاربر یک دسترسی به هر چک‌لیست
+  @@index([checklistId]) // اشتراک‌های یک چک‌لیست
+  @@index([userId]) // چک‌لیست‌های به اشتراک گذاشته شده با یک کاربر
 }

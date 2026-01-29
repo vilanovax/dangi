@@ -3,7 +3,12 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import type { FamilyDashboardStats } from '@/types/family'
-import { familyTheme } from '@/styles/family-theme'
+import {
+  getBackgroundClass,
+  getHeaderGradient,
+  getCardBackgroundClass,
+  getTextColorClass,
+} from '@/styles/family-theme'
 
 export default function PeriodDetailReportPage() {
   const params = useParams()
@@ -160,17 +165,17 @@ export default function PeriodDetailReportPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-cyan-50 flex items-center justify-center">
-        <div className="text-stone-600">در حال بارگذاری...</div>
+      <div className={`min-h-screen flex items-center justify-center ${getBackgroundClass()}`}>
+        <div className={getTextColorClass('secondary')}>در حال بارگذاری...</div>
       </div>
     )
   }
 
   if (error || !stats) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-cyan-50 p-6">
+      <div className={`min-h-screen p-6 ${getBackgroundClass()}`}>
         <div className="max-w-2xl mx-auto">
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+          <div className="bg-[#FEECEC] dark:bg-[#2D1212] border border-[#EF4444]/20 dark:border-[#F87171]/20 text-[#EF4444] dark:text-[#F87171] px-4 py-3 rounded-xl">
             {error || 'خطا در بارگذاری گزارش'}
           </div>
         </div>
@@ -197,12 +202,9 @@ export default function PeriodDetailReportPage() {
   const monthName = monthNames[parseInt(month, 10) - 1]
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: familyTheme.colors.background }}>
+    <div className={`min-h-screen ${getBackgroundClass()}`}>
       {/* Header با گرادیان آبی استاندارد */}
-      <div
-        className="text-white p-6 shadow-lg sticky top-0 z-10"
-        style={{ background: familyTheme.gradients.infoHeader }}
-      >
+      <div className={`text-white p-6 shadow-lg sticky top-0 z-10 ${getHeaderGradient('info')}`}>
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-4">
             <button
@@ -213,14 +215,14 @@ export default function PeriodDetailReportPage() {
             </button>
             <div>
               <h1 className="text-2xl font-bold">گزارش تفصیلی</h1>
-              <p className="text-blue-100 text-sm">
+              <p className="text-white/80 text-sm">
                 {monthName} {year}
               </p>
             </div>
           </div>
           <button
             onClick={handleExportCSV}
-            className="bg-white text-indigo-600 px-4 py-2 rounded-full font-medium hover:bg-blue-50 transition-colors text-sm"
+            className="bg-white text-[#4F6EF7] dark:text-[#818CF8] px-4 py-2 rounded-full font-medium hover:bg-white/90 dark:hover:bg-white/80 transition-colors text-sm"
           >
             📥 دانلود CSV
           </button>
@@ -240,7 +242,7 @@ export default function PeriodDetailReportPage() {
         )}
 
         {/* Financial Summary - Narrative Style */}
-        <div className="bg-gradient-to-br from-indigo-500 to-blue-600 rounded-3xl p-8 shadow-xl text-white">
+        <div className="bg-gradient-to-br from-[#4F6EF7] to-[#6D83FF] dark:from-[#6D83FF] dark:to-[#818CF8] rounded-3xl p-8 shadow-xl text-white">
           {/* Main narrative */}
           <div className="text-center mb-6">
             <div className="text-sm opacity-90 mb-2">نتیجه مالی این ماه</div>
@@ -281,12 +283,12 @@ export default function PeriodDetailReportPage() {
 
         {/* Smart Insights */}
         {(getBudgetAnalysis() || getTopExpenseInsight()) && (
-          <div className="bg-amber-50 border-2 border-amber-100 rounded-2xl p-5 shadow-md">
+          <div className="bg-[#FFF3E0] dark:bg-[#2D1F0D] border-2 border-[#FF8A00]/20 dark:border-[#FFA94D]/20 rounded-2xl p-5 shadow-sm">
             <div className="flex items-start gap-3">
               <div className="text-2xl flex-shrink-0">💡</div>
               <div className="flex-1">
-                <h3 className="font-bold text-amber-900 mb-2">نکات تحلیلی</h3>
-                <div className="space-y-2 text-sm text-amber-800">
+                <h3 className={`font-bold mb-2 ${getTextColorClass('primary')}`}>نکات تحلیلی</h3>
+                <div className={`space-y-2 text-sm ${getTextColorClass('secondary')}`}>
                   {getBudgetAnalysis() && (
                     <div className="flex items-start gap-2">
                       <span className="flex-shrink-0">•</span>
@@ -307,76 +309,78 @@ export default function PeriodDetailReportPage() {
 
         {/* Budget Overview */}
         {stats.totalBudget > 0 ? (
-          <div className="bg-white rounded-2xl p-6 shadow-lg">
-            <h2 className="text-lg font-bold text-stone-800 mb-4">
+          <div className={`rounded-2xl p-6 shadow-lg ${getCardBackgroundClass()}`}>
+            <h2 className={`text-lg font-bold mb-4 ${getTextColorClass('primary')}`}>
               وضعیت بودجه
             </h2>
           <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="text-center bg-stone-50 rounded-xl p-4">
-              <div className="text-xl font-bold text-stone-800">
+            <div className="text-center bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+              <div className={`text-xl font-bold ${getTextColorClass('primary')}`}>
                 {stats.totalBudget.toLocaleString('fa-IR')}
               </div>
-              <div className="text-sm text-stone-600 mt-1">کل بودجه</div>
+              <div className={`text-sm mt-1 ${getTextColorClass('secondary')}`}>کل بودجه</div>
             </div>
-            <div className="text-center bg-amber-50 rounded-xl p-4">
-              <div className="text-xl font-bold text-amber-700">
+            <div className="text-center bg-[#FFF3E0] dark:bg-[#2D1F0D] rounded-xl p-4">
+              <div className={`text-xl font-bold ${getTextColorClass('primary')}`}>
                 {stats.totalSpent.toLocaleString('fa-IR')}
               </div>
-              <div className="text-sm text-stone-600 mt-1">مصرف شده</div>
+              <div className={`text-sm mt-1 ${getTextColorClass('secondary')}`}>مصرف شده</div>
             </div>
-            <div className="text-center bg-indigo-50 rounded-xl p-4">
-              <div className="text-xl font-bold text-indigo-600">
+            <div className="text-center bg-[#EEF2FF] dark:bg-[#1E1B3A] rounded-xl p-4">
+              <div className={`text-xl font-bold ${getTextColorClass('info')}`}>
                 {stats.budgetUtilization.toFixed(0)}%
               </div>
-              <div className="text-sm text-stone-600 mt-1">درصد استفاده</div>
+              <div className={`text-sm mt-1 ${getTextColorClass('secondary')}`}>درصد استفاده</div>
             </div>
           </div>
 
             {/* Budget details - only meaningful ones */}
             {getMeaningfulBudgets().length > 0 ? (
               <div className="space-y-3">
-                <h3 className="font-medium text-stone-700 text-sm">
+                <h3 className={`font-medium text-sm ${getTextColorClass('primary')}`}>
                   جزئیات بودجه دسته‌بندی‌ها
                 </h3>
                 {getMeaningfulBudgets().map((budget, index) => (
-                  <div key={index} className="border-t border-stone-100 pt-3">
+                  <div key={index} className="border-t border-[#E5E7EB] dark:border-[#334155] pt-3">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         {budget.categoryIcon && (
                           <span>{budget.categoryIcon}</span>
                         )}
-                        <span className="font-medium text-stone-800">
+                        <span className={`font-medium ${getTextColorClass('primary')}`}>
                           {budget.categoryName}
                         </span>
                       </div>
-                      <div className="text-sm text-stone-600">
+                      <div className={`text-sm ${getTextColorClass('secondary')}`}>
                         {(budget.spent / 10).toLocaleString('fa-IR')} /{' '}
                         {(budget.budgetAmount / 10).toLocaleString('fa-IR')}
                       </div>
                     </div>
                     {budget.spent === 0 && budget.budgetAmount > 0 ? (
-                      <div className="text-xs text-stone-400 italic">
+                      <div className={`text-xs italic ${getTextColorClass('secondary')}`}>
                         هنوز مصرفی ثبت نشده
                       </div>
                     ) : (
                       <div className="flex items-center gap-3">
-                        <div className="flex-1 h-2 bg-stone-100 rounded-full overflow-hidden">
+                        <div className="flex-1 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                           <div
                             className={`h-full rounded-full transition-all ${
                               budget.isOverBudget
-                                ? 'bg-red-500'
+                                ? 'bg-[#EF4444] dark:bg-[#F87171]'
                                 : budget.percentage >= 90
-                                  ? 'bg-orange-500'
+                                  ? 'bg-[#FF8A00] dark:bg-[#FFA94D]'
                                   : budget.percentage >= 70
-                                    ? 'bg-yellow-500'
-                                    : 'bg-green-500'
+                                    ? 'bg-yellow-500 dark:bg-yellow-400'
+                                    : 'bg-[#22C55E] dark:bg-[#4ADE80]'
                             }`}
                             style={{ width: `${Math.min(budget.percentage, 100)}%` }}
                           />
                         </div>
-                        <span
-                          className={`text-sm font-medium ${budget.isOverBudget ? 'text-red-600' : 'text-stone-600'}`}
-                        >
+                        <span className={`text-sm font-medium ${
+                          budget.isOverBudget
+                            ? 'text-[#EF4444] dark:text-[#F87171]'
+                            : getTextColorClass('secondary')
+                        }`}>
                           {budget.percentage.toFixed(0)}%
                         </span>
                       </div>
@@ -385,7 +389,7 @@ export default function PeriodDetailReportPage() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-stone-400">
+              <div className={`text-center py-8 ${getTextColorClass('secondary')}`}>
                 <div className="text-3xl mb-2">💭</div>
                 <div className="text-sm">
                   بودجه تعیین شده ولی هنوز خرجی ثبت نشده
@@ -394,9 +398,9 @@ export default function PeriodDetailReportPage() {
             )}
           </div>
         ) : (
-          <div className="bg-stone-50 rounded-2xl p-8 text-center border-2 border-dashed border-stone-200">
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-8 text-center border-2 border-dashed border-gray-200 dark:border-gray-700">
             <div className="text-4xl mb-3">🎯</div>
-            <div className="text-stone-600 text-sm">
+            <div className={`text-sm ${getTextColorClass('secondary')}`}>
               برای این ماه بودجه‌ای تعیین نشده
             </div>
           </div>
@@ -404,30 +408,30 @@ export default function PeriodDetailReportPage() {
 
         {/* Top Expenses */}
         {stats.topExpenses.length > 0 && (
-          <div className="bg-white rounded-2xl p-6 shadow-lg">
-            <h2 className="text-lg font-bold text-stone-800 mb-4">
+          <div className={`rounded-2xl p-6 shadow-lg ${getCardBackgroundClass()}`}>
+            <h2 className={`text-lg font-bold mb-4 ${getTextColorClass('primary')}`}>
               بیشترین هزینه‌ها
             </h2>
             <div className="space-y-3">
               {stats.topExpenses.map((expense, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between p-3 bg-stone-50 rounded-xl"
+                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-xl"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-bold text-sm">
+                    <div className="w-8 h-8 rounded-full bg-[#FEECEC] dark:bg-[#2D1212] flex items-center justify-center text-[#EF4444] dark:text-[#F87171] font-bold text-sm">
                       {index + 1}
                     </div>
                     <div>
-                      <div className="font-medium text-stone-800">
+                      <div className={`font-medium ${getTextColorClass('primary')}`}>
                         {expense.categoryIcon} {expense.categoryName}
                       </div>
-                      <div className="text-xs text-stone-500">
+                      <div className={`text-xs ${getTextColorClass('secondary')}`}>
                         {expense.percentage.toFixed(1)}% از کل هزینه‌ها
                       </div>
                     </div>
                   </div>
-                  <div className="text-lg font-bold text-stone-800">
+                  <div className={`text-lg font-bold ${getTextColorClass('primary')}`}>
                     {expense.amount.toLocaleString('fa-IR')}
                   </div>
                 </div>
@@ -441,13 +445,13 @@ export default function PeriodDetailReportPage() {
           <div className="space-y-4">
             {/* Recent Incomes */}
             {stats.recentIncomes.length > 0 && (
-              <div className="bg-white rounded-2xl p-6 shadow-lg">
+              <div className={`rounded-2xl p-6 shadow-lg ${getCardBackgroundClass()}`}>
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h2 className="text-lg font-bold text-green-700">
+                    <h2 className="text-lg font-bold text-[#22C55E] dark:text-[#4ADE80]">
                       💰 درآمدهای اخیر
                     </h2>
-                    <p className="text-xs text-stone-500 mt-1">
+                    <p className={`text-xs mt-1 ${getTextColorClass('secondary')}`}>
                       {stats.recentIncomes.length > 5
                         ? '۵ مورد آخر'
                         : `${stats.recentIncomes.length} مورد`}
@@ -458,13 +462,13 @@ export default function PeriodDetailReportPage() {
                   {stats.recentIncomes.slice(0, 5).map((income) => (
                     <div
                       key={income.id}
-                      className="flex items-center justify-between p-3 bg-green-50 rounded-xl hover:bg-green-100 transition-colors"
+                      className="flex items-center justify-between p-3 bg-[#EAFBF1] dark:bg-[#0F2417] rounded-xl hover:bg-[#D4F7E0] dark:hover:bg-[#0F2417]/80 transition-colors"
                     >
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-stone-800 truncate">
+                        <div className={`font-medium truncate ${getTextColorClass('primary')}`}>
                           {income.title}
                         </div>
-                        <div className="text-xs text-stone-600 flex items-center gap-2">
+                        <div className={`text-xs flex items-center gap-2 ${getTextColorClass('secondary')}`}>
                           <span>{income.receivedByName}</span>
                           {income.categoryName && (
                             <>
@@ -474,7 +478,7 @@ export default function PeriodDetailReportPage() {
                           )}
                         </div>
                       </div>
-                      <div className="text-green-700 font-bold flex-shrink-0 mr-3">
+                      <div className="text-[#22C55E] dark:text-[#4ADE80] font-bold flex-shrink-0 mr-3">
                         +{(income.amount / 10).toLocaleString('fa-IR')}
                       </div>
                     </div>
@@ -485,13 +489,13 @@ export default function PeriodDetailReportPage() {
 
             {/* Recent Expenses */}
             {stats.recentExpenses.length > 0 && (
-              <div className="bg-white rounded-2xl p-6 shadow-lg">
+              <div className={`rounded-2xl p-6 shadow-lg ${getCardBackgroundClass()}`}>
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h2 className="text-lg font-bold text-red-700">
+                    <h2 className="text-lg font-bold text-[#EF4444] dark:text-[#F87171]">
                       💸 هزینه‌های اخیر
                     </h2>
-                    <p className="text-xs text-stone-500 mt-1">
+                    <p className={`text-xs mt-1 ${getTextColorClass('secondary')}`}>
                       {stats.recentExpenses.length > 5
                         ? '۵ مورد آخر'
                         : `${stats.recentExpenses.length} مورد`}
@@ -502,13 +506,13 @@ export default function PeriodDetailReportPage() {
                   {stats.recentExpenses.slice(0, 5).map((expense) => (
                     <div
                       key={expense.id}
-                      className="flex items-center justify-between p-3 bg-red-50 rounded-xl hover:bg-red-100 transition-colors"
+                      className="flex items-center justify-between p-3 bg-[#FEECEC] dark:bg-[#2D1212] rounded-xl hover:bg-[#FDDDDD] dark:hover:bg-[#2D1212]/80 transition-colors"
                     >
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-stone-800 truncate">
+                        <div className={`font-medium truncate ${getTextColorClass('primary')}`}>
                           {expense.title}
                         </div>
-                        <div className="text-xs text-stone-600 flex items-center gap-2">
+                        <div className={`text-xs flex items-center gap-2 ${getTextColorClass('secondary')}`}>
                           <span>{expense.paidByName}</span>
                           {expense.categoryName && (
                             <>
@@ -518,7 +522,7 @@ export default function PeriodDetailReportPage() {
                           )}
                         </div>
                       </div>
-                      <div className="text-red-700 font-bold flex-shrink-0 mr-3">
+                      <div className="text-[#EF4444] dark:text-[#F87171] font-bold flex-shrink-0 mr-3">
                         −{(expense.amount / 10).toLocaleString('fa-IR')}
                       </div>
                     </div>

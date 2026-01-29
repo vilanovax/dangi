@@ -2,7 +2,13 @@
 
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { familyTheme } from '@/styles/family-theme'
+import {
+  familyTheme,
+  getBackgroundClass,
+  getHeaderGradient,
+  getCardBackgroundClass,
+  getTextColorClass,
+} from '@/styles/family-theme'
 
 export default function FamilySettingsPage() {
   const params = useParams()
@@ -10,12 +16,9 @@ export default function FamilySettingsPage() {
   const projectId = params.projectId as string
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: familyTheme.colors.background }}>
+    <div className={`min-h-screen ${getBackgroundClass()}`}>
       {/* Header */}
-      <div
-        className="text-white p-6 shadow-lg sticky top-0 z-10"
-        style={{ background: familyTheme.gradients.primaryHeader }}
-      >
+      <div className={`text-white p-6 shadow-lg sticky top-0 z-10 ${getHeaderGradient('primary')}`}>
         <div className="flex items-center gap-4">
           <Link
             href={`/project/${projectId}/family`}
@@ -24,19 +27,10 @@ export default function FamilySettingsPage() {
             →
           </Link>
           <div>
-            <h1
-              className="font-bold"
-              style={{
-                fontSize: familyTheme.typography.pageTitle.size,
-                fontWeight: familyTheme.typography.pageTitle.weight
-              }}
-            >
+            <h1 className="text-[22px] font-bold">
               تنظیمات
             </h1>
-            <p
-              className="text-white/90 mt-1"
-              style={{ fontSize: familyTheme.typography.body.size }}
-            >
+            <p className="text-white/90 mt-1 text-sm">
               مدیریت پروژه و تنظیمات
             </p>
           </div>
@@ -46,115 +40,58 @@ export default function FamilySettingsPage() {
       {/* Content */}
       <div className="p-4 space-y-4">
         {/* Coming Soon */}
-        <div
-          className="rounded-2xl p-12 text-center"
-          style={{
-            backgroundColor: familyTheme.colors.card,
-            boxShadow: familyTheme.card.shadow
-          }}
-        >
-          <div
-            className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center"
-            style={{ backgroundColor: familyTheme.colors.primarySoft }}
-          >
+        <div className={`rounded-2xl p-12 text-center shadow-lg ${getCardBackgroundClass()}`}>
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center bg-[#FFF3E0] dark:bg-[#2D1F0D]">
             <span className="text-5xl">⚙️</span>
           </div>
-          <h2
-            className="font-bold mb-2"
-            style={{
-              fontSize: familyTheme.typography.subtitle.size,
-              fontWeight: familyTheme.typography.cardNumber.weight,
-              color: familyTheme.colors.textPrimary
-            }}
-          >
+          <h2 className={`text-[15px] font-bold mb-2 ${getTextColorClass('primary')}`}>
             به زودی...
           </h2>
-          <p
-            style={{
-              fontSize: familyTheme.typography.body.size,
-              color: familyTheme.colors.textSecondary
-            }}
-          >
+          <p className={`text-sm ${getTextColorClass('secondary')}`}>
             صفحه تنظیمات در حال ساخت است
           </p>
         </div>
 
         {/* Quick Links */}
-        <div
-          className="rounded-2xl p-5"
-          style={{
-            backgroundColor: familyTheme.colors.card,
-            boxShadow: familyTheme.card.shadow
-          }}
-        >
-          <h3
-            className="font-bold mb-4"
-            style={{
-              fontSize: familyTheme.typography.body.size,
-              color: familyTheme.colors.textPrimary
-            }}
-          >
+        <div className={`rounded-2xl p-5 shadow-lg ${getCardBackgroundClass()}`}>
+          <h3 className={`text-sm font-bold mb-4 ${getTextColorClass('primary')}`}>
             دسترسی سریع
           </h3>
           <div className="space-y-2">
             <Link
               href={`/project/${projectId}/family/categories`}
-              className="flex items-center justify-between p-4 rounded-xl hover:opacity-80 transition-colors"
-              style={{ backgroundColor: familyTheme.colors.background }}
+              className={`flex items-center justify-between p-4 rounded-xl hover:opacity-80 transition-colors ${getBackgroundClass()}`}
             >
               <div className="flex items-center gap-3">
                 <span className="text-2xl">📂</span>
                 <div>
-                  <div
-                    className="font-medium"
-                    style={{
-                      fontSize: familyTheme.typography.body.size,
-                      color: familyTheme.colors.textPrimary
-                    }}
-                  >
+                  <div className={`font-medium text-sm ${getTextColorClass('primary')}`}>
                     دسته‌بندی‌ها
                   </div>
-                  <div
-                    style={{
-                      fontSize: familyTheme.typography.small.size,
-                      color: familyTheme.colors.textSecondary
-                    }}
-                  >
+                  <div className={`text-xs ${getTextColorClass('secondary')}`}>
                     مدیریت دسته‌بندی‌های هزینه
                   </div>
                 </div>
               </div>
-              <span style={{ color: familyTheme.colors.textTertiary }}>←</span>
+              <span className={getTextColorClass('secondary')}>←</span>
             </Link>
 
             <Link
               href={`/project/${projectId}/family/recurring`}
-              className="flex items-center justify-between p-4 rounded-xl hover:opacity-80 transition-colors"
-              style={{ backgroundColor: familyTheme.colors.background }}
+              className={`flex items-center justify-between p-4 rounded-xl hover:opacity-80 transition-colors ${getBackgroundClass()}`}
             >
               <div className="flex items-center gap-3">
                 <span className="text-2xl">🔄</span>
                 <div>
-                  <div
-                    className="font-medium"
-                    style={{
-                      fontSize: familyTheme.typography.body.size,
-                      color: familyTheme.colors.textPrimary
-                    }}
-                  >
+                  <div className={`font-medium text-sm ${getTextColorClass('primary')}`}>
                     تراکنش‌های تکراری
                   </div>
-                  <div
-                    style={{
-                      fontSize: familyTheme.typography.small.size,
-                      color: familyTheme.colors.textSecondary
-                    }}
-                  >
+                  <div className={`text-xs ${getTextColorClass('secondary')}`}>
                     هزینه‌ها و درآمدهای دوره‌ای
                   </div>
                 </div>
               </div>
-              <span style={{ color: familyTheme.colors.textTertiary }}>←</span>
+              <span className={getTextColorClass('secondary')}>←</span>
             </Link>
           </div>
         </div>

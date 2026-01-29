@@ -10,10 +10,10 @@ import { projectService } from '@/lib/services/project.service'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { projectId: string } }
+  { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
-    const { projectId } = params
+    const { projectId } = await params
 
     // Verify project exists
     const project = await projectService.getById(projectId)
@@ -46,10 +46,10 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { projectId: string } }
+  { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
-    const { projectId } = params
+    const { projectId } = await params
     const body = await request.json()
 
     // Verify project exists

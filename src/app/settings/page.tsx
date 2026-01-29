@@ -6,11 +6,9 @@ import Link from 'next/link'
 import { Button, Input, Card, BottomSheet, Avatar, AvatarPicker, SettingsPageSkeleton } from '@/components/ui'
 import type { Avatar as AvatarType } from '@/lib/types/avatar'
 import { deserializeAvatar, serializeAvatar } from '@/lib/types/avatar'
+import { useTheme, type Theme } from '@/contexts/ThemeContext'
 
-const THEME_KEY = 'dangi_theme'
 const APP_VERSION = '1.0.0-beta'
-
-type Theme = 'light' | 'dark' | 'system'
 
 interface User {
   id: string
@@ -19,27 +17,9 @@ interface User {
   avatar?: string | null
 }
 
-function getTheme(): Theme {
-  if (typeof window === 'undefined') return 'system'
-  return (localStorage.getItem(THEME_KEY) as Theme) || 'system'
-}
-
-function setThemeStorage(theme: Theme) {
-  localStorage.setItem(THEME_KEY, theme)
-  applyTheme(theme)
-}
-
-function applyTheme(theme: Theme) {
-  const root = document.documentElement
-  if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-    root.classList.add('dark')
-  } else {
-    root.classList.remove('dark')
-  }
-}
-
 export default function SettingsPage() {
   const router = useRouter()
+  const { theme: currentTheme, setTheme } = useTheme()
 
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
@@ -47,7 +27,6 @@ export default function SettingsPage() {
   const [newName, setNewName] = useState('')
   const [newAvatar, setNewAvatar] = useState<AvatarType | null>(null)
   const [saving, setSaving] = useState(false)
-  const [currentTheme, setCurrentTheme] = useState<Theme>('system')
   const [showThemeSheet, setShowThemeSheet] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
@@ -77,7 +56,6 @@ export default function SettingsPage() {
     }
 
     fetchUser()
-    setCurrentTheme(getTheme())
   }, [])
 
   const handleSaveProfile = useCallback(async () => {
@@ -120,11 +98,10 @@ export default function SettingsPage() {
     }
   }, [router])
 
-  const handleThemeChange = useCallback((theme: Theme) => {
-    setThemeStorage(theme)
-    setCurrentTheme(theme)
+  const handleThemeChange = useCallback((newTheme: Theme) => {
+    setTheme(newTheme)
     setShowThemeSheet(false)
-  }, [])
+  }, [setTheme])
 
   const getThemeLabel = (theme: Theme) => {
     switch (theme) {
@@ -409,6 +386,85 @@ export default function SettingsPage() {
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">اشتراک‌گذاری لینک</p>
               </div>
             </button>
+          </div>
+        </section>
+
+        {/* Project Management Section */}
+        <section>
+          <div className="flex items-center gap-2 mb-4 px-1">
+            <div className="w-1 h-5 bg-gradient-to-b from-purple-500 to-pink-600 rounded-full" />
+            <h2 className="text-sm font-bold text-gray-600 dark:text-gray-300">مدیریت پروژه‌ها</h2>
+          </div>
+
+          <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-3xl border border-white/50 dark:border-gray-800/50 shadow-sm overflow-hidden divide-y divide-gray-100 dark:divide-gray-800">
+            {/* Archived Projects */}
+            <Link href="/archived-projects" className="group">
+              <button className="w-full flex items-center gap-4 p-5 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-gray-500 to-slate-600 rounded-2xl blur-lg opacity-40 group-hover:opacity-60 transition-opacity" />
+                  <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-500 to-slate-600 flex items-center justify-center shadow-lg shadow-gray-500/25">
+                    <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="flex-1 text-right">
+                  <p className="font-semibold text-gray-900 dark:text-white">پروژه‌های آرشیو شده</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">مشاهده پروژه‌های قدیمی</p>
+                </div>
+                <div className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </div>
+              </button>
+            </Link>
+
+            {/* Backup Projects */}
+            <Link href="/backup-projects" className="group">
+              <button className="w-full flex items-center gap-4 p-5 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-2xl blur-lg opacity-40 group-hover:opacity-60 transition-opacity" />
+                  <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
+                    <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="flex-1 text-right">
+                  <p className="font-semibold text-gray-900 dark:text-white">بک‌آپ از پروژه‌ها</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">دانلود نسخه پشتیبان</p>
+                </div>
+                <div className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </div>
+              </button>
+            </Link>
+
+            {/* Restore Backup */}
+            <Link href="/restore-backup" className="group">
+              <button className="w-full flex items-center gap-4 p-5 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl blur-lg opacity-40 group-hover:opacity-60 transition-opacity" />
+                  <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg shadow-purple-500/25">
+                    <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="flex-1 text-right">
+                  <p className="font-semibold text-gray-900 dark:text-white">بازگردانی بک‌آپ</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">ایجاد پروژه از فایل بک‌آپ</p>
+                </div>
+                <div className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </div>
+              </button>
+            </Link>
           </div>
         </section>
 
