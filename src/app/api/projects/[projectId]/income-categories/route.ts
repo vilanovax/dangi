@@ -1,109 +1,99 @@
+/**
+ * Income Categories API Routes
+ * GET /api/projects/[projectId]/income-categories - List all income categories
+ * POST /api/projects/[projectId]/income-categories - Create a new income category
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
-import { getProjectById } from '@/lib/services/project.service'
-import { incomeCategoryService } from '@/lib/services/income-category.service'
-import { requireProjectAccess } from '@/lib/utils/auth'
-import { logApiError } from '@/lib/utils/logger'
-import type { CreateIncomeCategoryInput } from '@/lib/services/income-category.service'
+import { prisma } from '@/lib/db/prisma'
+import { projectService } from '@/lib/services/project.service'
 
-interface RouteParams {
-  params: Promise<{ projectId: string }>
-}
-
-// GET /api/projects/[projectId]/income-categories - Get all income categories
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { projectId: string } }
+) {
   try {
-    const { projectId } = await params
+    const { projectId } = params
 
-    // Authorization check
-    const authResult = await requireProjectAccess(projectId)
-    if (!authResult.authorized) {
-      return authResult.response
-    }
-
-    // Check if project exists and is family template
-    const project = await getProjectById(projectId)
+    // Verify project exists
+    const project = await projectService.getById(projectId)
     if (!project) {
-      return NextResponse.json({ error: 'پروژه یافت نشد' }, { status: 404 })
+      return NextResponse.json({ error: 'پروژه پیدا نشد' }, { status: 404 })
     }
 
+    // Verify project is family template
     if (project.template !== 'family') {
       return NextResponse.json(
-        { error: 'این API فقط برای تمپلیت خانواده است' },
+        { error: 'این ویژگی فقط برای تمپلیت خانواده در دسترس است' },
         { status: 400 }
       )
     }
 
-    // Get all income categories
-    const categories = await incomeCategoryService.getAll(projectId)
+    const categories = await prisma.incomeCategory.findMany({
+      where: { projectId },
+      orderBy: { name: 'asc' },
+    })
 
     return NextResponse.json({ categories })
-  } catch (error) {
-    logApiError(error, {
-      context: 'GET /api/projects/[projectId]/income-categories',
-    })
+  } catch (error: any) {
+    console.error('Error fetching income categories:', error)
     return NextResponse.json(
-      { error: 'خطا در دریافت دسته‌بندی‌های درآمد' },
+      { error: 'خطا در دریافت دسته‌بندی‌های درآمد', details: error.message },
       { status: 500 }
     )
   }
 }
 
-// POST /api/projects/[projectId]/income-categories - Create a new income category
-export async function POST(request: NextRequest, { params }: RouteParams) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { projectId: string } }
+) {
   try {
-    const { projectId } = await params
+    const { projectId } = params
+    const body = await request.json()
 
-    // Authorization check
-    const authResult = await requireProjectAccess(projectId)
-    if (!authResult.authorized) {
-      return authResult.response
-    }
-
-    // Check if project exists and is family template
-    const project = await getProjectById(projectId)
+    // Verify project exists
+    const project = await projectService.getById(projectId)
     if (!project) {
-      return NextResponse.json({ error: 'پروژه یافت نشد' }, { status: 404 })
+      return NextResponse.json({ error: 'پروژه پیدا نشد' }, { status: 404 })
     }
 
+    // Verify project is family template
     if (project.template !== 'family') {
       return NextResponse.json(
-        { error: 'این API فقط برای تمپلیت خانواده است' },
+        { error: 'این ویژگی فقط برای تمپلیت خانواده در دسترس است' },
         { status: 400 }
       )
     }
 
-    // Parse request body
-    const body = await request.json()
-
     // Validate required fields
-    if (
-      !body.name ||
-      typeof body.name !== 'string' ||
-      body.name.trim().length === 0
-    ) {
+    if (!body.name || body.name.trim() === '') {
       return NextResponse.json(
         { error: 'نام دسته‌بندی الزامی است' },
         { status: 400 }
       )
     }
 
-    // Create category data
-    const categoryData: CreateIncomeCategoryInput = {
-      name: body.name.trim(),
-      icon: body.icon || undefined,
-      color: body.color || undefined,
-    }
-
-    // Create income category
-    const category = await incomeCategoryService.create(projectId, categoryData)
-
-    return NextResponse.json({ category }, { status: 201 })
-  } catch (error) {
-    logApiError(error, {
-      context: 'POST /api/projects/[projectId]/income-categories',
+    const category = await prisma.incomeCategory.create({
+      data: {
+        name: body.name.trim(),
+        icon: body.icon,
+        color: body.color,
+        projectId,
+      },
     })
+
     return NextResponse.json(
-      { error: 'خطا در ایجاد دسته‌بندی درآمد' },
+      {
+        message: 'دسته‌بندی با موفقیت ایجاد شد',
+        category,
+      },
+      { status: 201 }
+    )
+  } catch (error: any) {
+    console.error('Error creating income category:', error)
+    return NextResponse.json(
+      { error: 'خطا در ایجاد دسته‌بندی', details: error.message },
       { status: 500 }
     )
   }

@@ -163,3 +163,38 @@ export async function deleteProject(projectId: string) {
     where: { id: projectId },
   })
 }
+
+/**
+ * Get a participant by ID within a project
+ */
+export async function getParticipant(projectId: string, participantId: string) {
+  return prisma.participant.findFirst({
+    where: {
+      id: participantId,
+      projectId,
+    },
+  })
+}
+
+/**
+ * Get a category by ID within a project
+ */
+export async function getCategory(projectId: string, categoryId: string) {
+  return prisma.category.findFirst({
+    where: {
+      id: categoryId,
+      projectId,
+    },
+  })
+}
+
+// Export as service object for convenience
+export const projectService = {
+  create: createProject,
+  getById: getProjectById,
+  getByShareCode: getProjectByShareCode,
+  update: updateProject,
+  delete: deleteProject,
+  getParticipant,
+  getCategory,
+}

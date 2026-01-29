@@ -7,7 +7,7 @@ import type { TemplateDefinition } from '@/lib/types/domain'
 export const familyTemplate: TemplateDefinition = {
   id: 'family',
   name: 'Family Finance',
-  nameFa: 'خانواده',
+  nameFa: 'مالی شخصی',
   defaultSplitType: 'MANUAL', // No automatic splitting for families
   icon: '👨‍👩‍👧‍👦',
   periodRequired: false,

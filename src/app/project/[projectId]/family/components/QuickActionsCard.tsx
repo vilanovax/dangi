@@ -1,108 +1,93 @@
+/**
+ * Quick Actions Card
+ * 2x2 grid of large action buttons with flat design
+ */
+
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { familyTheme } from '@/styles/family-theme'
+import Link from 'next/link'
 
 interface QuickActionsCardProps {
   projectId: string
 }
 
 export function QuickActionsCard({ projectId }: QuickActionsCardProps) {
-  const router = useRouter()
-
   const actions = [
     {
       icon: '💸',
-      label: 'ثبت هزینه',
-      bgColor: familyTheme.colors.dangerSoft,
-      textColor: familyTheme.colors.danger,
-      action: () => router.push(`/project/${projectId}/family/add-expense`),
+      label: 'ثبت خرج',
+      href: `/project/${projectId}/family/add-expense`,
+      color: 'from-red-400 to-rose-500',
     },
     {
       icon: '💰',
       label: 'ثبت درآمد',
-      bgColor: familyTheme.colors.successSoft,
-      textColor: familyTheme.colors.success,
-      action: () => router.push(`/project/${projectId}/family/add-income`),
-    },
-    {
-      icon: '🎯',
-      label: 'تنظیم بودجه',
-      bgColor: familyTheme.colors.primarySoft,
-      textColor: familyTheme.colors.primary,
-      action: () => router.push(`/project/${projectId}/family/budgets/set`),
+      href: `/project/${projectId}/family/add-income`,
+      color: 'from-emerald-400 to-green-500',
     },
     {
       icon: '📊',
-      label: 'گزارش‌ها',
-      bgColor: familyTheme.colors.infoSoft,
-      textColor: familyTheme.colors.info,
-      action: () => router.push(`/project/${projectId}/family/reports`),
+      label: 'تنظیم بودجه',
+      href: `/project/${projectId}/family/budgets/set`,
+      color: 'from-blue-400 to-cyan-500',
+    },
+    {
+      icon: '📈',
+      label: 'مشاهده گزارش',
+      href: `/project/${projectId}/family/reports`,
+      color: 'from-purple-400 to-pink-500',
     },
   ]
 
   return (
-    <div
-      className="h-screen w-full flex flex-col items-center justify-center p-6 snap-start"
-      style={{ backgroundColor: familyTheme.colors.background }}
-    >
-      {/* Header */}
-      <div className="text-center mb-12">
-        <h2
-          className="font-bold mb-2"
-          style={{
-            fontSize: '28px',
-            fontWeight: familyTheme.typography.pageTitle.weight,
-            color: familyTheme.colors.textPrimary
-          }}
-        >
-          عملیات سریع
+    <div className="w-full max-w-2xl">
+      <div className="text-center mb-8">
+        <h2 className="text-3xl font-bold text-amber-900 dark:text-amber-100 mb-2">
+          کارهای سریع
         </h2>
-        <p
-          style={{
-            fontSize: familyTheme.typography.body.size,
-            color: familyTheme.colors.textSecondary
-          }}
-        >
-          کارهای روزانه خود را انجام دهید
+        <p className="text-amber-700 dark:text-amber-300">
+          عملیات روزمره خود را انجام دهید
         </p>
       </div>
 
-      {/* 2x2 Grid */}
-      <div className="grid grid-cols-2 gap-6 w-full max-w-md">
-        {actions.map((action, index) => (
-          <button
-            key={index}
-            onClick={action.action}
-            className="rounded-3xl p-8 hover:shadow-xl active:scale-95 transition-all duration-200 flex flex-col items-center justify-center gap-4 min-h-[160px]"
-            style={{
-              backgroundColor: action.bgColor,
-              boxShadow: familyTheme.card.shadow
-            }}
+      <div className="grid grid-cols-2 gap-6">
+        {actions.map((action) => (
+          <Link
+            key={action.href}
+            href={action.href}
+            className="group relative overflow-hidden rounded-3xl bg-white dark:bg-gray-800 p-8 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95"
           >
-            <span className="text-5xl">{action.icon}</span>
-            <span
-              className="font-bold"
-              style={{
-                fontSize: familyTheme.typography.body.size,
-                color: action.textColor
-              }}
-            >
-              {action.label}
-            </span>
-          </button>
+            {/* Background gradient on hover */}
+            <div
+              className={`absolute inset-0 bg-gradient-to-br ${action.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}
+            ></div>
+
+            {/* Content */}
+            <div className="relative flex flex-col items-center justify-center gap-4">
+              <div className="text-6xl transform group-hover:scale-110 transition-transform duration-300">
+                {action.icon}
+              </div>
+              <p className="text-lg font-semibold text-gray-800 dark:text-gray-100 text-center">
+                {action.label}
+              </p>
+            </div>
+
+            {/* Bottom accent line */}
+            <div
+              className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${action.color} transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300`}
+            ></div>
+          </Link>
         ))}
       </div>
 
-      {/* Navigation hint */}
-      <div
-        className="mt-12 text-center"
-        style={{
-          fontSize: familyTheme.typography.small.size,
-          color: familyTheme.colors.textTertiary
-        }}
-      >
-        برای دیدن کارت‌های بعدی به بالا بکشید
+      {/* Additional action link */}
+      <div className="mt-8 text-center">
+        <Link
+          href={`/project/${projectId}/family/transactions`}
+          className="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 underline font-medium"
+        >
+          مشاهده همه تراکنش‌ها →
+        </Link>
       </div>
     </div>
   )

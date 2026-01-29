@@ -1,99 +1,209 @@
+/**
+ * Family Dashboard Stats API
+ * GET /api/projects/[projectId]/family-stats?period=1403-10
+ * Returns comprehensive financial stats for family dashboard
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
-import { getProjectById } from '@/lib/services/project.service'
-import { calculateFamilyStats } from '@/lib/domain/calculators/familyStats'
-import { requireProjectAccess } from '@/lib/utils/auth'
-import { logApiError } from '@/lib/utils/logger'
-import {
-  getCurrentPeriodKey,
-  getPersianPeriodBounds,
-} from '@/lib/utils/persian-date'
+import { projectService } from '@/lib/services/project.service'
+import { incomeService } from '@/lib/services/income.service'
+import { budgetService } from '@/lib/services/budget.service'
+import { prisma } from '@/lib/db/prisma'
+import { getCurrentPeriod, parsePeriodKey } from '@/lib/utils/jalali'
+import type { FamilyDashboardStats, CategoryBudgetStatus } from '@/types/family'
 
-interface RouteParams {
-  params: Promise<{ projectId: string }>
-}
-
-// GET /api/projects/[projectId]/family-stats - Get family finance dashboard stats
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { projectId: string } }
+) {
   try {
-    const { projectId } = await params
+    const { projectId } = params
+    const { searchParams } = new URL(request.url)
+    const periodKey = searchParams.get('period') || getCurrentPeriod()
 
-    // Authorization check
-    const authResult = await requireProjectAccess(projectId)
-    if (!authResult.authorized) {
-      return authResult.response
-    }
-
-    // Check if project exists and is family template
-    const project = await getProjectById(projectId)
+    // Verify project exists
+    const project = await projectService.getById(projectId)
     if (!project) {
-      return NextResponse.json({ error: 'پروژه یافت نشد' }, { status: 404 })
+      return NextResponse.json({ error: 'پروژه پیدا نشد' }, { status: 404 })
     }
 
+    // Verify project is family template
     if (project.template !== 'family') {
       return NextResponse.json(
-        { error: 'این API فقط برای تمپلیت خانواده است' },
+        { error: 'این ویژگی فقط برای تمپلیت خانواده در دسترس است' },
         { status: 400 }
       )
     }
 
-    // Get period from query params (optional, defaults to current month)
-    const { searchParams } = new URL(request.url)
-    const periodKey = searchParams.get('period') || getCurrentPeriodKey()
+    // Parse period to get date range
+    const periodDates = parsePeriodKey(periodKey)
+    const { startDate, endDate } = periodDates
 
-    // Calculate period dates (convert Persian to Gregorian)
-    const { startDate, endDate } = getPersianPeriodBounds(periodKey)
+    // Get total income for period
+    const totalIncome = await incomeService.getTotalForPeriod(
+      projectId,
+      startDate,
+      endDate
+    )
 
-    // Fetch dashboard data
-    const stats = await calculateFamilyStats(projectId, periodKey, startDate, endDate)
+    // Get total expenses for period
+    const expensesSum = await prisma.expense.aggregate({
+      where: {
+        projectId,
+        expenseDate: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      _sum: {
+        amount: true,
+      },
+    })
+    const totalExpenses = expensesSum._sum.amount || 0
 
-    // Transform budgets data to match the format expected by BudgetsPage
-    const budgetsFormatted = stats.budgets.map((budget) => ({
-      categoryId: budget.categoryId,
-      categoryName: budget.categoryName,
-      categoryIcon: budget.categoryIcon,
-      spent: budget.spent / 10, // Convert to Toman
-      limit: budget.budgetAmount / 10, // Convert to Toman
-      percentage: budget.percentage,
+    // Calculate net savings
+    const netSavings = totalIncome - totalExpenses
+    const savingsRate = totalIncome > 0 ? (netSavings / totalIncome) * 100 : 0
+
+    // Get budgets with spending
+    const budgetsWithSpending = await budgetService.getBudgetsWithSpending(
+      projectId,
+      periodKey,
+      startDate,
+      endDate
+    )
+
+    const budgets: CategoryBudgetStatus[] = budgetsWithSpending.map((b) => ({
+      categoryId: b.categoryId,
+      categoryName: b.category.name,
+      categoryIcon: b.category.icon || undefined,
+      categoryColor: b.category.color || undefined,
+      budgetAmount: b.amount,
+      spent: b.spent,
+      remaining: b.remaining,
+      percentage: b.percentage,
+      isOverBudget: b.isOverBudget,
     }))
 
-    return NextResponse.json({
-      // Budget data
-      budgets: budgetsFormatted,
-      totalBudget: stats.totalBudget / 10, // Convert to Toman
-      totalSpent: stats.totalSpent / 10, // Convert to Toman
-      budgetUtilization: stats.budgetUtilization,
+    // Get budget totals
+    const budgetTotals = await budgetService.getTotalsForPeriod(
+      projectId,
+      periodKey,
+      startDate,
+      endDate
+    )
 
-      // Income and expense data
-      totalIncome: stats.totalIncome / 10,
-      totalExpenses: stats.totalExpenses / 10,
-      netSavings: stats.netSavings / 10,
-      savingsRate: stats.savingsRate,
-
-      // Top expenses
-      topExpenses: stats.topExpenses.map((expense) => ({
-        ...expense,
-        amount: expense.amount / 10,
-      })),
-
-      // Recent transactions
-      recentIncomes: stats.recentIncomes.map((income) => ({
-        ...income,
-        amount: income.amount / 10,
-      })),
-      recentExpenses: stats.recentExpenses.map((expense) => ({
-        ...expense,
-        amount: expense.amount / 10,
-      })),
-
-      // Period info
-      periodKey: stats.periodKey,
-      periodStartDate: stats.periodStartDate,
-      periodEndDate: stats.periodEndDate,
+    // Get top expenses by category
+    const expensesByCategory = await prisma.expense.groupBy({
+      by: ['categoryId'],
+      where: {
+        projectId,
+        expenseDate: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      _sum: {
+        amount: true,
+      },
+      orderBy: {
+        _sum: {
+          amount: 'desc',
+        },
+      },
+      take: 5,
     })
-  } catch (error) {
-    logApiError(error, { context: 'GET /api/projects/[projectId]/family-stats' })
+
+    const topExpenses = await Promise.all(
+      expensesByCategory.map(async (item) => {
+        const category = item.categoryId
+          ? await prisma.category.findUnique({
+              where: { id: item.categoryId },
+            })
+          : null
+
+        const amount = item._sum.amount || 0
+        const percentage = totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0
+
+        return {
+          categoryName: category?.name || 'بدون دسته‌بندی',
+          categoryIcon: category?.icon,
+          amount,
+          percentage: Math.round(percentage * 100) / 100,
+        }
+      })
+    )
+
+    // Get recent incomes
+    const recentIncomes = await incomeService.getRecent(projectId, 5)
+    const recentIncomesData = recentIncomes.map((income) => ({
+      id: income.id,
+      title: income.title,
+      amount: income.amount,
+      date: income.incomeDate,
+      categoryName: income.category?.name,
+      categoryIcon: income.category?.icon,
+      receivedByName: income.receivedBy.name,
+    }))
+
+    // Get recent expenses
+    const recentExpenses = await prisma.expense.findMany({
+      where: { projectId },
+      include: {
+        paidBy: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+        category: true,
+      },
+      orderBy: { expenseDate: 'desc' },
+      take: 5,
+    })
+
+    const recentExpensesData = recentExpenses.map((expense) => ({
+      id: expense.id,
+      title: expense.title,
+      amount: expense.amount,
+      date: expense.expenseDate,
+      categoryName: expense.category?.name,
+      categoryIcon: expense.category?.icon,
+      paidByName: expense.paidBy.name,
+    }))
+
+    const stats: FamilyDashboardStats = {
+      // Financial Summary
+      totalIncome,
+      totalExpenses,
+      netSavings,
+      savingsRate: Math.round(savingsRate * 100) / 100,
+
+      // Budget Status
+      budgets,
+      totalBudget: budgetTotals.totalBudget,
+      totalSpent: budgetTotals.totalSpent,
+      budgetUtilization: budgetTotals.budgetUtilization,
+
+      // Top Expenses
+      topExpenses,
+
+      // Recent Transactions
+      recentIncomes: recentIncomesData,
+      recentExpenses: recentExpensesData,
+
+      // Period Info
+      periodKey,
+      periodStartDate: startDate,
+      periodEndDate: endDate,
+    }
+
+    return NextResponse.json({ stats })
+  } catch (error: any) {
+    console.error('Error fetching family stats:', error)
     return NextResponse.json(
-      { error: 'خطا در دریافت آمار مالی خانواده' },
+      { error: 'خطا در دریافت آمار', details: error.message },
       { status: 500 }
     )
   }

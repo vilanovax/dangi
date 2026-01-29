@@ -1,126 +1,127 @@
+/**
+ * Recurring Transactions API Routes
+ * GET /api/projects/[projectId]/recurring - List all recurring transactions
+ * POST /api/projects/[projectId]/recurring - Create a new recurring transaction
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
-import { getProjectById } from '@/lib/services/project.service'
-import { recurringService } from '@/lib/services/recurring.service'
-import { requireProjectAccess } from '@/lib/utils/auth'
-import { logApiError } from '@/lib/utils/logger'
-import type {
-  CreateRecurringTransactionInput,
-  RecurringTransactionType,
-} from '@/types/family'
+import { projectService } from '@/lib/services/project.service'
+import type { CreateRecurringTransactionInput } from '@/types/family'
 
-interface RouteParams {
-  params: Promise<{ projectId: string }>
-}
-
-// GET /api/projects/[projectId]/recurring - Get all recurring transactions
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { projectId: string } }
+) {
   try {
-    const { projectId } = await params
+    const { projectId } = params
+    const { searchParams } = new URL(request.url)
+    const type = searchParams.get('type') // 'INCOME' | 'EXPENSE' | null (all)
+    const isActive = searchParams.get('active') // 'true' | 'false' | null (all)
 
-    // Authorization check
-    const authResult = await requireProjectAccess(projectId)
-    if (!authResult.authorized) {
-      return authResult.response
-    }
-
-    // Check if project exists and is family template
-    const project = await getProjectById(projectId)
+    // Verify project exists
+    const project = await projectService.getById(projectId)
     if (!project) {
-      return NextResponse.json({ error: 'پروژه یافت نشد' }, { status: 404 })
+      return NextResponse.json({ error: 'پروژه پیدا نشد' }, { status: 404 })
     }
 
+    // Verify project is family template
     if (project.template !== 'family') {
       return NextResponse.json(
-        { error: 'این API فقط برای تمپلیت خانواده است' },
+        { error: 'این ویژگی فقط برای تمپلیت خانواده در دسترس است' },
         { status: 400 }
       )
     }
 
-    // Get query params
-    const { searchParams } = new URL(request.url)
-    const type = searchParams.get('type') as RecurringTransactionType | null
-    const activeOnly = searchParams.get('activeOnly') === 'true'
+    const where: any = { projectId }
+    if (type) where.type = type
+    if (isActive !== null) where.isActive = isActive === 'true'
 
-    // Validate type if provided
-    if (type && type !== 'INCOME' && type !== 'EXPENSE') {
-      return NextResponse.json(
-        { error: 'نوع تراکنش باید INCOME یا EXPENSE باشد' },
-        { status: 400 }
-      )
-    }
+    const transactions = await prisma.recurringTransaction.findMany({
+      where,
+      include: {
+        participant: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+        category: true,
+      },
+      orderBy: [
+        { isActive: 'desc' }, // Active first
+        { startDate: 'desc' },
+      ],
+    })
 
-    // Get recurring transactions
-    const recurring = activeOnly
-      ? await recurringService.getActive(projectId, type || undefined)
-      : await recurringService.getAll(projectId, type || undefined)
-
-    return NextResponse.json({ recurring })
-  } catch (error) {
-    logApiError(error, { context: 'GET /api/projects/[projectId]/recurring' })
+    return NextResponse.json({
+      transactions,
+      count: transactions.length,
+    })
+  } catch (error: any) {
+    console.error('Error fetching recurring transactions:', error)
     return NextResponse.json(
-      { error: 'خطا در دریافت تراکنش‌های تکراری' },
+      { error: 'خطا در دریافت تراکنش‌های تکراری', details: error.message },
       { status: 500 }
     )
   }
 }
 
-// POST /api/projects/[projectId]/recurring - Create a recurring transaction
-export async function POST(request: NextRequest, { params }: RouteParams) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { projectId: string } }
+) {
   try {
-    const { projectId } = await params
+    const { projectId } = params
+    const body = await request.json()
 
-    // Authorization check
-    const authResult = await requireProjectAccess(projectId)
-    if (!authResult.authorized) {
-      return authResult.response
-    }
-
-    // Check if project exists and is family template
-    const project = await getProjectById(projectId)
+    // Verify project exists
+    const project = await projectService.getById(projectId)
     if (!project) {
-      return NextResponse.json({ error: 'پروژه یافت نشد' }, { status: 404 })
+      return NextResponse.json({ error: 'پروژه پیدا نشد' }, { status: 404 })
     }
 
+    // Verify project is family template
     if (project.template !== 'family') {
       return NextResponse.json(
-        { error: 'این API فقط برای تمپلیت خانواده است' },
+        { error: 'این ویژگی فقط برای تمپلیت خانواده در دسترس است' },
         { status: 400 }
       )
     }
 
-    // Parse request body
-    const body = await request.json()
-
     // Validate required fields
-    if (!body.type || (body.type !== 'INCOME' && body.type !== 'EXPENSE')) {
+    if (!body.type || !['INCOME', 'EXPENSE'].includes(body.type)) {
       return NextResponse.json(
         { error: 'نوع تراکنش باید INCOME یا EXPENSE باشد' },
         { status: 400 }
       )
     }
 
-    if (
-      !body.title ||
-      typeof body.title !== 'string' ||
-      body.title.trim().length === 0
-    ) {
-      return NextResponse.json({ error: 'عنوان الزامی است' }, { status: 400 })
-    }
-
-    if (!body.amount || typeof body.amount !== 'number' || body.amount <= 0) {
+    if (!body.title || body.title.trim() === '') {
       return NextResponse.json(
-        { error: 'مبلغ باید عدد مثبت باشد' },
+        { error: 'عنوان تراکنش الزامی است' },
         { status: 400 }
       )
     }
 
-    if (
-      !body.frequency ||
-      !['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'].includes(body.frequency)
-    ) {
+    if (!body.amount || body.amount <= 0) {
+      return NextResponse.json(
+        { error: 'مبلغ باید بزرگتر از صفر باشد' },
+        { status: 400 }
+      )
+    }
+
+    if (!body.frequency || !['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'].includes(body.frequency)) {
       return NextResponse.json(
         { error: 'فرکانس باید DAILY، WEEKLY، MONTHLY یا YEARLY باشد' },
+        { status: 400 }
+      )
+    }
+
+    if (!body.participantId) {
+      return NextResponse.json(
+        { error: 'انتخاب شخص الزامی است' },
         { status: 400 }
       )
     }
@@ -132,66 +133,55 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    if (!body.participantId || typeof body.participantId !== 'string') {
-      return NextResponse.json(
-        { error: 'شناسه شرکت‌کننده الزامی است' },
-        { status: 400 }
-      )
-    }
-
-    // Verify participant exists and belongs to project
-    const participant = await prisma.participant.findFirst({
-      where: {
-        id: body.participantId,
-        projectId,
-      },
-    })
-
+    // Verify participant exists
+    const participant = await projectService.getParticipant(projectId, body.participantId)
     if (!participant) {
       return NextResponse.json(
-        { error: 'شرکت‌کننده یافت نشد یا به این پروژه تعلق ندارد' },
+        { error: 'شخص در این پروژه وجود ندارد' },
         { status: 404 }
       )
     }
 
-    // Verify category if provided
-    if (body.categoryId) {
-      const category = await prisma.category.findFirst({
-        where: {
-          id: body.categoryId,
-          projectId,
-        },
-      })
-
-      if (!category) {
-        return NextResponse.json(
-          { error: 'دسته‌بندی یافت نشد یا به این پروژه تعلق ندارد' },
-          { status: 404 }
-        )
-      }
-    }
-
-    // Create recurring transaction data
-    const recurringData: CreateRecurringTransactionInput = {
+    const transactionData: CreateRecurringTransactionInput = {
       type: body.type,
       title: body.title.trim(),
-      amount: body.amount,
+      amount: parseFloat(body.amount),
       frequency: body.frequency,
-      startDate: body.startDate,
-      endDate: body.endDate || undefined,
-      categoryId: body.categoryId || undefined,
+      startDate: new Date(body.startDate),
+      endDate: body.endDate ? new Date(body.endDate) : null,
+      categoryId: body.categoryId,
       participantId: body.participantId,
       isActive: body.isActive !== undefined ? body.isActive : true,
     }
 
-    // Create recurring transaction
-    const recurring = await recurringService.create(projectId, recurringData)
+    const transaction = await prisma.recurringTransaction.create({
+      data: {
+        ...transactionData,
+        projectId,
+      },
+      include: {
+        participant: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+        category: true,
+      },
+    })
 
-    return NextResponse.json({ recurring }, { status: 201 })
-  } catch (error) {
-    logApiError(error, { context: 'POST /api/projects/[projectId]/recurring' })
     return NextResponse.json(
-      { error: 'خطا در ایجاد تراکنش تکراری' },
+      {
+        message: 'تراکنش تکراری با موفقیت ایجاد شد',
+        transaction,
+      },
+      { status: 201 }
+    )
+  } catch (error: any) {
+    console.error('Error creating recurring transaction:', error)
+    return NextResponse.json(
+      { error: 'خطا در ایجاد تراکنش تکراری', details: error.message },
       { status: 500 }
     )
   }

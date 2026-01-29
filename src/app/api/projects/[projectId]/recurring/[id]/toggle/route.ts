@@ -1,50 +1,74 @@
+/**
+ * Toggle Recurring Transaction Active State
+ * POST /api/projects/[projectId]/recurring/[id]/toggle - Toggle isActive
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
-import { getProjectById } from '@/lib/services/project.service'
-import { recurringService } from '@/lib/services/recurring.service'
-import { requireProjectAccess } from '@/lib/utils/auth'
-import { logApiError } from '@/lib/utils/logger'
+import { prisma } from '@/lib/db/prisma'
+import { projectService } from '@/lib/services/project.service'
 
-interface RouteParams {
-  params: Promise<{ projectId: string; id: string }>
-}
-
-// POST /api/projects/[projectId]/recurring/[id]/toggle - Toggle active/inactive status
-export async function POST(request: NextRequest, { params }: RouteParams) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { projectId: string; id: string } }
+) {
   try {
-    const { projectId, id } = await params
+    const { projectId, id } = params
 
-    // Authorization check
-    const authResult = await requireProjectAccess(projectId)
-    if (!authResult.authorized) {
-      return authResult.response
-    }
-
-    // Check if project exists and is family template
-    const project = await getProjectById(projectId)
+    // Verify project exists
+    const project = await projectService.getById(projectId)
     if (!project) {
-      return NextResponse.json({ error: 'پروژه یافت نشد' }, { status: 404 })
+      return NextResponse.json({ error: 'پروژه پیدا نشد' }, { status: 404 })
     }
 
+    // Verify project is family template
     if (project.template !== 'family') {
       return NextResponse.json(
-        { error: 'این API فقط برای تمپلیت خانواده است' },
+        { error: 'این ویژگی فقط برای تمپلیت خانواده در دسترس است' },
         { status: 400 }
       )
     }
 
-    // Toggle recurring transaction status
-    const recurring = await recurringService.toggle(projectId, id)
+    // Verify transaction exists
+    const existingTransaction = await prisma.recurringTransaction.findFirst({
+      where: { id, projectId },
+    })
+
+    if (!existingTransaction) {
+      return NextResponse.json(
+        { error: 'تراکنش تکراری پیدا نشد' },
+        { status: 404 }
+      )
+    }
+
+    // Toggle isActive
+    const transaction = await prisma.recurringTransaction.update({
+      where: { id },
+      data: {
+        isActive: !existingTransaction.isActive,
+      },
+      include: {
+        participant: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+        category: true,
+      },
+    })
 
     return NextResponse.json({
-      recurring,
-      message: `تراکنش تکراری ${recurring.isActive ? 'فعال' : 'غیرفعال'} شد`,
+      message: transaction.isActive
+        ? 'تراکنش تکراری فعال شد'
+        : 'تراکنش تکراری غیرفعال شد',
+      transaction,
+      isActive: transaction.isActive,
     })
-  } catch (error) {
-    logApiError(error, {
-      context: 'POST /api/projects/[projectId]/recurring/[id]/toggle',
-    })
+  } catch (error: any) {
+    console.error('Error toggling recurring transaction:', error)
     return NextResponse.json(
-      { error: 'خطا در تغییر وضعیت تراکنش تکراری' },
+      { error: 'خطا در تغییر وضعیت تراکنش', details: error.message },
       { status: 500 }
     )
   }
