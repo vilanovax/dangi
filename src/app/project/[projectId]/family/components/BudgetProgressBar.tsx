@@ -22,11 +22,11 @@ export function BudgetProgressBar({
   const percentage = limit > 0 ? Math.min((spent / limit) * 100, 100) : 0
 
   // Color logic: green → yellow → red
-  let barColor = familyTheme.colors.success // green (under 70%)
+  let barColor: string = familyTheme.colors.success // green (under 70%)
   if (percentage >= 90) {
     barColor = familyTheme.colors.danger // red (over 90%)
   } else if (percentage >= 70) {
-    barColor = '#FCD34D' // yellow (70-90%) - keeping this as theme doesn't have yellow
+    barColor = familyTheme.colors.warning // yellow (70-90%)
   }
 
   return (
