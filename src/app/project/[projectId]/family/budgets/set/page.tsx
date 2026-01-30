@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Button } from '@/components/ui'
 import { getCurrentPeriodKey } from '@/lib/utils/persian-date'
+import { FamilyIcon } from '../../components/FamilyIcon'
+import { FamilyButton } from '../../components/FamilyButton'
 import {
   familyTheme,
   getBackgroundClass,
@@ -37,7 +38,7 @@ const CATEGORY_HINTS: Record<string, string> = {
   'خوراک و خواربار': 'معمولاً بیشترین خرج اینجاست',
   'مسکن': 'اجاره، اینترنت، نگهداری',
   'حمل‌ونقل': 'بنزین، تاکسی، اتوبوس',
-  'تفریح': 'برای حال خوب لازمه 😊',
+  'تفریح': 'برای حال خوب لازمه',
   'قبوض': 'برق، گاز، آب و...',
   'سلامت و درمان': 'دارو، پزشک، بیمه',
   'آموزش': 'کتاب، دوره، کلاس',
@@ -177,13 +178,13 @@ export default function SetBudgetsPage() {
       <div className={`min-h-screen flex items-center justify-center p-4 ${getBackgroundClass()}`}>
         <div className={`rounded-3xl p-8 text-center max-w-sm shadow-lg ${getCardBackgroundClass()}`}>
           <div className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center animate-bounce bg-[#EAFBF1] dark:bg-[#0F2417]">
-            <span className="text-4xl">✓</span>
+            <FamilyIcon name="success" size={48} className="text-[#22C55E]" />
           </div>
           <h2 className={`text-[22px] font-bold mb-2 ${getTextColorClass('primary')}`}>
             بودجه این ماه ذخیره شد
           </h2>
           <p className={`text-sm ${getTextColorClass('secondary')}`}>
-            حالا می‌تونی خرج‌هات رو راحت‌تر کنترل کنی 👌
+            حالا می‌تونی خرج‌هات رو راحت‌تر کنترل کنی
           </p>
         </div>
       </div>
@@ -222,7 +223,7 @@ export default function SetBudgetsPage() {
             className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
             type="button"
           >
-            ←
+            <FamilyIcon name="back" size={20} />
           </button>
           <div>
             <h1 className="text-[22px] font-bold">
@@ -241,13 +242,13 @@ export default function SetBudgetsPage() {
           {/* Info card - دوستانه */}
           <div className={`rounded-2xl p-5 shadow-lg ${getCardBackgroundClass()}`}>
             <div className="flex items-start gap-3">
-              <span className="text-3xl">🎯</span>
+              <FamilyIcon name="budget" size={32} className="text-[#FF8A00] flex-shrink-0" />
               <div>
                 <h3 className={`text-[15px] font-bold mb-2 ${getTextColorClass('primary')}`}>
                   مشخص کن این ماه حداکثر چقدر می‌خوای خرج کنی
                 </h3>
                 <p className={`leading-relaxed text-sm ${getTextColorClass('secondary')}`}>
-                  نگران نباش، هر وقت خواستی می‌تونی تغییرش بدی 😊
+                  نگران نباش، هر وقت خواستی می‌تونی تغییرش بدی.
                   بودجه فقط یه راهنماست تا آخر ماه غافلگیر نشی.
                 </p>
               </div>
@@ -270,7 +271,7 @@ export default function SetBudgetsPage() {
                   </div>
                 </div>
                 <div className="w-16 h-16 rounded-full flex items-center justify-center bg-[#FFF3E0] dark:bg-[#2D1F0D]">
-                  <span className="text-3xl">💰</span>
+                  <FamilyIcon name="wallet" size={32} className="text-[#FF8A00]" />
                 </div>
               </div>
             </div>
@@ -404,7 +405,7 @@ export default function SetBudgetsPage() {
               onClick={() => setShowAllCategories(true)}
               className={`w-full rounded-2xl p-3.5 shadow-sm transition-all font-medium flex items-center justify-center gap-2 text-sm ${getCardBackgroundClass()} ${getTextColorClass('primary')} hover:opacity-80`}
             >
-              <span>➕</span>
+              <FamilyIcon name="add" size={18} />
               <span>افزودن دسته دیگر ({otherCategories.length})</span>
             </button>
           )}
@@ -424,20 +425,17 @@ export default function SetBudgetsPage() {
 
           {/* Submit button */}
           <div className="sticky bottom-4">
-            <button
+            <FamilyButton
               type="submit"
-              disabled={loading || categories.length === 0}
-              className="w-full text-white py-4 rounded-2xl font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:opacity-90 h-[52px] shadow-lg bg-[#FF8A00] dark:bg-[#FFA94D] text-[15px]"
+              variant="primary"
+              fullWidth
+              loading={loading}
+              disabled={categories.length === 0}
+              icon="budget"
+              className="shadow-lg"
             >
-              {loading ? (
-                <div className="flex items-center justify-center gap-2">
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>در حال ذخیره...</span>
-                </div>
-              ) : (
-                '🎯 شروع با این بودجه'
-              )}
-            </button>
+              شروع با این بودجه
+            </FamilyButton>
           </div>
         </form>
       </div>
