@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { FamilyIcon } from '../components/FamilyIcon'
 import {
   familyTheme,
   getBackgroundClass,
@@ -24,7 +25,7 @@ export default function FamilySettingsPage() {
             href={`/project/${projectId}/family`}
             className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
           >
-            →
+            <FamilyIcon name="back" size={20} />
           </Link>
           <div>
             <h1 className="text-[22px] font-bold">
@@ -48,7 +49,7 @@ export default function FamilySettingsPage() {
           >
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#FF8A00]/10">
-                <span className="text-2xl">📂</span>
+                <FamilyIcon name="categories" size={24} className="text-[#FF8A00]" />
               </div>
               <div>
                 <div className={`font-bold text-[15px] ${getTextColorClass('primary')}`}>
@@ -59,9 +60,7 @@ export default function FamilySettingsPage() {
                 </div>
               </div>
             </div>
-            <svg className={`w-5 h-5 ${getTextColorClass('secondary')}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+            <FamilyIcon name="back" size={20} className={getTextColorClass('secondary')} />
           </Link>
 
           {/* Members Management */}
@@ -71,7 +70,7 @@ export default function FamilySettingsPage() {
           >
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#22C55E]/10">
-                <span className="text-2xl">👥</span>
+                <FamilyIcon name="members" size={24} className="text-[#22C55E]" />
               </div>
               <div>
                 <div className={`font-bold text-[15px] ${getTextColorClass('primary')}`}>
@@ -82,9 +81,7 @@ export default function FamilySettingsPage() {
                 </div>
               </div>
             </div>
-            <svg className={`w-5 h-5 ${getTextColorClass('secondary')}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+            <FamilyIcon name="back" size={20} className={getTextColorClass('secondary')} />
           </Link>
 
           {/* Project Settings */}
@@ -94,7 +91,7 @@ export default function FamilySettingsPage() {
           >
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#3B82F6]/10">
-                <span className="text-2xl">⚙️</span>
+                <FamilyIcon name="settings" size={24} className="text-[#3B82F6]" />
               </div>
               <div>
                 <div className={`font-bold text-[15px] ${getTextColorClass('primary')}`}>
@@ -105,9 +102,7 @@ export default function FamilySettingsPage() {
                 </div>
               </div>
             </div>
-            <svg className={`w-5 h-5 ${getTextColorClass('secondary')}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+            <FamilyIcon name="back" size={20} className={getTextColorClass('secondary')} />
           </Link>
 
           {/* Backup & Restore */}
@@ -119,7 +114,7 @@ export default function FamilySettingsPage() {
           >
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#6B7280]/10">
-                <span className="text-2xl">💾</span>
+                <FamilyIcon name="backup" size={24} className="text-[#6B7280]" />
               </div>
               <div className="text-right">
                 <div className={`font-bold text-[15px] ${getTextColorClass('primary')}`}>
@@ -130,16 +125,14 @@ export default function FamilySettingsPage() {
                 </div>
               </div>
             </div>
-            <svg className={`w-5 h-5 ${getTextColorClass('secondary')}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+            <FamilyIcon name="back" size={20} className={getTextColorClass('secondary')} />
           </button>
         </div>
 
         {/* Info Note */}
         <div className={`rounded-xl p-4 border ${getCardBackgroundClass()}`} style={{ borderColor: familyTheme.colors.divider }}>
           <div className="flex gap-3">
-            <span className="text-lg flex-shrink-0">ℹ️</span>
+            <FamilyIcon name="info" size={20} className="flex-shrink-0 text-[#3B82F6]" />
             <p className={`text-xs leading-relaxed ${getTextColorClass('secondary')}`}>
               برخی تنظیمات نیاز به دسترسی مدیریت دارند. اگر عضو پروژه هستید، برای تغییرات مهم با مدیر پروژه هماهنگ کنید.
             </p>
