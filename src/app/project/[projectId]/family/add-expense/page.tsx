@@ -24,7 +24,15 @@ export default function AddExpensePage() {
   // Form state
   const [title, setTitle] = useState('')
   const [amount, setAmount] = useState('')
-  const [expenseType, setExpenseType] = useState<'personal' | 'family'>('personal')
+  const [expenseType, setExpenseType] = useState<'personal' | 'family'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('expense-type-preference')
+      if (saved === 'personal' || saved === 'family') {
+        return saved
+      }
+    }
+    return 'family'
+  })
   const [categoryId, setCategoryId] = useState('')
   const [description, setDescription] = useState('')
   const [expenseDate, setExpenseDate] = useState<Date>(new Date())
@@ -67,6 +75,13 @@ export default function AddExpensePage() {
 
     fetchData()
   }, [projectId])
+
+  // Save expense type preference to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('expense-type-preference', expenseType)
+    }
+  }, [expenseType])
 
   const formatNumberWithCommas = (num: string) => {
     const cleaned = num.replace(/\D/g, '')
