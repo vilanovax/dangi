@@ -38,61 +38,111 @@ export default function FamilySettingsPage() {
       </div>
 
       {/* Content */}
-      <div className="p-4 space-y-4">
-        {/* Coming Soon */}
-        <div className={`rounded-2xl p-12 text-center shadow-lg ${getCardBackgroundClass()}`}>
-          <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center bg-[#FFF3E0] dark:bg-[#2D1F0D]">
-            <span className="text-5xl">⚙️</span>
-          </div>
-          <h2 className={`text-[15px] font-bold mb-2 ${getTextColorClass('primary')}`}>
-            به زودی...
-          </h2>
-          <p className={`text-sm ${getTextColorClass('secondary')}`}>
-            صفحه تنظیمات در حال ساخت است
-          </p>
+      <div className="p-4 space-y-4 pb-24">
+        {/* Settings Items */}
+        <div className="space-y-3">
+          {/* Categories Management */}
+          <Link
+            href={`/project/${projectId}/family/categories`}
+            className={`flex items-center justify-between p-5 rounded-2xl shadow-sm hover:shadow-md transition-all ${getCardBackgroundClass()}`}
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#FF8A00]/10">
+                <span className="text-2xl">📂</span>
+              </div>
+              <div>
+                <div className={`font-bold text-[15px] ${getTextColorClass('primary')}`}>
+                  مدیریت دسته‌بندی‌ها
+                </div>
+                <div className={`text-xs mt-1 ${getTextColorClass('secondary')}`}>
+                  افزودن و ویرایش دسته‌بندی‌های هزینه و درآمد
+                </div>
+              </div>
+            </div>
+            <svg className={`w-5 h-5 ${getTextColorClass('secondary')}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </Link>
+
+          {/* Members Management */}
+          <Link
+            href={`/project/${projectId}/participants`}
+            className={`flex items-center justify-between p-5 rounded-2xl shadow-sm hover:shadow-md transition-all ${getCardBackgroundClass()}`}
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#22C55E]/10">
+                <span className="text-2xl">👥</span>
+              </div>
+              <div>
+                <div className={`font-bold text-[15px] ${getTextColorClass('primary')}`}>
+                  مدیریت اعضا
+                </div>
+                <div className={`text-xs mt-1 ${getTextColorClass('secondary')}`}>
+                  اضافه یا حذف اعضای خانواده
+                </div>
+              </div>
+            </div>
+            <svg className={`w-5 h-5 ${getTextColorClass('secondary')}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </Link>
+
+          {/* Project Settings */}
+          <Link
+            href={`/project/${projectId}/settings`}
+            className={`flex items-center justify-between p-5 rounded-2xl shadow-sm hover:shadow-md transition-all ${getCardBackgroundClass()}`}
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#3B82F6]/10">
+                <span className="text-2xl">⚙️</span>
+              </div>
+              <div>
+                <div className={`font-bold text-[15px] ${getTextColorClass('primary')}`}>
+                  تنظیمات پروژه
+                </div>
+                <div className={`text-xs mt-1 ${getTextColorClass('secondary')}`}>
+                  نام، توضیحات و بایگانی پروژه
+                </div>
+              </div>
+            </div>
+            <svg className={`w-5 h-5 ${getTextColorClass('secondary')}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </Link>
+
+          {/* Backup & Restore */}
+          <button
+            onClick={() => {
+              alert('پشتیبان‌گیری و بازیابی به زودی اضافه خواهد شد')
+            }}
+            className={`w-full flex items-center justify-between p-5 rounded-2xl shadow-sm hover:shadow-md transition-all ${getCardBackgroundClass()}`}
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#6B7280]/10">
+                <span className="text-2xl">💾</span>
+              </div>
+              <div className="text-right">
+                <div className={`font-bold text-[15px] ${getTextColorClass('primary')}`}>
+                  پشتیبان‌گیری و بازیابی
+                </div>
+                <div className={`text-xs mt-1 ${getTextColorClass('secondary')}`}>
+                  ذخیره و بازگردانی اطلاعات
+                </div>
+              </div>
+            </div>
+            <svg className={`w-5 h-5 ${getTextColorClass('secondary')}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
         </div>
 
-        {/* Quick Links */}
-        <div className={`rounded-2xl p-5 shadow-lg ${getCardBackgroundClass()}`}>
-          <h3 className={`text-sm font-bold mb-4 ${getTextColorClass('primary')}`}>
-            دسترسی سریع
-          </h3>
-          <div className="space-y-2">
-            <Link
-              href={`/project/${projectId}/family/categories`}
-              className={`flex items-center justify-between p-4 rounded-xl hover:opacity-80 transition-colors ${getBackgroundClass()}`}
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">📂</span>
-                <div>
-                  <div className={`font-medium text-sm ${getTextColorClass('primary')}`}>
-                    دسته‌بندی‌ها
-                  </div>
-                  <div className={`text-xs ${getTextColorClass('secondary')}`}>
-                    مدیریت دسته‌بندی‌های هزینه
-                  </div>
-                </div>
-              </div>
-              <span className={getTextColorClass('secondary')}>←</span>
-            </Link>
-
-            <Link
-              href={`/project/${projectId}/family/recurring`}
-              className={`flex items-center justify-between p-4 rounded-xl hover:opacity-80 transition-colors ${getBackgroundClass()}`}
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">🔄</span>
-                <div>
-                  <div className={`font-medium text-sm ${getTextColorClass('primary')}`}>
-                    تراکنش‌های تکراری
-                  </div>
-                  <div className={`text-xs ${getTextColorClass('secondary')}`}>
-                    هزینه‌ها و درآمدهای دوره‌ای
-                  </div>
-                </div>
-              </div>
-              <span className={getTextColorClass('secondary')}>←</span>
-            </Link>
+        {/* Info Note */}
+        <div className={`rounded-xl p-4 border ${getCardBackgroundClass()}`} style={{ borderColor: familyTheme.colors.divider }}>
+          <div className="flex gap-3">
+            <span className="text-lg flex-shrink-0">ℹ️</span>
+            <p className={`text-xs leading-relaxed ${getTextColorClass('secondary')}`}>
+              برخی تنظیمات نیاز به دسترسی مدیریت دارند. اگر عضو پروژه هستید، برای تغییرات مهم با مدیر پروژه هماهنگ کنید.
+            </p>
           </div>
         </div>
       </div>
