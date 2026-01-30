@@ -153,13 +153,13 @@ export default function PeriodDetailReportPage() {
     const incomes = stats.recentIncomes.map((item) => ({
       ...item,
       type: 'income' as const,
-      date: new Date(item.createdAt || Date.now()),
+      date: item.date instanceof Date ? item.date : new Date(item.date),
     }))
 
     const expenses = stats.recentExpenses.map((item) => ({
       ...item,
       type: 'expense' as const,
-      date: new Date(item.createdAt || Date.now()),
+      date: item.date instanceof Date ? item.date : new Date(item.date),
     }))
 
     return [...incomes, ...expenses].sort((a, b) => b.date.getTime() - a.date.getTime())
@@ -429,7 +429,7 @@ export default function PeriodDetailReportPage() {
                   stats.budgetUtilization >= 100
                     ? getTextColorClass('danger')
                     : stats.budgetUtilization >= 90
-                      ? getTextColorClass('warning')
+                      ? 'text-[#FF8A00] dark:text-[#FFA94D]'
                       : getTextColorClass('info')
                 }`}
               >

@@ -234,7 +234,7 @@ export default function FamilyDashboardPage({ params }: PageProps) {
           </div>
         </div>
 
-        {/* 4️⃣ Quick Actions */}
+        {/* 4️⃣ Primary Actions - ONLY add transactions */}
         <div className="grid grid-cols-2 gap-3">
           <Link
             href={`/project/${projectId}/family/add-expense`}
@@ -255,51 +255,9 @@ export default function FamilyDashboardPage({ params }: PageProps) {
               ثبت درآمد
             </span>
           </Link>
-
-          <Link
-            href={`/project/${projectId}/family/reports`}
-            className="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-2xl transition-all shadow-sm hover:shadow-md active:scale-95 flex items-center justify-center gap-2 p-4"
-          >
-            <FamilyIcon name="reports" size={20} className="text-gray-600 dark:text-gray-400" />
-            <span className={`text-[14px] font-semibold ${getTextColorClass('primary')}`}>
-              گزارش‌ها
-            </span>
-          </Link>
-
-          <Link
-            href={`/project/${projectId}/family/budgets`}
-            className="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-2xl transition-all shadow-sm hover:shadow-md active:scale-95 flex items-center justify-center gap-2 p-4"
-          >
-            <FamilyIcon name="budget" size={20} className="text-gray-600 dark:text-gray-400" />
-            <span className={`text-[14px] font-semibold ${getTextColorClass('primary')}`}>
-              بودجه
-            </span>
-          </Link>
         </div>
 
-        {/* Full Report CTA - Prominent */}
-        <button
-          onClick={() => router.push(`/project/${projectId}/family/reports/${periodKey}`)}
-          className="w-full bg-gradient-to-br from-[#4F6EF7] to-[#6D83FF] dark:from-[#6D83FF] dark:to-[#818CF8] hover:from-[#6D83FF] hover:to-[#4F6EF7] rounded-2xl p-5 shadow-lg transition-all text-white group active:scale-[0.98]"
-        >
-          <div className="flex items-center justify-between">
-            <div className="text-right">
-              <div className="font-bold text-[15px] mb-1">
-                مشاهده گزارش کامل {monthName}
-              </div>
-              <div className="text-[12px] opacity-90">
-                تحلیل عمیق درآمدها، هزینه‌ها و دسته‌بندی‌ها
-              </div>
-            </div>
-            <FamilyIcon
-              name="back"
-              size={20}
-              className="text-white rotate-180 group-hover:translate-x-1 transition-transform"
-            />
-          </div>
-        </button>
-
-        {/* 5️⃣ Recent Transactions - Max 3 items */}
+        {/* 5️⃣ Recent Transactions Preview */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm" style={{ padding: '20px' }}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-900 dark:text-white" style={{ fontSize: '16px' }}>
@@ -381,19 +339,19 @@ export default function FamilyDashboardPage({ params }: PageProps) {
           </div>
         </div>
 
-        {/* Budget Overview - Optional section */}
-        {stats.budgets && stats.budgets.length > 0 && (
+        {/* 6️⃣ Budget Status Preview */}
+        {stats.budgets && stats.budgets.length > 0 ? (
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm" style={{ padding: '20px' }}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-semibold text-gray-900 dark:text-white" style={{ fontSize: '16px' }}>
-                بودجه ماه
+                وضعیت بودجه ماه
               </h2>
               <Link
-                href={`/project/${projectId}/family/budgets/set`}
+                href={`/project/${projectId}/family/budgets`}
                 className="hover:opacity-80 transition-opacity"
                 style={{ fontSize: '13px', color: '#FF8A00' }}
               >
-                تنظیم
+                مشاهده همه ←
               </Link>
             </div>
 
@@ -441,6 +399,24 @@ export default function FamilyDashboardPage({ params }: PageProps) {
                 </div>
               ))}
             </div>
+          </div>
+        ) : (
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-6 text-center">
+            <div className="w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center bg-orange-50 dark:bg-orange-950/30">
+              <FamilyIcon name="budget" size={28} className="text-[#FF8A00] dark:text-[#FFA94D]" />
+            </div>
+            <h3 className={`font-semibold mb-1 text-[14px] ${getTextColorClass('primary')}`}>
+              هنوز بودجه‌ای تعیین نکردی
+            </h3>
+            <p className={`text-[12px] mb-4 ${getTextColorClass('secondary')}`}>
+              با تنظیم بودجه، خرج‌ها رو بهتر کنترل کن
+            </p>
+            <Link
+              href={`/project/${projectId}/family/budgets/set`}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-colors text-[13px] font-medium text-gray-700 dark:text-gray-300"
+            >
+              تنظیم بودجه ←
+            </Link>
           </div>
         )}
       </div>
