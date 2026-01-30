@@ -40,9 +40,11 @@ export default function BudgetsPage() {
       const res = await fetch(`/api/projects/${projectId}/family-stats`)
       const data = await res.json()
 
-      setBudgets(data.budgets || [])
-      setTotalBudget(data.totalBudget || 0)
-      setTotalSpent(data.totalSpent || 0)
+      // Fix: داده‌ها در data.stats قرار دارند
+      const stats = data.stats || {}
+      setBudgets(stats.budgets || [])
+      setTotalBudget(stats.totalBudget || 0)
+      setTotalSpent(stats.totalSpent || 0)
     } catch (error) {
       console.error('Error fetching budgets:', error)
     } finally {
