@@ -100,10 +100,13 @@ export default function FamilyDashboardPage({ params }: PageProps) {
 
   const isPersonal = project?.template === 'personal'
 
-  // Format large numbers (millions)
+  // Format large numbers (millions) - with Persian digits
   const formatLarge = (num: number) => {
-    const millions = num / 1000000
-    return millions.toFixed(1) + 'M'
+    const millions = num / 10000000 // Convert to millions (تومان to میلیون)
+    return millions.toLocaleString('fa-IR', {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1
+    }) + 'M'
   }
 
   return (
