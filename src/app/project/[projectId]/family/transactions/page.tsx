@@ -11,6 +11,7 @@ import {
   getCardBackgroundClass,
   getTextColorClass,
 } from '@/styles/family-theme'
+import { FamilyIcon } from '../components/FamilyIcon'
 
 interface Transaction {
   id: string
@@ -187,8 +188,9 @@ export default function TransactionsPage() {
           <Link
             href={`/project/${projectId}/family`}
             className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+            aria-label="بازگشت"
           >
-            →
+            <FamilyIcon name="back" size={24} className="text-white" />
           </Link>
           <div>
             <h1 className="text-[22px] font-bold">
@@ -256,7 +258,7 @@ export default function TransactionsPage() {
         ) : totalCount === 0 ? (
           <div className={`rounded-3xl p-12 text-center shadow-lg ${getCardBackgroundClass()}`}>
             <div className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center bg-[#FFF3E0] dark:bg-[#2D1F0D]">
-              <span className="text-4xl">📋</span>
+              <FamilyIcon name="emptyList" size={36} className="text-[#FF8A00] dark:text-[#FFA94D]" />
             </div>
             <p className={`font-medium mb-1 text-sm ${getTextColorClass('primary')}`}>
               هنوز تراکنشی ثبت نشده
@@ -291,10 +293,15 @@ export default function TransactionsPage() {
                               : 'bg-[#FEECEC] dark:bg-[#2D1212]'
                           }`}
                         >
-                          <span className="text-base">
-                            {transaction.categoryIcon ||
-                              (transaction.type === 'INCOME' ? '💰' : '💸')}
-                          </span>
+                          {transaction.categoryIcon ? (
+                            <span className="text-base">{transaction.categoryIcon}</span>
+                          ) : (
+                            <FamilyIcon
+                              name={transaction.type === 'INCOME' ? 'income' : 'expense'}
+                              size={20}
+                              className={transaction.type === 'INCOME' ? 'text-[#22C55E] dark:text-[#4ADE80]' : 'text-[#EF4444] dark:text-[#F87171]'}
+                            />
+                          )}
                         </div>
 
                         {/* Info */}
