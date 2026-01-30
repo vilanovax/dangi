@@ -9,6 +9,8 @@ import {
   getCardBackgroundClass,
   getTextColorClass,
 } from '@/styles/family-theme'
+import { FamilyIcon } from '../components/FamilyIcon'
+import { FamilyButton } from '../components/FamilyButton'
 
 interface RecurringTransaction {
   id: string
@@ -120,7 +122,7 @@ export default function RecurringTransactionsPage() {
               onClick={() => router.back()}
               className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
             >
-              ←
+              <FamilyIcon name="back" size={24} className="text-white" />
             </button>
             <div>
               <h1 className="text-[22px] font-bold">
@@ -135,9 +137,10 @@ export default function RecurringTransactionsPage() {
             onClick={() =>
               router.push(`/project/${projectId}/family/recurring/add`)
             }
-            className="bg-white text-[#4F6EF7] dark:text-[#818CF8] px-4 py-2 rounded-full font-medium hover:opacity-90 transition-opacity text-[14px]"
+            className="bg-white text-[#4F6EF7] dark:text-[#818CF8] px-4 py-2 rounded-full font-medium hover:opacity-90 transition-opacity text-[14px] flex items-center gap-1"
           >
-            + افزودن
+            <FamilyIcon name="add" size={16} className="text-[#4F6EF7] dark:text-[#818CF8]" />
+            افزودن
           </button>
         </div>
       </div>
@@ -190,7 +193,9 @@ export default function RecurringTransactionsPage() {
           </div>
         ) : filteredTransactions.length === 0 ? (
           <div className={`rounded-2xl p-12 text-center shadow-sm ${getCardBackgroundClass()}`}>
-            <span className="text-6xl mb-4 block">🔄</span>
+            <div className="mb-4 flex justify-center">
+              <FamilyIcon name="recurring" size={64} className={getTextColorClass('secondary')} />
+            </div>
             <p className={`mb-4 text-[14px] ${getTextColorClass('secondary')}`}>
               {filter === 'all'
                 ? 'هنوز تراکنش تکراری ثبت نشده است'
