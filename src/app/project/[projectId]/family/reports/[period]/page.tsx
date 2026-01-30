@@ -122,48 +122,87 @@ export default function PeriodDetailReportPage() {
     setTimeout(() => setShowExportSuccess(false), 3000)
   }
 
-  // Smart analysis helpers
-  const getFinancialNarrative = () => {
-    if (!stats) return ''
+  // Aggregate categories to prevent duplicates
+  const getAggregatedCategories = () => {
+    if (!stats?.topExpenses || stats.topExpenses.length === 0) return []
 
-    if (stats.netSavings > 0) {
-      if (stats.savingsRate >= 20) {
-        return `این ماه ${(stats.netSavings / 10).toLocaleString('fa-IR')} تومان پس‌انداز کردی، عالیه!`
-      } else if (stats.savingsRate >= 10) {
-        return `${(stats.netSavings / 10).toLocaleString('fa-IR')} تومان پس‌انداز این ماه، خوبه`
+    const categoryMap = new Map<string, typeof stats.topExpenses[0]>()
+
+    stats.topExpenses.forEach((category) => {
+      const key = category.categoryName || 'بدون دسته‌بندی'
+
+      if (categoryMap.has(key)) {
+        const existing = categoryMap.get(key)!
+        categoryMap.set(key, {
+          ...existing,
+          amount: existing.amount + category.amount,
+          percentage: existing.percentage + category.percentage,
+        })
       } else {
-        return `پس‌انداز این ماه: ${(stats.netSavings / 10).toLocaleString('fa-IR')} تومان`
+        categoryMap.set(key, { ...category })
       }
-    } else if (stats.netSavings < 0) {
-      return `این ماه ${Math.abs(stats.netSavings / 10).toLocaleString('fa-IR')} تومان بیشتر از درآمد خرج کردی`
-    } else {
-      return 'این ماه درآمد و هزینه برابر بوده'
-    }
+    })
+
+    return Array.from(categoryMap.values()).sort((a, b) => b.percentage - a.percentage)
   }
 
-  const getBudgetAnalysis = () => {
-    if (!stats || stats.totalBudget === 0) return ''
-
-    const util = stats.budgetUtilization
-    if (util === 0) return 'هنوز از بودجه‌های تعیین شده استفاده نشده'
-    if (util < 70) return 'بودجه این ماه به‌خوبی مدیریت شده'
-    if (util < 90) return 'داری نزدیک سقف بودجه می‌شی، کمی دقت کن'
-    if (util < 100) return 'تقریباً تمام بودجه مصرف شده'
-    return 'بودجه این ماه رد شده، ماه بعد دقت بیشتری لازمه'
-  }
-
-  const getTopExpenseInsight = () => {
-    if (!stats || stats.topExpenses.length === 0) return ''
-
-    const top = stats.topExpenses[0]
-    return `بیشترین هزینه این ماه مربوط به ${top.categoryName} بوده (${top.percentage.toFixed(0)}% از کل)`
-  }
-
-  // Filter meaningful budgets (only show if has spending or budget set)
-  const getMeaningfulBudgets = () => {
+  // Combine and sort all transactions chronologically
+  const getAllTransactions = () => {
     if (!stats) return []
-    return stats.budgets.filter(b => b.spent > 0 || b.budgetAmount > 0)
+
+    const incomes = stats.recentIncomes.map((item) => ({
+      ...item,
+      type: 'income' as const,
+      date: new Date(item.createdAt || Date.now()),
+    }))
+
+    const expenses = stats.recentExpenses.map((item) => ({
+      ...item,
+      type: 'expense' as const,
+      date: new Date(item.createdAt || Date.now()),
+    }))
+
+    return [...incomes, ...expenses].sort((a, b) => b.date.getTime() - a.date.getTime())
   }
+
+  // Smart insights (max 3)
+  const getSmartInsights = () => {
+    if (!stats) return []
+
+    const insights: string[] = []
+    const aggregated = getAggregatedCategories()
+
+    // Insight 1: Top expense category
+    if (aggregated.length > 0) {
+      insights.push(
+        `بیشترین هزینه مربوط به «${aggregated[0].categoryName}» بوده (${aggregated[0].percentage.toFixed(0)}%)`
+      )
+    }
+
+    // Insight 2: Budget status
+    if (stats.totalBudget > 0) {
+      const util = stats.budgetUtilization
+      if (util >= 100) {
+        insights.push('بودجه این ماه رد شده، ماه بعد دقت بیشتری لازمه')
+      } else if (util >= 90) {
+        insights.push('تقریباً تمام بودجه مصرف شده، مراقب باش')
+      } else if (util < 70) {
+        insights.push('بودجه به‌خوبی مدیریت شده')
+      }
+    }
+
+    // Insight 3: Savings performance
+    if (stats.savingsRate >= 20) {
+      insights.push('عملکرد پس‌اندازت عالی بوده 👏')
+    } else if (stats.netSavings < 0) {
+      insights.push('این ماه بیشتر از درآمد خرج کردی')
+    }
+
+    return insights.slice(0, 3)
+  }
+
+  // Category expand state
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null)
 
   if (loading) {
     return (
@@ -244,311 +283,412 @@ export default function PeriodDetailReportPage() {
           </div>
         )}
 
-        {/* Financial Summary - Narrative Style */}
-        <div className="bg-gradient-to-br from-[#4F6EF7] to-[#6D83FF] dark:from-[#6D83FF] dark:to-[#818CF8] rounded-3xl p-8 shadow-xl text-white">
-          {/* Main narrative */}
-          <div className="text-center mb-6">
-            <div className="text-sm opacity-90 mb-2">نتیجه مالی این ماه</div>
-            <div className="text-2xl font-bold leading-relaxed">
-              {getFinancialNarrative()}
+        {/* Section 2: Financial Summary - Compact */}
+        <div className={`rounded-2xl p-5 shadow-sm ${getCardBackgroundClass()}`}>
+          <h2 className={`text-sm font-bold mb-4 ${getTextColorClass('secondary')}`}>
+            خلاصه مالی
+          </h2>
+          <div className="grid grid-cols-2 gap-4">
+            {/* Net Savings */}
+            <div className="col-span-2 bg-gray-50 dark:bg-gray-800 rounded-xl p-4 text-center">
+              <div className={`text-xs mb-1 ${getTextColorClass('secondary')}`}>
+                خالص پس‌انداز
+              </div>
+              <div
+                className={`text-3xl font-black ${
+                  stats.netSavings >= 0
+                    ? getTextColorClass('success')
+                    : getTextColorClass('danger')
+                }`}
+              >
+                {stats.netSavings >= 0 ? '+' : ''}
+                {(stats.netSavings / 10).toLocaleString('fa-IR')}
+                <span className="text-xs font-medium text-gray-400 dark:text-gray-600">
+                  {' '}
+                  تومان
+                </span>
+              </div>
+              <div className={`text-xs mt-1 ${getTextColorClass('secondary')}`}>
+                نرخ پس‌انداز: {stats.savingsRate.toFixed(1)}%
+              </div>
             </div>
-          </div>
 
-          {/* Three key metrics */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-white/10 backdrop-blur rounded-xl p-4 text-center">
-              <div className="mb-1 flex justify-center">
-                <FamilyIcon name="income" size={24} className="text-white" />
-              </div>
-              <div className="text-xs opacity-80 mb-1">درآمد</div>
-              <div className="text-lg font-bold">
-                {(stats.totalIncome / 10).toLocaleString('fa-IR')}
-              </div>
-            </div>
-            <div className="bg-white/10 backdrop-blur rounded-xl p-4 text-center">
-              <div className="mb-1 flex justify-center">
-                <FamilyIcon name="expense" size={24} className="text-white" />
-              </div>
-              <div className="text-xs opacity-80 mb-1">هزینه</div>
-              <div className="text-lg font-bold">
-                {(stats.totalExpenses / 10).toLocaleString('fa-IR')}
-              </div>
-            </div>
-            <div className="bg-white/10 backdrop-blur rounded-xl p-4 text-center">
-              <div className="mb-1 flex justify-center">
+            {/* Total Income */}
+            <div className="bg-[#EAFBF1] dark:bg-[#0F2417] rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
                 <FamilyIcon
-                  name={stats.netSavings >= 0 ? 'savings' : 'warning'}
-                  size={24}
-                  className="text-white"
+                  name="income"
+                  size={16}
+                  className="text-[#22C55E] dark:text-[#4ADE80]"
                 />
+                <span className={`text-xs ${getTextColorClass('secondary')}`}>
+                  کل درآمد
+                </span>
               </div>
-              <div className="text-xs opacity-80 mb-1">
-                {stats.netSavings >= 0 ? 'پس‌انداز' : 'کسری'}
+              <div className="text-lg font-bold text-[#22C55E] dark:text-[#4ADE80]">
+                {(stats.totalIncome / 10).toLocaleString('fa-IR')}
+                <span className="text-xs font-medium text-gray-400 dark:text-gray-600">
+                  {' '}
+                  تومان
+                </span>
               </div>
-              <div className="text-lg font-bold">
-                {Math.abs(stats.netSavings / 10).toLocaleString('fa-IR')}
+            </div>
+
+            {/* Total Expenses */}
+            <div className="bg-[#FEECEC] dark:bg-[#2D1212] rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <FamilyIcon
+                  name="expense"
+                  size={16}
+                  className="text-[#EF4444] dark:text-[#F87171]"
+                />
+                <span className={`text-xs ${getTextColorClass('secondary')}`}>
+                  کل هزینه
+                </span>
+              </div>
+              <div className="text-lg font-bold text-[#EF4444] dark:text-[#F87171]">
+                {(stats.totalExpenses / 10).toLocaleString('fa-IR')}
+                <span className="text-xs font-medium text-gray-400 dark:text-gray-600">
+                  {' '}
+                  تومان
+                </span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Smart Insights */}
-        {(getBudgetAnalysis() || getTopExpenseInsight()) && (
-          <div className="bg-[#FFF3E0] dark:bg-[#2D1F0D] border-2 border-[#FF8A00]/20 dark:border-[#FFA94D]/20 rounded-2xl p-5 shadow-sm">
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0">
-                <FamilyIcon name="tip" size={24} className={getTextColorClass('primary')} />
-              </div>
-              <div className="flex-1">
-                <h3 className={`font-bold mb-2 ${getTextColorClass('primary')}`}>نکات تحلیلی</h3>
-                <div className={`space-y-2 text-sm ${getTextColorClass('secondary')}`}>
-                  {getBudgetAnalysis() && (
-                    <div className="flex items-start gap-2">
-                      <span className="flex-shrink-0">•</span>
-                      <span>{getBudgetAnalysis()}</span>
+        {/* Section 3: Expense Distribution Chart */}
+        {getAggregatedCategories().length > 0 && (
+          <div className={`rounded-2xl p-5 shadow-sm ${getCardBackgroundClass()}`}>
+            <h2 className={`text-sm font-bold mb-4 ${getTextColorClass('secondary')}`}>
+              توزیع هزینه‌ها
+            </h2>
+            <div className="space-y-3">
+              {getAggregatedCategories().map((category, index) => {
+                const barColor =
+                  index === 0
+                    ? 'bg-[#EF4444] dark:bg-[#F87171]'
+                    : index === 1
+                      ? 'bg-[#FF8A00] dark:bg-[#FFA94D]'
+                      : index === 2
+                        ? 'bg-[#F59E0B] dark:bg-[#FBBF24]'
+                        : 'bg-[#6B7280] dark:bg-[#9CA3AF]'
+
+                return (
+                  <div key={category.categoryName}>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        {category.categoryIcon && (
+                          <span className="text-sm">{category.categoryIcon}</span>
+                        )}
+                        <span className={`text-sm font-medium ${getTextColorClass('primary')}`}>
+                          {category.categoryName}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className={`text-xs ${getTextColorClass('secondary')}`}>
+                          {(category.amount / 10).toLocaleString('fa-IR')} تومان
+                        </span>
+                        <span className={`text-sm font-bold ${getTextColorClass('primary')}`}>
+                          {category.percentage.toFixed(0)}%
+                        </span>
+                      </div>
                     </div>
-                  )}
-                  {getTopExpenseInsight() && (
-                    <div className="flex items-start gap-2">
-                      <span className="flex-shrink-0">•</span>
-                      <span>{getTopExpenseInsight()}</span>
+                    <div className="h-2.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${barColor} transition-all`}
+                        style={{ width: `${category.percentage}%` }}
+                      />
                     </div>
-                  )}
-                </div>
-              </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}
 
-        {/* Budget Overview */}
-        {stats.totalBudget > 0 ? (
-          <div className={`rounded-2xl p-6 shadow-lg ${getCardBackgroundClass()}`}>
-            <h2 className={`text-lg font-bold mb-4 ${getTextColorClass('primary')}`}>
-              وضعیت بودجه
-            </h2>
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="text-center bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
-              <div className={`text-xl font-bold ${getTextColorClass('primary')}`}>
-                {stats.totalBudget.toLocaleString('fa-IR')}
-              </div>
-              <div className={`text-sm mt-1 ${getTextColorClass('secondary')}`}>کل بودجه</div>
-            </div>
-            <div className="text-center bg-[#FFF3E0] dark:bg-[#2D1F0D] rounded-xl p-4">
-              <div className={`text-xl font-bold ${getTextColorClass('primary')}`}>
-                {stats.totalSpent.toLocaleString('fa-IR')}
-              </div>
-              <div className={`text-sm mt-1 ${getTextColorClass('secondary')}`}>مصرف شده</div>
-            </div>
-            <div className="text-center bg-[#EEF2FF] dark:bg-[#1E1B3A] rounded-xl p-4">
-              <div className={`text-xl font-bold ${getTextColorClass('info')}`}>
+        {/* Section 5: Budget Status */}
+        {stats.totalBudget > 0 && stats.budgets.filter((b) => b.spent > 0 || b.budgetAmount > 0).length > 0 && (
+          <div className={`rounded-2xl p-5 shadow-sm ${getCardBackgroundClass()}`}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className={`text-sm font-bold ${getTextColorClass('secondary')}`}>
+                وضعیت بودجه
+              </h2>
+              <div
+                className={`text-lg font-bold ${
+                  stats.budgetUtilization >= 100
+                    ? getTextColorClass('danger')
+                    : stats.budgetUtilization >= 90
+                      ? getTextColorClass('warning')
+                      : getTextColorClass('info')
+                }`}
+              >
                 {stats.budgetUtilization.toFixed(0)}%
               </div>
-              <div className={`text-sm mt-1 ${getTextColorClass('secondary')}`}>درصد استفاده</div>
             </div>
-          </div>
 
-            {/* Budget details - only meaningful ones */}
-            {getMeaningfulBudgets().length > 0 ? (
-              <div className="space-y-3">
-                <h3 className={`font-medium text-sm ${getTextColorClass('primary')}`}>
-                  جزئیات بودجه دسته‌بندی‌ها
-                </h3>
-                {getMeaningfulBudgets().map((budget, index) => (
-                  <div key={index} className="border-t border-[#E5E7EB] dark:border-[#334155] pt-3">
-                    <div className="flex items-center justify-between mb-2">
+            <div className="space-y-3">
+              {stats.budgets
+                .filter((b) => b.spent > 0 || b.budgetAmount > 0)
+                .map((budget, index) => (
+                  <div key={index}>
+                    <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
-                        {budget.categoryIcon && (
-                          <span>{budget.categoryIcon}</span>
-                        )}
-                        <span className={`font-medium ${getTextColorClass('primary')}`}>
+                        {budget.categoryIcon && <span className="text-sm">{budget.categoryIcon}</span>}
+                        <span className={`text-sm font-medium ${getTextColorClass('primary')}`}>
                           {budget.categoryName}
                         </span>
                       </div>
-                      <div className={`text-sm ${getTextColorClass('secondary')}`}>
-                        {(budget.spent / 10).toLocaleString('fa-IR')} /{' '}
-                        {(budget.budgetAmount / 10).toLocaleString('fa-IR')}
-                      </div>
-                    </div>
-                    {budget.spent === 0 && budget.budgetAmount > 0 ? (
-                      <div className={`text-xs italic ${getTextColorClass('secondary')}`}>
-                        هنوز مصرفی ثبت نشده
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all ${
-                              budget.isOverBudget
-                                ? 'bg-[#EF4444] dark:bg-[#F87171]'
-                                : budget.percentage >= 90
-                                  ? 'bg-[#FF8A00] dark:bg-[#FFA94D]'
-                                  : budget.percentage >= 70
-                                    ? 'bg-yellow-500 dark:bg-yellow-400'
-                                    : 'bg-[#22C55E] dark:bg-[#4ADE80]'
-                            }`}
-                            style={{ width: `${Math.min(budget.percentage, 100)}%` }}
-                          />
-                        </div>
-                        <span className={`text-sm font-medium ${
-                          budget.isOverBudget
-                            ? 'text-[#EF4444] dark:text-[#F87171]'
-                            : getTextColorClass('secondary')
-                        }`}>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs ${getTextColorClass('secondary')}`}>
+                          {(budget.spent / 10).toLocaleString('fa-IR')} /{' '}
+                          {(budget.budgetAmount / 10).toLocaleString('fa-IR')}
+                        </span>
+                        <span
+                          className={`text-sm font-bold ${
+                            budget.isOverBudget
+                              ? 'text-[#EF4444] dark:text-[#F87171]'
+                              : getTextColorClass('secondary')
+                          }`}
+                        >
                           {budget.percentage.toFixed(0)}%
                         </span>
                       </div>
-                    )}
+                    </div>
+                    <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full transition-all ${
+                          budget.isOverBudget
+                            ? 'bg-[#EF4444] dark:bg-[#F87171]'
+                            : budget.percentage >= 90
+                              ? 'bg-[#FF8A00] dark:bg-[#FFA94D]'
+                              : budget.percentage >= 70
+                                ? 'bg-yellow-500 dark:bg-yellow-400'
+                                : 'bg-[#22C55E] dark:bg-[#4ADE80]'
+                        }`}
+                        style={{ width: `${Math.min(budget.percentage, 100)}%` }}
+                      />
+                    </div>
                   </div>
                 ))}
-              </div>
-            ) : (
-              <div className={`text-center py-8 ${getTextColorClass('secondary')}`}>
-                <div className="mb-2 flex justify-center">
-                  <FamilyIcon name="info" size={32} className={getTextColorClass('secondary')} />
-                </div>
-                <div className="text-sm">
-                  بودجه تعیین شده ولی هنوز خرجی ثبت نشده
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-8 text-center border-2 border-dashed border-gray-200 dark:border-gray-700">
-            <div className="mb-3 flex justify-center">
-              <FamilyIcon name="budget" size={48} className={getTextColorClass('secondary')} />
-            </div>
-            <div className={`text-sm ${getTextColorClass('secondary')}`}>
-              برای این ماه بودجه‌ای تعیین نشده
             </div>
           </div>
         )}
 
-        {/* Top Expenses */}
-        {stats.topExpenses.length > 0 && (
-          <div className={`rounded-2xl p-6 shadow-lg ${getCardBackgroundClass()}`}>
-            <h2 className={`text-lg font-bold mb-4 ${getTextColorClass('primary')}`}>
-              بیشترین هزینه‌ها
+        {/* Section 4: Category Drill-Down List */}
+        {getAggregatedCategories().length > 0 && (
+          <div className={`rounded-2xl p-5 shadow-sm ${getCardBackgroundClass()}`}>
+            <h2 className={`text-sm font-bold mb-4 ${getTextColorClass('secondary')}`}>
+              دسته‌بندی‌های هزینه
             </h2>
-            <div className="space-y-3">
-              {stats.topExpenses.map((expense, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-xl"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-[#FEECEC] dark:bg-[#2D1212] flex items-center justify-center text-[#EF4444] dark:text-[#F87171] font-bold text-sm">
-                      {index + 1}
-                    </div>
-                    <div>
-                      <div className={`font-medium ${getTextColorClass('primary')}`}>
-                        {expense.categoryIcon} {expense.categoryName}
+            <div className="space-y-2">
+              {getAggregatedCategories().map((category, index) => {
+                const isExpanded = expandedCategory === category.categoryName
+                const relatedExpenses = stats.recentExpenses.filter(
+                  (exp) => exp.categoryName === category.categoryName
+                )
+
+                return (
+                  <div key={category.categoryName}>
+                    <button
+                      onClick={() =>
+                        setExpandedCategory(isExpanded ? null : category.categoryName)
+                      }
+                      className={`w-full text-right p-3 rounded-xl transition-colors ${
+                        isExpanded
+                          ? 'bg-[#FFF3E0] dark:bg-[#2D1F0D]'
+                          : 'bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                              isExpanded
+                                ? 'bg-[#FF8A00] dark:bg-[#FFA94D] text-white'
+                                : 'bg-[#FEECEC] dark:bg-[#2D1212] text-[#EF4444] dark:text-[#F87171]'
+                            }`}
+                          >
+                            {index + 1}
+                          </div>
+                          <div>
+                            <div className={`font-medium text-sm ${getTextColorClass('primary')}`}>
+                              {category.categoryIcon && (
+                                <span className="ml-1">{category.categoryIcon}</span>
+                              )}
+                              {category.categoryName}
+                            </div>
+                            <div className={`text-xs ${getTextColorClass('secondary')}`}>
+                              {category.percentage.toFixed(0)}% از کل هزینه‌ها
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className={`text-sm font-bold ${getTextColorClass('primary')}`}>
+                            {(category.amount / 10).toLocaleString('fa-IR')}
+                            <span className="text-xs font-normal text-gray-400 dark:text-gray-600">
+                              {' '}
+                              تومان
+                            </span>
+                          </div>
+                          <FamilyIcon
+                            name="back"
+                            size={16}
+                            className={`transform transition-transform ${
+                              isExpanded ? '-rotate-90' : 'rotate-180'
+                            } ${getTextColorClass('secondary')}`}
+                          />
+                        </div>
                       </div>
-                      <div className={`text-xs ${getTextColorClass('secondary')}`}>
-                        {expense.percentage.toFixed(1)}% از کل هزینه‌ها
+                    </button>
+
+                    {/* Expanded transactions */}
+                    {isExpanded && relatedExpenses.length > 0 && (
+                      <div className="mt-2 mr-11 space-y-1">
+                        {relatedExpenses.slice(0, 5).map((expense) => (
+                          <div
+                            key={expense.id}
+                            className="p-2 bg-white dark:bg-gray-900 rounded-lg text-xs"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1 min-w-0">
+                                <div
+                                  className={`font-medium truncate ${getTextColorClass('primary')}`}
+                                >
+                                  {expense.title}
+                                </div>
+                                <div className={`${getTextColorClass('secondary')}`}>
+                                  {expense.paidByName}
+                                </div>
+                              </div>
+                              <div className="text-[#EF4444] dark:text-[#F87171] font-bold flex-shrink-0 mr-2">
+                                {(expense.amount / 10).toLocaleString('fa-IR')}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        {relatedExpenses.length > 5 && (
+                          <div className={`text-center py-1 text-xs ${getTextColorClass('secondary')}`}>
+                            و {relatedExpenses.length - 5} مورد دیگر
+                          </div>
+                        )}
                       </div>
-                    </div>
+                    )}
                   </div>
-                  <div className={`text-lg font-bold ${getTextColorClass('primary')}`}>
-                    {expense.amount.toLocaleString('fa-IR')}
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Section 6: Transaction List - Chronological */}
+        {getAllTransactions().length > 0 && (
+          <div className={`rounded-2xl p-5 shadow-sm ${getCardBackgroundClass()}`}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className={`text-sm font-bold ${getTextColorClass('secondary')}`}>
+                تراکنش‌های این ماه
+              </h2>
+              <div className={`text-xs ${getTextColorClass('secondary')}`}>
+                {getAllTransactions().length} مورد
+              </div>
+            </div>
+            <div className="space-y-2">
+              {getAllTransactions().slice(0, 20).map((transaction) => (
+                <div
+                  key={transaction.id}
+                  className={`p-3 rounded-xl transition-colors ${
+                    transaction.type === 'income'
+                      ? 'bg-[#EAFBF1] dark:bg-[#0F2417] hover:bg-[#D4F7E0] dark:hover:bg-[#0F2417]/80'
+                      : 'bg-[#FEECEC] dark:bg-[#2D1212] hover:bg-[#FDDDDD] dark:hover:bg-[#2D1212]/80'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                          transaction.type === 'income'
+                            ? 'bg-[#22C55E]/10 dark:bg-[#22C55E]/20'
+                            : 'bg-[#EF4444]/10 dark:bg-[#EF4444]/20'
+                        }`}
+                      >
+                        <FamilyIcon
+                          name={transaction.type === 'income' ? 'income' : 'expense'}
+                          size={16}
+                          className={
+                            transaction.type === 'income'
+                              ? 'text-[#22C55E] dark:text-[#4ADE80]'
+                              : 'text-[#EF4444] dark:text-[#F87171]'
+                          }
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className={`font-medium text-sm truncate ${getTextColorClass('primary')}`}>
+                          {transaction.title}
+                        </div>
+                        <div className={`text-xs flex items-center gap-2 ${getTextColorClass('secondary')}`}>
+                          <span>
+                            {transaction.type === 'income'
+                              ? transaction.receivedByName
+                              : transaction.paidByName}
+                          </span>
+                          {transaction.categoryName && (
+                            <>
+                              <span>•</span>
+                              <span>{transaction.categoryName}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      className={`text-sm font-bold flex-shrink-0 mr-3 ${
+                        transaction.type === 'income'
+                          ? 'text-[#22C55E] dark:text-[#4ADE80]'
+                          : 'text-[#EF4444] dark:text-[#F87171]'
+                      }`}
+                    >
+                      {transaction.type === 'income' ? '+' : '−'}
+                      {(transaction.amount / 10).toLocaleString('fa-IR')}
+                      <span className="text-xs font-normal text-gray-400 dark:text-gray-600">
+                        {' '}
+                        تومان
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))}
+              {getAllTransactions().length > 20 && (
+                <div className={`text-center py-2 text-xs ${getTextColorClass('secondary')}`}>
+                  و {getAllTransactions().length - 20} مورد دیگر
+                </div>
+              )}
             </div>
           </div>
         )}
 
-        {/* Recent Transactions - Separated */}
-        {(stats.recentIncomes.length > 0 || stats.recentExpenses.length > 0) && (
-          <div className="space-y-4">
-            {/* Recent Incomes */}
-            {stats.recentIncomes.length > 0 && (
-              <div className={`rounded-2xl p-6 shadow-lg ${getCardBackgroundClass()}`}>
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h2 className="text-lg font-bold text-[#22C55E] dark:text-[#4ADE80] flex items-center gap-2">
-                      <FamilyIcon name="income" size={20} className="text-[#22C55E] dark:text-[#4ADE80]" />
-                      درآمدهای اخیر
-                    </h2>
-                    <p className={`text-xs mt-1 ${getTextColorClass('secondary')}`}>
-                      {stats.recentIncomes.length > 5
-                        ? '۵ مورد آخر'
-                        : `${stats.recentIncomes.length} مورد`}
-                    </p>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  {stats.recentIncomes.slice(0, 5).map((income) => (
-                    <div
-                      key={income.id}
-                      className="flex items-center justify-between p-3 bg-[#EAFBF1] dark:bg-[#0F2417] rounded-xl hover:bg-[#D4F7E0] dark:hover:bg-[#0F2417]/80 transition-colors"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className={`font-medium truncate ${getTextColorClass('primary')}`}>
-                          {income.title}
-                        </div>
-                        <div className={`text-xs flex items-center gap-2 ${getTextColorClass('secondary')}`}>
-                          <span>{income.receivedByName}</span>
-                          {income.categoryName && (
-                            <>
-                              <span>•</span>
-                              <span>{income.categoryName}</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      <div className="text-[#22C55E] dark:text-[#4ADE80] font-bold flex-shrink-0 mr-3">
-                        +{(income.amount / 10).toLocaleString('fa-IR')}
-                      </div>
+        {/* Section 7: Smart Insights - Optional */}
+        {getSmartInsights().length > 0 && (
+          <div className="bg-[#FFF3E0] dark:bg-[#2D1F0D] border border-[#FF8A00]/20 dark:border-[#FFA94D]/20 rounded-2xl p-4">
+            <div className="flex items-start gap-2">
+              <FamilyIcon
+                name="tip"
+                size={18}
+                className="text-[#FF8A00] dark:text-[#FFA94D] flex-shrink-0 mt-0.5"
+              />
+              <div>
+                <h3 className={`text-sm font-bold mb-2 ${getTextColorClass('primary')}`}>
+                  نکات تحلیلی
+                </h3>
+                <div className={`space-y-1 text-xs ${getTextColorClass('secondary')}`}>
+                  {getSmartInsights().map((insight, index) => (
+                    <div key={index} className="flex items-start gap-2">
+                      <span className="flex-shrink-0">•</span>
+                      <span>{insight}</span>
                     </div>
                   ))}
                 </div>
               </div>
-            )}
-
-            {/* Recent Expenses */}
-            {stats.recentExpenses.length > 0 && (
-              <div className={`rounded-2xl p-6 shadow-lg ${getCardBackgroundClass()}`}>
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h2 className="text-lg font-bold text-[#EF4444] dark:text-[#F87171] flex items-center gap-2">
-                      <FamilyIcon name="expense" size={20} className="text-[#EF4444] dark:text-[#F87171]" />
-                      هزینه‌های اخیر
-                    </h2>
-                    <p className={`text-xs mt-1 ${getTextColorClass('secondary')}`}>
-                      {stats.recentExpenses.length > 5
-                        ? '۵ مورد آخر'
-                        : `${stats.recentExpenses.length} مورد`}
-                    </p>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  {stats.recentExpenses.slice(0, 5).map((expense) => (
-                    <div
-                      key={expense.id}
-                      className="flex items-center justify-between p-3 bg-[#FEECEC] dark:bg-[#2D1212] rounded-xl hover:bg-[#FDDDDD] dark:hover:bg-[#2D1212]/80 transition-colors"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className={`font-medium truncate ${getTextColorClass('primary')}`}>
-                          {expense.title}
-                        </div>
-                        <div className={`text-xs flex items-center gap-2 ${getTextColorClass('secondary')}`}>
-                          <span>{expense.paidByName}</span>
-                          {expense.categoryName && (
-                            <>
-                              <span>•</span>
-                              <span>{expense.categoryName}</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      <div className="text-[#EF4444] dark:text-[#F87171] font-bold flex-shrink-0 mr-3">
-                        −{(expense.amount / 10).toLocaleString('fa-IR')}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            </div>
           </div>
         )}
       </div>
