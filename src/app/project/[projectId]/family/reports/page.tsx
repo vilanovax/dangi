@@ -100,20 +100,49 @@ export default function ReportsOverviewPage() {
     router.push(`/project/${projectId}/family/reports/${periodKey}`)
   }
 
-  // جمع‌بندی هوشمند این ماه
+  // Aggregate categories to prevent duplicates
+  const getAggregatedCategories = () => {
+    if (!report?.topExpenses || report.topExpenses.length === 0) return []
+
+    // Group by category name and sum percentages/amounts
+    const categoryMap = new Map<string, typeof report.topExpenses[0]>()
+
+    report.topExpenses.forEach((category) => {
+      const key = category.categoryName || 'بدون دسته‌بندی'
+
+      if (categoryMap.has(key)) {
+        const existing = categoryMap.get(key)!
+        categoryMap.set(key, {
+          ...existing,
+          amount: existing.amount + category.amount,
+          percentage: existing.percentage + category.percentage,
+        })
+      } else {
+        categoryMap.set(key, { ...category })
+      }
+    })
+
+    // Convert to array and sort by percentage descending
+    return Array.from(categoryMap.values())
+      .sort((a, b) => b.percentage - a.percentage)
+      .slice(0, 4) // Top 4 only
+  }
+
+  // جمع‌بندی هوشمند این ماه - حداکثر 2 نکته
   const getMonthlyInsights = () => {
     if (!report) return []
 
     const insights: string[] = []
+    const aggregatedCategories = getAggregatedCategories()
 
     // Insight 1: بیشترین دسته
-    if (report.topExpenses && report.topExpenses.length > 0) {
-      insights.push(`بیشترین هزینه مربوط به «${report.topExpenses[0].categoryName}» بوده`)
+    if (aggregatedCategories.length > 0) {
+      insights.push(`بیشترین خرج مربوط به «${aggregatedCategories[0].categoryName}» بوده`)
     }
 
-    // Insight 2: عملکرد پس‌انداز
+    // Insight 2: عملکرد پس‌انداز (با ایموجی فقط در مثبت)
     if (report.savingsRate >= 20) {
-      insights.push('عملکرد پس‌اندازت عالی بوده')
+      insights.push('عملکرد پس‌اندازت عالی بوده 👏')
     } else if (report.savingsRate >= 10) {
       insights.push('عملکرد پس‌اندازت نسبتاً خوب بوده')
     } else if (report.savingsRate >= 0) {
@@ -122,7 +151,7 @@ export default function ReportsOverviewPage() {
       insights.push('این ماه خرج‌ها بیشتر از درآمد بوده')
     }
 
-    return insights.slice(0, 3) // حداکثر 3 نکته
+    return insights.slice(0, 2) // حداکثر 2 نکته
   }
 
   return (
@@ -253,12 +282,13 @@ export default function ReportsOverviewPage() {
 
               {/* Primary Metric - فقط یک عدد بزرگ */}
               <div className="mb-6">
-                <div className={`text-[44px] font-extrabold leading-none ${report.netSavings >= 0 ? 'text-[#22C55E] dark:text-[#4ADE80]' : 'text-[#EF4444] dark:text-[#F87171]'}`}>
+                <div className={`text-[48px] font-black leading-none ${report.netSavings >= 0 ? 'text-[#22C55E] dark:text-[#4ADE80]' : 'text-[#EF4444] dark:text-[#F87171]'}`}>
                   {report.netSavings >= 0 ? '+' : ''}
                   {(report.netSavings / 10).toLocaleString('fa-IR')}
+                  <span className="text-[16px] font-medium text-gray-400 dark:text-gray-600"> تومان</span>
                 </div>
-                <div className={`text-xs mt-1 ${getTextColorClass('secondary')}`}>
-                  تومان - پس‌انداز خالص
+                <div className={`text-xs mt-2 ${getTextColorClass('secondary')}`}>
+                  پس‌انداز خالص
                 </div>
               </div>
 
@@ -303,50 +333,53 @@ export default function ReportsOverviewPage() {
             </div>
 
             {/* 3️⃣ Expense Breakdown - بیشترین دسته‌های هزینه */}
-            {report.topExpenses && report.topExpenses.length > 0 && (
-              <div className={`rounded-2xl p-5 shadow-md ${getCardBackgroundClass()}`}>
-                <div className={`font-semibold mb-4 text-sm ${getTextColorClass('primary')}`}>
-                  بیشترین دسته‌های هزینه
-                </div>
-                <div className="space-y-3">
-                  {report.topExpenses.slice(0, 4).map((category) => (
-                    <div key={category.categoryName}>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <div className="flex items-center gap-2">
-                          {category.categoryIcon ? (
-                            <span className="text-base">{category.categoryIcon}</span>
-                          ) : (
-                            <FamilyIcon name="categories" size={16} className="text-gray-400 dark:text-gray-600" />
-                          )}
-                          <span className={`text-sm ${getTextColorClass('primary')}`}>
-                            {category.categoryName}
-                          </span>
+            {(() => {
+              const aggregatedCategories = getAggregatedCategories()
+              return aggregatedCategories.length > 0 && (
+                <div className={`rounded-2xl p-5 shadow-md ${getCardBackgroundClass()}`}>
+                  <div className={`font-semibold mb-4 text-sm ${getTextColorClass('primary')}`}>
+                    بیشترین دسته‌های هزینه
+                  </div>
+                  <div className="space-y-4">
+                    {aggregatedCategories.map((category, index) => (
+                      <div key={`${category.categoryName}-${index}`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            {category.categoryIcon ? (
+                              <span className="text-base">{category.categoryIcon}</span>
+                            ) : (
+                              <FamilyIcon name="categories" size={16} className="text-gray-400 dark:text-gray-600" />
+                            )}
+                            <span className={`text-sm ${getTextColorClass('primary')}`}>
+                              {category.categoryName}
+                            </span>
+                          </div>
+                          <div className={`text-sm font-bold ${getTextColorClass('primary')}`}>
+                            {category.percentage.toFixed(0)}٪
+                          </div>
                         </div>
-                        <div className={`text-sm font-bold ${getTextColorClass('primary')}`}>
-                          {category.percentage.toFixed(0)}٪
+                        <div className="h-2.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-l from-[#4F6EF7] to-[#6D83FF] dark:from-[#818CF8] dark:to-[#A5B4FC] transition-all"
+                            style={{ width: `${Math.min(category.percentage, 100)}%` }}
+                          />
                         </div>
                       </div>
-                      <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-l from-[#4F6EF7] to-[#6D83FF] dark:from-[#818CF8] dark:to-[#A5B4FC] transition-all"
-                          style={{ width: `${category.percentage}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
 
-                {/* نمایش دکمه "مشاهده همه" اگر بیش از 4 دسته وجود دارد */}
-                {report.topExpenses.length > 4 && (
-                  <button
-                    onClick={handleViewDetails}
-                    className={`w-full mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 text-sm font-medium hover:opacity-70 transition-opacity ${getTextColorClass('info')}`}
-                  >
-                    مشاهده همه دسته‌ها
-                  </button>
-                )}
-              </div>
-            )}
+                  {/* نمایش دکمه "مشاهده همه" اگر بیش از 4 دسته وجود دارد */}
+                  {report.topExpenses && report.topExpenses.length > 4 && (
+                    <button
+                      onClick={handleViewDetails}
+                      className={`w-full mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 text-sm font-medium hover:opacity-70 transition-opacity ${getTextColorClass('info')}`}
+                    >
+                      مشاهده همه دسته‌ها
+                    </button>
+                  )}
+                </div>
+              )
+            })()}
 
             {/* 4️⃣ Primary Action - گزارش کامل */}
             <button
@@ -403,7 +436,7 @@ export default function ReportsOverviewPage() {
                   <div className="w-8 h-8 mb-2 mx-auto rounded-full bg-white dark:bg-gray-900 flex items-center justify-center shadow-sm">
                     <FamilyIcon name="recurring" size={16} className="text-gray-600 dark:text-gray-400" />
                   </div>
-                  <div className={`text-xs ${getTextColorClass('primary')}`}>تراکنش تکراری</div>
+                  <div className={`text-xs ${getTextColorClass('primary')}`}>تکراری‌ها</div>
                 </button>
               </div>
             </div>
