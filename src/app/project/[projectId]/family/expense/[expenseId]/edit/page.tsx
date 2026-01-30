@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { PersianDatePicker } from '@/components/ui/PersianDatePicker'
+import { FamilyIcon } from '../../../components/FamilyIcon'
+import { FamilyButton } from '../../../components/FamilyButton'
 
 interface Participant {
   id: string
@@ -203,7 +205,7 @@ export default function EditExpensePage() {
           style={{ backgroundColor: '#22C55E' }}
         >
           <div className="flex items-center gap-2 font-semibold" style={{ fontSize: '14px' }}>
-            <span>✓</span>
+            <FamilyIcon name="success" size={18} className="text-white" />
             <span>ویرایش شد</span>
           </div>
         </div>
@@ -217,9 +219,7 @@ export default function EditExpensePage() {
             className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors p-2 -m-2"
             aria-label="بازگشت"
           >
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+            <FamilyIcon name="back" size={24} />
           </button>
           <h1 className="font-bold text-gray-900 dark:text-white" style={{ fontSize: '20px' }}>
             ویرایش هزینه
