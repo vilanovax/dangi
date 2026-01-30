@@ -10,6 +10,8 @@ import {
   getCardBackgroundClass,
   getTextColorClass,
 } from '@/styles/family-theme'
+import { FamilyIcon } from '../components/FamilyIcon'
+import { FamilyButton } from '../components/FamilyButton'
 
 interface Category {
   id: string
@@ -80,7 +82,7 @@ export default function CategoriesPage() {
             onClick={() => router.back()}
             className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
           >
-            ←
+            <FamilyIcon name="back" size={24} className="text-white" />
           </button>
           <h1 className="text-[22px] font-bold">
             مدیریت دسته‌بندی‌ها
@@ -93,12 +95,15 @@ export default function CategoriesPage() {
 
       <div className="p-6 max-w-2xl mx-auto space-y-4">
         {/* Add button */}
-        <button
+        <FamilyButton
           onClick={() => handleOpenEditor()}
-          className="w-full bg-[#FF8A00] hover:bg-[#E67A00] text-white py-4 rounded-2xl font-bold text-[14px] shadow-sm transition-all active:scale-[0.98]"
+          variant="primary"
+          size="lg"
+          fullWidth
+          icon="add"
         >
-          + افزودن دسته‌بندی جدید
-        </button>
+          افزودن دسته‌بندی جدید
+        </FamilyButton>
 
         {/* Categories list */}
         <div className="space-y-3">
@@ -116,7 +121,11 @@ export default function CategoriesPage() {
                       style={{ backgroundColor: category.color }}
                     />
                   )}
-                  <span className="text-2xl">{category.icon || '📝'}</span>
+                  {category.icon ? (
+                    <span className="text-2xl">{category.icon}</span>
+                  ) : (
+                    <FamilyIcon name="note" size={24} className="text-gray-400 dark:text-gray-600" />
+                  )}
                   <span className={`font-medium text-[14px] ${getTextColorClass('primary')}`}>
                     {category.name}
                   </span>
@@ -125,9 +134,7 @@ export default function CategoriesPage() {
                 {/* Menu button */}
                 <div className="relative group">
                   <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
-                    <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                    </svg>
+                    <FamilyIcon name="more" size={20} className="text-gray-600 dark:text-gray-400" />
                   </button>
 
                   {/* Dropdown menu */}
@@ -136,18 +143,14 @@ export default function CategoriesPage() {
                       onClick={() => handleOpenEditor(category)}
                       className="w-full px-4 py-2 text-right hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors rounded-t-xl flex items-center gap-2"
                     >
-                      <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
+                      <FamilyIcon name="edit" size={16} className="text-gray-600 dark:text-gray-400" />
                       <span className="text-gray-700 dark:text-gray-300 text-sm">ویرایش</span>
                     </button>
                     <button
                       onClick={() => handleOpenDelete(category)}
                       className="w-full px-4 py-2 text-right hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors rounded-b-xl flex items-center gap-2"
                     >
-                      <svg className="w-4 h-4 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
+                      <FamilyIcon name="delete" size={16} className="text-red-600 dark:text-red-400" />
                       <span className="text-red-600 dark:text-red-400 text-sm">حذف</span>
                     </button>
                   </div>
@@ -159,7 +162,9 @@ export default function CategoriesPage() {
 
         {categories.length === 0 && (
           <div className={`rounded-2xl p-12 text-center shadow-sm ${getCardBackgroundClass()}`}>
-            <span className="text-6xl mb-4 block">📁</span>
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center bg-[#FFF3E0] dark:bg-[#2D1F0D]">
+              <FamilyIcon name="categories" size={36} className="text-[#FF8A00] dark:text-[#FFA94D]" />
+            </div>
             <p className={`mb-4 text-[14px] ${getTextColorClass('secondary')}`}>
               هنوز دسته‌بندی‌ای ایجاد نشده است
             </p>

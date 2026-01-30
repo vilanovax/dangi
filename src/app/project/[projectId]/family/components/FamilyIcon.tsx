@@ -28,6 +28,9 @@ import {
   Plus,
   ChevronLeft,
   AlertCircle,
+  MoreVertical,
+  Pencil,
+  Trash2,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -54,6 +57,9 @@ export type IconName =
   | 'add'
   | 'back'
   | 'warning'
+  | 'more'
+  | 'edit'
+  | 'delete'
 
 interface FamilyIconProps {
   name: IconName
@@ -94,6 +100,9 @@ const iconMap: Record<IconName, LucideIcon> = {
   home: Home,
   add: Plus,
   back: ChevronLeft,
+  more: MoreVertical,
+  edit: Pencil,
+  delete: Trash2,
 }
 
 /**
