@@ -273,7 +273,7 @@ export default function ReportsOverviewPage() {
             </FamilyButton>
           </div>
         ) : (
-          <div className="space-y-5">
+          <div className="space-y-6">
             {/* 1️⃣ Monthly Summary (Hero Card) */}
             <div className={`rounded-2xl p-6 shadow-md ${getCardBackgroundClass()}`}>
               <div className={`text-sm mb-4 ${getTextColorClass('secondary')}`}>
@@ -332,27 +332,34 @@ export default function ReportsOverviewPage() {
               </div>
             </div>
 
-            {/* 3️⃣ Expense Breakdown - بیشترین دسته‌های هزینه */}
+            {/* 3️⃣ Expense Breakdown - بیشترین هزینه‌ها بر اساس دسته */}
             {(() => {
               const aggregatedCategories = getAggregatedCategories()
               return aggregatedCategories.length > 0 && (
                 <div className={`rounded-2xl p-5 shadow-md ${getCardBackgroundClass()}`}>
                   <div className={`font-semibold mb-4 text-sm ${getTextColorClass('primary')}`}>
-                    بیشترین دسته‌های هزینه
+                    بیشترین هزینه‌ها بر اساس دسته
                   </div>
                   <div className="space-y-4">
                     {aggregatedCategories.map((category, index) => (
                       <div key={`${category.categoryName}-${index}`}>
                         <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
                             {category.categoryIcon ? (
-                              <span className="text-base">{category.categoryIcon}</span>
+                              <span className="text-base flex-shrink-0">{category.categoryIcon}</span>
                             ) : (
-                              <FamilyIcon name="categories" size={16} className="text-gray-400 dark:text-gray-600" />
+                              <div className="w-4 h-4 rounded-full bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
                             )}
-                            <span className={`text-sm ${getTextColorClass('primary')}`}>
-                              {category.categoryName}
-                            </span>
+                            <div className="flex-1 min-w-0">
+                              <span className={`text-sm ${getTextColorClass('primary')}`}>
+                                {category.categoryName}
+                              </span>
+                              {(category.categoryName === 'بدون دسته‌بندی' || !category.categoryIcon) && (
+                                <span className={`text-[10px] mr-1.5 ${getTextColorClass('secondary')}`}>
+                                  (پیشنهاد می‌شود دسته‌بندی شود)
+                                </span>
+                              )}
+                            </div>
                           </div>
                           <div className={`text-sm font-bold ${getTextColorClass('primary')}`}>
                             {category.percentage.toFixed(0)}٪
