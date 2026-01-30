@@ -61,8 +61,8 @@ export default function FamilyDashboardPage({ params }: PageProps) {
     return (
       <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#FFFDF8' }}>
         <div className="text-center">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent mx-auto"></div>
-          <p className="mt-4 text-gray-700 dark:text-gray-300">در حال بارگذاری...</p>
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#FF8A00] border-t-transparent mx-auto"></div>
+          <p className="mt-4 text-gray-700 dark:text-gray-300" style={{ fontSize: '14px' }}>در حال بارگذاری...</p>
         </div>
       </div>
     )
@@ -72,10 +72,13 @@ export default function FamilyDashboardPage({ params }: PageProps) {
     return (
       <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#FFFDF8' }}>
         <div className="text-center p-8">
-          <p className="text-red-600 dark:text-red-400 mb-4">خطا در بارگذاری داده‌ها</p>
+          <p className="mb-4" style={{ fontSize: '14px', color: '#EF4444' }}>خطا در بارگذاری داده‌ها</p>
           <button
             onClick={() => refetch()}
-            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            className="px-6 py-2 rounded-2xl transition-colors"
+            style={{ backgroundColor: '#FF8A00', color: 'white' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E67A00'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FF8A00'}
           >
             تلاش مجدد
           </button>
@@ -109,30 +112,34 @@ export default function FamilyDashboardPage({ params }: PageProps) {
   return (
     <div className="min-h-screen pb-24" style={{ backgroundColor: '#FFFDF8' }}>
       {/* 1️⃣ Header - Minimal and calm */}
-      <div className="bg-blue-50/40 dark:bg-blue-950/20 px-4 py-4">
+      <div className="px-4 py-6" style={{ backgroundColor: 'rgba(255, 253, 248, 0.8)' }}>
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-lg font-bold text-gray-900 dark:text-white">
+              <h1 className="font-bold text-gray-900 dark:text-white" style={{ fontSize: '22px', lineHeight: '1.3' }}>
                 {isPersonal ? 'حساب شخصی' : 'حساب خانواده'}
               </h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{monthName} {year}</p>
+              <p className="text-gray-500 dark:text-gray-400" style={{ fontSize: '13px', marginTop: '2px' }}>
+                {monthName} {year}
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => refetch()}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                onClick={() => router.push('/')}
+                className="p-2 hover:bg-white/50 dark:hover:bg-gray-800/50 rounded-xl transition-colors"
+                aria-label="بازگشت به خانه"
               >
-                <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
               </button>
               <button
-                onClick={() => router.back()}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                onClick={() => refetch()}
+                className="p-2 hover:bg-white/50 dark:hover:bg-gray-800/50 rounded-xl transition-colors"
+                aria-label="بارگذاری مجدد"
               >
-                <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               </button>
             </div>
@@ -141,28 +148,43 @@ export default function FamilyDashboardPage({ params }: PageProps) {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-2xl mx-auto px-4 space-y-6" style={{ paddingTop: '16px', paddingBottom: '24px' }}>
         {/* 2️⃣ Hero Card - Monthly Financial Status */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-sm">
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">وضعیت مالی این ماه</p>
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm" style={{ padding: '24px' }}>
+          <p className="text-gray-500 dark:text-gray-400 mb-3" style={{ fontSize: '13px' }}>
+            وضعیت مالی این ماه
+          </p>
 
-          <div className="mb-4">
-            <p className={`text-3xl font-bold ${netBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-              {netBalance >= 0 ? '+' : ''}{netBalance.toLocaleString('fa-IR')} <span className="text-base font-normal">تومان</span>
+          <div className="mb-6">
+            <p
+              className="font-extrabold"
+              style={{
+                fontSize: '32px',
+                lineHeight: '1.2',
+                color: netBalance >= 0 ? '#22C55E' : '#EF4444'
+              }}
+            >
+              {netBalance >= 0 ? '+' : ''}{netBalance.toLocaleString('fa-IR')}
+              <span style={{ fontSize: '14px', fontWeight: 'normal', color: '#9CA3AF' }}> تومان</span>
             </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">مانده خالص</p>
+            <p className="text-gray-500 dark:text-gray-400" style={{ fontSize: '13px', marginTop: '4px' }}>
+              مانده خالص
+            </p>
           </div>
 
-          <div className="flex items-center justify-between text-sm pt-4 border-t border-gray-100 dark:border-gray-800">
+          <div
+            className="flex items-center justify-between border-t border-gray-100 dark:border-gray-800"
+            style={{ paddingTop: '16px', fontSize: '13px' }}
+          >
             <div>
               <span className="text-gray-500 dark:text-gray-400">درآمد: </span>
-              <span className="font-medium text-gray-900 dark:text-white">
+              <span className="font-semibold text-gray-900 dark:text-white">
                 {totalIncome.toLocaleString('fa-IR')}
               </span>
             </div>
             <div>
               <span className="text-gray-500 dark:text-gray-400">هزینه: </span>
-              <span className="font-medium text-gray-900 dark:text-white">
+              <span className="font-semibold text-gray-900 dark:text-white">
                 {totalExpenses.toLocaleString('fa-IR')}
               </span>
             </div>
@@ -170,27 +192,50 @@ export default function FamilyDashboardPage({ params }: PageProps) {
         </div>
 
         {/* 3️⃣ Stats Row - Three quick indicators */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-4">
           <div className="text-center">
-            <div className="text-2xl mb-1">🔴</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">هزینه</div>
-            <div className="text-lg font-bold text-gray-900 dark:text-white">
+            <div
+              className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center"
+              style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)' }}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#EF4444' }}></div>
+            </div>
+            <div className="text-gray-500 dark:text-gray-400 mb-1" style={{ fontSize: '12px' }}>
+              هزینه
+            </div>
+            <div className="font-bold text-gray-900 dark:text-white" style={{ fontSize: '18px' }}>
               {formatLarge(totalExpenses)}
             </div>
           </div>
 
           <div className="text-center">
-            <div className="text-2xl mb-1">🟢</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">درآمد</div>
-            <div className="text-lg font-bold text-gray-900 dark:text-white">
+            <div
+              className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center"
+              style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)' }}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#22C55E' }}></div>
+            </div>
+            <div className="text-gray-500 dark:text-gray-400 mb-1" style={{ fontSize: '12px' }}>
+              درآمد
+            </div>
+            <div className="font-bold text-gray-900 dark:text-white" style={{ fontSize: '18px' }}>
               {formatLarge(totalIncome)}
             </div>
           </div>
 
           <div className="text-center">
-            <div className="text-2xl mb-1">📊</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">پس‌انداز</div>
-            <div className="text-lg font-bold text-gray-900 dark:text-white">
+            <div
+              className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center"
+              style={{ backgroundColor: 'rgba(255, 138, 0, 0.1)' }}
+            >
+              <svg className="w-5 h-5" style={{ color: '#FF8A00' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+            </div>
+            <div className="text-gray-500 dark:text-gray-400 mb-1" style={{ fontSize: '12px' }}>
+              پس‌انداز
+            </div>
+            <div className="font-bold text-gray-900 dark:text-white" style={{ fontSize: '18px' }}>
               {savingsRate.toFixed(0)}٪
             </div>
           </div>
@@ -200,46 +245,69 @@ export default function FamilyDashboardPage({ params }: PageProps) {
         <div className="grid grid-cols-2 gap-3">
           <Link
             href={`/project/${projectId}/family/add-expense`}
-            className="bg-red-50/50 dark:bg-red-950/20 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl p-4 transition-colors flex items-center justify-center gap-2"
+            className="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-2xl transition-all shadow-sm hover:shadow-md active:scale-95 flex items-center justify-center gap-2"
+            style={{ padding: '16px' }}
           >
-            <span className="text-lg">➕</span>
-            <span className="font-medium text-gray-900 dark:text-white">ثبت خرج</span>
+            <svg className="w-5 h-5" style={{ color: '#EF4444' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+            </svg>
+            <span className="font-semibold text-gray-900 dark:text-white" style={{ fontSize: '14px' }}>
+              ثبت خرج
+            </span>
           </Link>
 
           <Link
             href={`/project/${projectId}/family/add-income`}
-            className="bg-green-50/50 dark:bg-green-950/20 hover:bg-green-50 dark:hover:bg-green-950/30 rounded-xl p-4 transition-colors flex items-center justify-center gap-2"
+            className="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-2xl transition-all shadow-sm hover:shadow-md active:scale-95 flex items-center justify-center gap-2"
+            style={{ padding: '16px' }}
           >
-            <span className="text-lg">➕</span>
-            <span className="font-medium text-gray-900 dark:text-white">ثبت درآمد</span>
+            <svg className="w-5 h-5" style={{ color: '#22C55E' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            <span className="font-semibold text-gray-900 dark:text-white" style={{ fontSize: '14px' }}>
+              ثبت درآمد
+            </span>
           </Link>
 
           <Link
             href={`/project/${projectId}/family/reports`}
-            className="bg-blue-50/50 dark:bg-blue-950/20 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-xl p-4 transition-colors flex items-center justify-center gap-2"
+            className="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-2xl transition-all shadow-sm hover:shadow-md active:scale-95 flex items-center justify-center gap-2"
+            style={{ padding: '16px' }}
           >
-            <span className="text-lg">📊</span>
-            <span className="font-medium text-gray-900 dark:text-white">گزارش‌ها</span>
+            <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            <span className="font-semibold text-gray-900 dark:text-white" style={{ fontSize: '14px' }}>
+              گزارش‌ها
+            </span>
           </Link>
 
           <Link
             href={`/project/${projectId}/family/budgets`}
-            className="bg-purple-50/50 dark:bg-purple-950/20 hover:bg-purple-50 dark:hover:bg-purple-950/30 rounded-xl p-4 transition-colors flex items-center justify-center gap-2"
+            className="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-2xl transition-all shadow-sm hover:shadow-md active:scale-95 flex items-center justify-center gap-2"
+            style={{ padding: '16px' }}
           >
-            <span className="text-lg">🎯</span>
-            <span className="font-medium text-gray-900 dark:text-white">بودجه</span>
+            <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="font-semibold text-gray-900 dark:text-white" style={{ fontSize: '14px' }}>
+              بودجه
+            </span>
           </Link>
         </div>
 
         {/* 5️⃣ Recent Transactions - Max 3 items */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl p-5 shadow-sm">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm" style={{ padding: '20px' }}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-900 dark:text-white">آخرین تراکنش‌ها</h2>
+            <h2 className="font-semibold text-gray-900 dark:text-white" style={{ fontSize: '16px' }}>
+              آخرین تراکنش‌ها
+            </h2>
             <Link
               href={`/project/${projectId}/family/transactions`}
-              className="text-sm text-blue-600 hover:text-blue-700"
+              className="hover:opacity-80 transition-opacity"
+              style={{ fontSize: '13px', color: '#FF8A00' }}
             >
-              مشاهده همه →
+              مشاهده همه ←
             </Link>
           </div>
 
@@ -252,16 +320,34 @@ export default function FamilyDashboardPage({ params }: PageProps) {
               .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
               .slice(0, 3)
               .map((transaction, idx) => (
-                <div key={idx} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">{transaction.type === 'expense' ? '💸' : '💰'}</span>
-                    <span className="text-sm text-gray-900 dark:text-white">{transaction.title}</span>
+                <div key={idx} className="flex items-center justify-between py-2">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center"
+                      style={{
+                        backgroundColor: transaction.type === 'expense'
+                          ? 'rgba(239, 68, 68, 0.1)'
+                          : 'rgba(34, 197, 94, 0.1)'
+                      }}
+                    >
+                      <div
+                        className="w-2 h-2 rounded-full"
+                        style={{
+                          backgroundColor: transaction.type === 'expense' ? '#EF4444' : '#22C55E'
+                        }}
+                      ></div>
+                    </div>
+                    <span className="text-gray-900 dark:text-white" style={{ fontSize: '14px' }}>
+                      {transaction.title}
+                    </span>
                   </div>
-                  <span className={`text-sm font-medium ${
-                    transaction.type === 'expense'
-                      ? 'text-red-600 dark:text-red-400'
-                      : 'text-green-600 dark:text-green-400'
-                  }`}>
+                  <span
+                    className="font-semibold"
+                    style={{
+                      fontSize: '14px',
+                      color: transaction.type === 'expense' ? '#EF4444' : '#22C55E'
+                    }}
+                  >
                     {transaction.type === 'expense' ? '-' : '+'}{transaction.amount.toLocaleString('fa-IR')}
                   </span>
                 </div>
@@ -269,13 +355,20 @@ export default function FamilyDashboardPage({ params }: PageProps) {
 
             {/* Empty State */}
             {(!stats.recentExpenses?.length && !stats.recentIncomes?.length) && (
-              <div className="text-center py-8">
-                <div className="text-4xl mb-3">✨</div>
-                <p className="text-gray-600 dark:text-gray-300 font-medium mb-1">
-                  هنوز خرجی ثبت نکردی
+              <div className="text-center" style={{ padding: '32px 0' }}>
+                <div
+                  className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
+                  style={{ backgroundColor: 'rgba(255, 138, 0, 0.1)' }}
+                >
+                  <svg className="w-8 h-8" style={{ color: '#FF8A00' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
+                  </svg>
+                </div>
+                <p className="text-gray-600 dark:text-gray-300 font-medium mb-1" style={{ fontSize: '14px' }}>
+                  هنوز تراکنشی ثبت نشده
                 </p>
-                <p className="text-sm text-gray-400 dark:text-gray-500">
-                  با ثبت اولین خرج، همه‌چیز شفاف می‌شه
+                <p className="text-gray-400 dark:text-gray-500" style={{ fontSize: '12px' }}>
+                  با ثبت اولین تراکنش، همه‌چیز شفاف می‌شه
                 </p>
               </div>
             )}
@@ -284,48 +377,59 @@ export default function FamilyDashboardPage({ params }: PageProps) {
 
         {/* Budget Overview - Optional section */}
         {stats.budgets && stats.budgets.length > 0 && (
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-5 shadow-sm">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm" style={{ padding: '20px' }}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-gray-900 dark:text-white">بودجه ماه</h2>
+              <h2 className="font-semibold text-gray-900 dark:text-white" style={{ fontSize: '16px' }}>
+                بودجه ماه
+              </h2>
               <Link
                 href={`/project/${projectId}/family/budgets/set`}
-                className="text-sm text-blue-600 hover:text-blue-700"
+                className="hover:opacity-80 transition-opacity"
+                style={{ fontSize: '13px', color: '#FF8A00' }}
               >
                 تنظیم
               </Link>
             </div>
 
             {/* Overall progress */}
-            <div className="mb-3">
-              <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+            <div className="mb-4">
+              <div className="flex items-center justify-between text-gray-500 dark:text-gray-400 mb-2" style={{ fontSize: '12px' }}>
                 <span>استفاده شده</span>
                 <span>{stats.budgetUtilization?.toFixed(0)}٪</span>
               </div>
               <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                 <div
-                  className={`h-full transition-all ${
-                    (stats.budgetUtilization ?? 0) > 100
-                      ? 'bg-red-500'
-                      : (stats.budgetUtilization ?? 0) > 80
-                        ? 'bg-yellow-500'
-                        : 'bg-green-500'
-                  }`}
-                  style={{ width: `${Math.min(stats.budgetUtilization ?? 0, 100)}%` }}
+                  className="h-full transition-all"
+                  style={{
+                    width: `${Math.min(stats.budgetUtilization ?? 0, 100)}%`,
+                    backgroundColor:
+                      (stats.budgetUtilization ?? 0) > 100
+                        ? '#EF4444'
+                        : (stats.budgetUtilization ?? 0) > 80
+                          ? '#F59E0B'
+                          : '#22C55E'
+                  }}
                 />
               </div>
             </div>
 
             {/* Top 3 budgets */}
-            <div className="space-y-2">
+            <div className="space-y-3">
               {stats.budgets.slice(0, 3).map((budget) => (
-                <div key={budget.categoryId} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <span>{budget.categoryIcon || '📦'}</span>
-                    <span className="text-gray-700 dark:text-gray-300">{budget.categoryName}</span>
+                <div key={budget.categoryId} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span style={{ fontSize: '18px' }}>{budget.categoryIcon || '📦'}</span>
+                    <span className="text-gray-700 dark:text-gray-300" style={{ fontSize: '14px' }}>
+                      {budget.categoryName}
+                    </span>
                   </div>
-                  <span className={`font-medium ${
-                    budget.isOverBudget ? 'text-red-600' : 'text-gray-900 dark:text-white'
-                  }`}>
+                  <span
+                    className="font-semibold"
+                    style={{
+                      fontSize: '14px',
+                      color: budget.isOverBudget ? '#EF4444' : '#6B7280'
+                    }}
+                  >
                     {budget.percentage.toFixed(0)}٪
                   </span>
                 </div>

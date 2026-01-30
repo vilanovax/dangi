@@ -1,5 +1,5 @@
 /**
- * Seed script: Add 15 random sample transactions to family/personal project
+ * Seed script: Add 10 random sample transactions to family/personal project
  * Run: npx tsx scripts/seed-family-transactions.ts
  */
 
@@ -148,19 +148,20 @@ async function main() {
     }
   }
 
-  // Create 15 transactions (12 expenses + 3 incomes)
+  // Create 10 transactions (8 expenses + 2 incomes)
   console.log('\n💸 Creating transactions...\n')
 
   const transactions = []
 
-  // 12 expenses
-  for (let i = 0; i < 12; i++) {
+  // 8 expenses
+  for (let i = 0; i < 8; i++) {
     const participant = project.participants[randomInt(0, project.participants.length - 1)]
     const category = expenseCats[randomInt(0, expenseCats.length - 1)]
     const title = expenseTitles[randomInt(0, expenseTitles.length - 1)]
     const amount = randomExpenseAmount()
     const date = randomDateThisMonth()
 
+    // Create expense with shares for all participants
     const expense = await prisma.expense.create({
       data: {
         title,
@@ -169,8 +170,12 @@ async function main() {
         paidById: participant.id,
         categoryId: category.id,
         expenseDate: date,
-        includedParticipants: {
-          connect: project.participants.map(p => ({ id: p.id })),
+        shares: {
+          create: project.participants.map(p => ({
+            participantId: p.id,
+            amount: amount / project.participants.length,
+            weightAtTime: 1,
+          })),
         },
       },
     })
@@ -186,8 +191,8 @@ async function main() {
     console.log(`  💸 ${title} - ${(amount / 10).toLocaleString('fa-IR')} تومان - ${category.icon} ${category.name}`)
   }
 
-  // 3 incomes
-  for (let i = 0; i < 3; i++) {
+  // 2 incomes
+  for (let i = 0; i < 2; i++) {
     const participant = project.participants[randomInt(0, project.participants.length - 1)]
     const category = incomeCats[randomInt(0, incomeCats.length - 1)]
     const title = incomeTitles[randomInt(0, incomeTitles.length - 1)]
@@ -201,7 +206,7 @@ async function main() {
         projectId: project.id,
         receivedById: participant.id,
         categoryId: category.id,
-        date,
+        incomeDate: date,
       },
     })
 
