@@ -12,6 +12,8 @@ import {
   getCardBackgroundClass,
   getTextColorClass,
 } from '@/styles/family-theme'
+import { FamilyButton } from '../components/FamilyButton'
+import { FamilyIcon } from '../components/FamilyIcon'
 
 interface Participant {
   id: string
@@ -160,8 +162,8 @@ export default function AddIncomePage() {
       {success && (
         <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 text-white px-6 py-3 rounded-2xl shadow-2xl animate-in slide-in-from-top-4 bg-[#22C55E] dark:bg-[#4ADE80]">
           <div className="flex items-center gap-2 font-bold">
+            <FamilyIcon name="success" size={16} className="text-white" />
             <span>ثبت شد!</span>
-            <span>💰</span>
           </div>
         </div>
       )}
@@ -172,15 +174,17 @@ export default function AddIncomePage() {
           <button
             onClick={() => router.back()}
             className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+            aria-label="بازگشت"
           >
-            ←
+            <FamilyIcon name="back" size={24} className="text-white" />
           </button>
           <h1 className="text-[22px] font-bold">
             ثبت درآمد
           </h1>
         </div>
-        <p className="text-white/90 mr-14 text-sm">
-          امروز چی دریافت کردی؟ 💰
+        <p className="text-white/90 mr-14 text-sm flex items-center gap-2">
+          <span>امروز چی دریافت کردی؟</span>
+          <FamilyIcon name="income" size={16} className="text-white/90" />
         </p>
       </div>
 
@@ -217,8 +221,8 @@ export default function AddIncomePage() {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="مثلاً: حقوق ماهانه 💼"
-              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm text-gray-900 dark:text-gray-100"
+              placeholder="مثلاً: حقوق ماهانه"
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF8A00] focus:border-transparent text-sm text-gray-900 dark:text-gray-100"
               disabled={loading}
             />
           </div>
@@ -231,7 +235,7 @@ export default function AddIncomePage() {
             <select
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm text-gray-900 dark:text-gray-100"
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF8A00] focus:border-transparent text-sm text-gray-900 dark:text-gray-100"
               disabled={loading}
             >
               <option value="">بدون دسته‌بندی</option>
@@ -253,7 +257,7 @@ export default function AddIncomePage() {
               value={source}
               onChange={(e) => setSource(e.target.value)}
               placeholder="مثلاً: شرکت، فریلنس، سرمایه‌گذاری"
-              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm text-gray-900 dark:text-gray-100"
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF8A00] focus:border-transparent text-sm text-gray-900 dark:text-gray-100"
               disabled={loading}
             />
           </div>
@@ -269,7 +273,7 @@ export default function AddIncomePage() {
                 onChange={setIncomeDate}
                 disabled={loading}
                 placeholder="انتخاب تاریخ"
-                className="focus:ring-green-400"
+                className="focus:ring-[#FF8A00]"
               />
               <div className="flex gap-2">
                 <button
@@ -302,7 +306,7 @@ export default function AddIncomePage() {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="اگر نکته‌ای هست اینجا بنویس..."
               rows={3}
-              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none text-sm text-gray-900 dark:text-gray-100"
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF8A00] focus:border-transparent resize-none text-sm text-gray-900 dark:text-gray-100"
               disabled={loading}
             />
           </div>
@@ -310,7 +314,7 @@ export default function AddIncomePage() {
           {/* 7. نوت */}
           <div className="rounded-xl p-3 bg-[#EAFBF1] dark:bg-[#0F2417] border border-[#22C55E]/20 dark:border-[#4ADE80]/20">
             <div className="flex items-start gap-2">
-              <span className="text-base">💡</span>
+              <FamilyIcon name="tip" size={16} className="text-[#22C55E] dark:text-[#4ADE80] flex-shrink-0 mt-0.5" />
               <div className={`text-xs ${getTextColorClass('success')}`}>
                 این درآمد به نام شما ثبت می‌شود.
               </div>
@@ -325,13 +329,17 @@ export default function AddIncomePage() {
           )}
 
           {/* 8. دکمه ثبت */}
-          <button
+          <FamilyButton
             type="submit"
+            variant="success"
+            size="lg"
+            fullWidth
             disabled={loading || !title.trim() || !amount}
-            className="w-full text-white py-4 rounded-2xl font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] h-[52px] shadow-lg bg-[#22C55E] dark:bg-[#4ADE80] text-[15px]"
+            loading={loading}
+            icon="income"
           >
-            {loading ? 'در حال ثبت...' : '💰 ثبت درآمد'}
-          </button>
+            {loading ? 'در حال ثبت...' : 'ثبت درآمد'}
+          </FamilyButton>
         </form>
       </div>
     </div>
