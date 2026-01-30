@@ -130,12 +130,12 @@ export function QuickResumeCard({
         isAnimating ? 'scale-[0.98]' : ''
       } transition-transform duration-150`}
     >
-      {/* "دفعه قبل اینجا بودی" Badge - Smart & Personal */}
+      {/* "آخرین پروژه" Badge */}
       <div className="flex items-center justify-between mb-2 px-1">
         <div className="flex items-center gap-2">
           <div className="w-1 h-5 bg-gradient-to-b from-blue-500 to-purple-600 rounded-full" />
           <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">
-            دفعه قبل اینجا بودی 👀
+            آخرین پروژه
           </p>
         </div>
         {onDismiss && (

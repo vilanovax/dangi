@@ -25,7 +25,7 @@ interface ChecklistsResponse {
 // ─────────────────────────────────────────────────────────────
 
 function getProgressPercentage(checklist: Checklist): number {
-  if (checklist.items.length === 0) return 0
+  if (!checklist.items || checklist.items.length === 0) return 0
   const checked = checklist.items.filter((i) => i.isChecked).length
   return Math.round((checked / checklist.items.length) * 100)
 }
@@ -223,7 +223,7 @@ export default function ChecklistsPage() {
                               )}
                               <div className="flex items-center gap-2">
                                 <span className="px-2.5 py-1 bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400 text-xs font-medium rounded-lg">
-                                  {checklist.items.length} مورد
+                                  {checklist.items?.length || 0} مورد
                                 </span>
                               </div>
                             </div>
@@ -313,7 +313,7 @@ export default function ChecklistsPage() {
                                 )}
                                 <div className="flex items-center gap-2">
                                   <span className="px-2.5 py-1 bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400 text-xs font-medium rounded-lg">
-                                    {checklist.items.length} مورد
+                                    {checklist.items?.length || 0} مورد
                                   </span>
                                 </div>
                               </div>

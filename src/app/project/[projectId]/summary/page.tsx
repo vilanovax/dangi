@@ -139,7 +139,7 @@ export default function SummaryPage() {
 
   const getParticipantAvatar = useCallback(
     (participantId: string): AvatarData | null => {
-      const participant = project?.participants.find((p) => p.id === participantId)
+      const participant = project?.participants.find((p: Participant) => p.id === participantId)
       if (participant) {
         return deserializeAvatar(participant.avatar || null, participant.name)
       }
@@ -200,7 +200,7 @@ export default function SummaryPage() {
 
   // Merge charge debt with balance
   const balancesWithChargeDebt = sortedBalances.map((b) => {
-    const chargeDebt = chargeInfo?.chargeDebts.find((d) => d.participantId === b.participantId)
+    const chargeDebt = chargeInfo?.chargeDebts.find((d: ChargeDebt) => d.participantId === b.participantId)
     return {
       ...b,
       chargeDebt: chargeDebt?.chargeDebt || 0,
@@ -340,7 +340,7 @@ export default function SummaryPage() {
                   </p>
                 </div>
                 <div className="space-y-2">
-                  {summary.settlements.map((s, index) => (
+                  {summary.settlements.map((s: Settlement, index: number) => (
                     <SettlementSuggestionCard
                       key={index}
                       fromName={s.fromName}

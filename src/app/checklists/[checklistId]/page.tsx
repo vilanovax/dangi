@@ -5,7 +5,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui'
 import type { Checklist, ChecklistItem } from '@/types/checklist'
@@ -26,7 +26,8 @@ interface CreateItemResponse {
 // Main Component
 // ─────────────────────────────────────────────────────────────
 
-export default function ChecklistDetailPage({ params }: { params: { checklistId: string } }) {
+export default function ChecklistDetailPage({ params }: { params: Promise<{ checklistId: string }> }) {
+  const { checklistId } = use(params)
   const router = useRouter()
 
   // ── State ───────────────────────────────────────────────────
@@ -40,7 +41,7 @@ export default function ChecklistDetailPage({ params }: { params: { checklistId:
   useEffect(() => {
     async function fetchChecklist() {
       try {
-        const res = await fetch(`/api/checklists/${params.checklistId}`)
+        const res = await fetch(`/api/checklists/${checklistId}`)
         if (!res.ok) {
           if (res.status === 404) {
             router.push('/checklists')
@@ -57,7 +58,7 @@ export default function ChecklistDetailPage({ params }: { params: { checklistId:
       }
     }
     fetchChecklist()
-  }, [params.checklistId, router])
+  }, [checklistId, router])
 
   // ── Add Item ────────────────────────────────────────────────
   const handleAddItem = async (e: React.FormEvent) => {
@@ -66,7 +67,7 @@ export default function ChecklistDetailPage({ params }: { params: { checklistId:
 
     setIsAdding(true)
     try {
-      const res = await fetch(`/api/checklists/${params.checklistId}/items`, {
+      const res = await fetch(`/api/checklists/${checklistId}/items`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -79,7 +80,7 @@ export default function ChecklistDetailPage({ params }: { params: { checklistId:
       const data: CreateItemResponse = await res.json()
       setChecklist({
         ...checklist,
-        items: [...checklist.items, data.item],
+        items: [...(checklist.items || []), data.item],
       })
       setNewItemText('')
     } catch (error) {
@@ -97,13 +98,13 @@ export default function ChecklistDetailPage({ params }: { params: { checklistId:
     // Optimistic update
     setChecklist({
       ...checklist,
-      items: checklist.items.map((item) =>
+      items: (checklist.items || []).map((item) =>
         item.id === itemId ? { ...item, isChecked: !currentChecked } : item
       ),
     })
 
     try {
-      const res = await fetch(`/api/checklists/${params.checklistId}/items/${itemId}`, {
+      const res = await fetch(`/api/checklists/${checklistId}/items/${itemId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isChecked: !currentChecked }),
@@ -115,7 +116,7 @@ export default function ChecklistDetailPage({ params }: { params: { checklistId:
       // Revert on error
       setChecklist({
         ...checklist,
-        items: checklist.items.map((item) =>
+        items: (checklist.items || []).map((item) =>
           item.id === itemId ? { ...item, isChecked: currentChecked } : item
         ),
       })
@@ -128,14 +129,14 @@ export default function ChecklistDetailPage({ params }: { params: { checklistId:
     if (!confirm('آیا از حذف این آیتم مطمئن هستید؟')) return
 
     // Optimistic update
-    const originalItems = checklist.items
+    const originalItems = checklist.items || []
     setChecklist({
       ...checklist,
-      items: checklist.items.filter((item) => item.id !== itemId),
+      items: (checklist.items || []).filter((item) => item.id !== itemId),
     })
 
     try {
-      const res = await fetch(`/api/checklists/${params.checklistId}/items/${itemId}`, {
+      const res = await fetch(`/api/checklists/${checklistId}/items/${itemId}`, {
         method: 'DELETE',
       })
 
@@ -153,7 +154,7 @@ export default function ChecklistDetailPage({ params }: { params: { checklistId:
     if (!checklist) return
 
     try {
-      const res = await fetch(`/api/checklists/${params.checklistId}/archive`, {
+      const res = await fetch(`/api/checklists/${checklistId}/archive`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ archive: !checklist.isArchived }),
@@ -174,7 +175,7 @@ export default function ChecklistDetailPage({ params }: { params: { checklistId:
       return
 
     try {
-      const res = await fetch(`/api/checklists/${params.checklistId}`, {
+      const res = await fetch(`/api/checklists/${checklistId}`, {
         method: 'DELETE',
       })
 
@@ -188,13 +189,10 @@ export default function ChecklistDetailPage({ params }: { params: { checklistId:
   }
 
   // ── Calculate Progress ──────────────────────────────────────
-  const progress = checklist
-    ? checklist.items.length === 0
-      ? 0
-      : Math.round(
-          (checklist.items.filter((i) => i.isChecked).length / checklist.items.length) * 100
-        )
-    : 0
+  const items = checklist?.items || []
+  const progress = items.length === 0
+    ? 0
+    : Math.round((items.filter((i) => i.isChecked).length / items.length) * 100)
 
   // ── Loading State ───────────────────────────────────────────
   if (isLoading) {
@@ -306,10 +304,10 @@ export default function ChecklistDetailPage({ params }: { params: { checklistId:
                 )}
                 <div className="flex items-center gap-2">
                   <span className="px-2.5 py-1 bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400 text-xs font-medium rounded-lg">
-                    {checklist.items.length} مورد
+                    {items.length} مورد
                   </span>
                   <span className="px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-medium rounded-lg">
-                    {checklist.items.filter((i) => i.isChecked).length} انجام شده
+                    {items.filter((i) => i.isChecked).length} انجام شده
                   </span>
                 </div>
               </div>
@@ -361,14 +359,14 @@ export default function ChecklistDetailPage({ params }: { params: { checklistId:
 
         {/* Items List */}
         <div className="space-y-3">
-          {checklist.items.length === 0 ? (
+          {items.length === 0 ? (
             <div className="text-center py-12 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
               <p className="text-gray-500 dark:text-gray-400 text-sm">
                 آیتمی وجود ندارد. یک آیتم جدید اضافه کنید
               </p>
             </div>
           ) : (
-            checklist.items.map((item) => (
+            items.map((item) => (
               <div
                 key={item.id}
                 className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl p-4 shadow-md border border-white/50 dark:border-gray-700/50 hover:shadow-lg transition-all"
@@ -448,7 +446,7 @@ export default function ChecklistDetailPage({ params }: { params: { checklistId:
         </div>
 
         {/* Completion Message */}
-        {checklist.items.length > 0 && progress === 100 && (
+        {items.length > 0 && progress === 100 && (
           <div className="mt-6 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl p-6 text-center shadow-xl">
             <div className="text-5xl mb-3">🎉</div>
             <h3 className="text-xl font-bold text-white mb-2">تمام موارد انجام شد!</h3>

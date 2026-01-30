@@ -5,25 +5,26 @@ import type { CategoryBudgetStatus } from '@/types/family'
 import { familyTheme } from '@/styles/family-theme'
 
 interface BudgetTrackerCardProps {
-  budgets: CategoryBudgetStatus[]
-  totalBudget: number
-  totalSpent: number
-  budgetUtilization: number
-  currency: string
+  budgets?: CategoryBudgetStatus[]
+  totalBudget?: number
+  totalSpent?: number
+  budgetUtilization?: number
+  currency?: string
+  projectId?: string
 }
 
 export function BudgetTrackerCard({
-  budgets,
-  totalBudget,
-  totalSpent,
-  budgetUtilization,
-  currency,
+  budgets = [],
+  totalBudget = 0,
+  totalSpent = 0,
+  budgetUtilization = 0,
+  currency = 'تومان',
 }: BudgetTrackerCardProps) {
   const overBudgetCount = budgets.filter((b) => b.isOverBudget).length
 
   return (
     <div
-      className="h-screen w-full flex flex-col p-6 snap-start overflow-y-auto"
+      className="h-screen w-full flex flex-col p-6 snap-start overflow-hidden"
       style={{ backgroundColor: familyTheme.colors.background }}
     >
       {/* Header */}

@@ -3,26 +3,27 @@
 import { useRouter } from 'next/navigation'
 import { CircularProgress } from './CircularProgress'
 import { familyTheme } from '@/styles/family-theme'
+import type { FamilyDashboardStats } from '@/types/family'
 
 interface MonthlyOverviewCardProps {
-  totalIncome: number
-  totalExpenses: number
-  savingsRate: number
-  currency: string
-  periodKey: string
+  stats: FamilyDashboardStats
   projectId: string
   onRefresh?: () => void
+  currency?: string
+  template?: string
 }
 
 export function MonthlyOverviewCard({
-  totalIncome,
-  totalExpenses,
-  savingsRate,
-  currency,
-  periodKey,
+  stats,
   projectId,
   onRefresh,
+  currency = 'تومان',
+  template = 'family',
 }: MonthlyOverviewCardProps) {
+  const totalIncome = stats?.totalIncome ?? 0
+  const totalExpenses = stats?.totalExpenses ?? 0
+  const savingsRate = stats?.savingsRate ?? 0
+  const periodKey = stats?.periodKey ?? '1403-01'
   const router = useRouter()
 
   const percentage =
@@ -48,11 +49,11 @@ export function MonthlyOverviewCard({
 
   return (
     <div
-      className="h-screen w-full flex flex-col items-center justify-center p-6 snap-start"
+      className="h-screen w-full flex flex-col items-center justify-center p-4 snap-start overflow-hidden"
       style={{ backgroundColor: familyTheme.colors.background }}
     >
       {/* Period header */}
-      <div className="text-center mb-8">
+      <div className="text-center mb-4">
         <h2
           className="font-bold mb-1"
           style={{
@@ -67,28 +68,28 @@ export function MonthlyOverviewCard({
           className="text-stone-600"
           style={{ fontSize: familyTheme.typography.small.size }}
         >
-          وضعیت مالی خانواده
+          {template === 'personal' ? 'وضعیت مالی شخصی' : 'وضعیت مالی خانواده'}
         </p>
       </div>
 
-      {/* Circular progress */}
-      <div className="mb-8">
+      {/* Circular progress - More compact */}
+      <div className="mb-4">
         <CircularProgress
           percentage={percentage}
-          size={240}
-          strokeWidth={16}
+          size={200}
+          strokeWidth={14}
           income={totalIncome}
           expense={totalExpenses}
           currency={currency}
         />
       </div>
 
-      {/* Stats cards */}
-      <div className="w-full max-w-md space-y-3">
+      {/* Stats cards - More compact */}
+      <div className="w-full max-w-md space-y-2">
         {/* Income */}
         <button
           onClick={() => router.push(`/project/${projectId}/family/transactions?filter=income`)}
-          className="w-full rounded-2xl p-4 hover:shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
+          className="w-full rounded-2xl p-3 hover:shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
           style={{
             backgroundColor: familyTheme.colors.card,
             boxShadow: familyTheme.card.shadow
@@ -140,7 +141,7 @@ export function MonthlyOverviewCard({
         {/* Expenses */}
         <button
           onClick={() => router.push(`/project/${projectId}/family/transactions?filter=expense`)}
-          className="w-full rounded-2xl p-4 hover:shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
+          className="w-full rounded-2xl p-3 hover:shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
           style={{
             backgroundColor: familyTheme.colors.card,
             boxShadow: familyTheme.card.shadow
@@ -192,7 +193,7 @@ export function MonthlyOverviewCard({
         {/* Savings rate */}
         <button
           onClick={() => router.push(`/project/${projectId}/family/reports`)}
-          className="w-full rounded-2xl p-4 hover:shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
+          className="w-full rounded-2xl p-3 hover:shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
           style={{
             backgroundColor: familyTheme.colors.card,
             boxShadow: familyTheme.card.shadow
@@ -232,16 +233,6 @@ export function MonthlyOverviewCard({
         </button>
       </div>
 
-      {/* Pull to refresh hint */}
-      <div
-        className="mt-8 text-center"
-        style={{
-          fontSize: familyTheme.typography.small.size,
-          color: familyTheme.colors.textTertiary
-        }}
-      >
-        برای به‌روزرسانی به پایین بکشید
-      </div>
     </div>
   )
 }

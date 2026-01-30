@@ -88,7 +88,6 @@ export async function POST(request: NextRequest) {
           data: {
             projectId: project.id,
             name: c.name,
-            nameFa: c.nameFa,
             icon: c.icon,
             color: c.color,
           },
@@ -147,18 +146,18 @@ export async function POST(request: NextRequest) {
 
       // 9. ایجاد shopping list items
       for (const item of backup.shoppingList || []) {
-        const newPurchasedById = item.purchasedBy
-          ? participantIdMap.get(item.purchasedBy)
+        const newAddedById = item.addedById
+          ? participantIdMap.get(item.addedById)
           : null
 
         await tx.shoppingItem.create({
           data: {
             projectId: project.id,
-            title: item.title,
+            text: item.text,
             quantity: item.quantity || null,
-            unit: item.unit || null,
-            isPurchased: item.isPurchased || false,
-            purchasedBy: newPurchasedById || null,
+            note: item.note || null,
+            isChecked: item.isChecked || false,
+            addedById: newAddedById || null,
           },
         })
       }

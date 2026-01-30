@@ -58,7 +58,6 @@ export const ProjectCard = memo(function ProjectCard({
   // Status logic
   const isSettled = myBalance === 0
   const isDebtor = myBalance < 0
-  const isCreditor = myBalance > 0
 
   const [showMenu, setShowMenu] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -239,32 +238,18 @@ export const ProjectCard = memo(function ProjectCard({
               </button>
             </div>
 
-            {/* Hero: Status Badge */}
-            <div className="relative mb-3">
-              {isSettled ? (
-                <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500/15 to-green-500/15 border-2 border-emerald-500/30 shadow-sm">
-                  <span className="text-xl">🟢</span>
-                  <span className="text-base font-bold text-emerald-700 dark:text-emerald-300">حساب صافه</span>
-                </div>
-              ) : isDebtor ? (
-                <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-red-500/15 to-rose-500/15 border-2 border-red-500/30 shadow-sm">
-                  <span className="text-xl">🔴</span>
-                  <span className="text-base font-bold text-red-700 dark:text-red-300">بدهکاری</span>
-                </div>
-              ) : (
-                <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500/15 to-teal-500/15 border-2 border-emerald-500/30 shadow-sm">
-                  <span className="text-xl">🟢</span>
-                  <span className="text-base font-bold text-emerald-700 dark:text-emerald-300">طلبکاری</span>
-                </div>
-              )}
-            </div>
-
             {/* Balance Text (if not settled) */}
             {!isSettled && (
-              <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
-                {isDebtor
-                  ? `تو این پروژه ${formatMoney(Math.abs(myBalance), currency)} بدهکاری`
-                  : `تو این پروژه ${formatMoney(myBalance, currency)} طلبکاری`}
+              <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                {isDebtor ? (
+                  <span className="text-red-600 dark:text-red-400">
+                    {formatMoney(Math.abs(myBalance), currency)} بدهکاری
+                  </span>
+                ) : (
+                  <span className="text-emerald-600 dark:text-emerald-400">
+                    {formatMoney(myBalance, currency)} طلبکاری
+                  </span>
+                )}
               </p>
             )}
 

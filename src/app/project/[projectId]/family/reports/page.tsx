@@ -269,7 +269,7 @@ export default function ReportsOverviewPage() {
                   <div className="text-xl mb-1">📊</div>
                   <div className={`text-xs mb-1 ${getTextColorClass('secondary')}`}>پس‌انداز</div>
                   <div className={`text-base font-bold ${getTextColorClass('info')}`}>
-                    {report.savingsRate.toFixed(1)}%
+                    {(report.savingsRate ?? 0).toFixed(1)}%
                   </div>
                 </div>
               </div>

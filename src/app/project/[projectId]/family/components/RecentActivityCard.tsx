@@ -31,7 +31,7 @@ interface Transaction {
 }
 
 interface RecentActivityCardProps {
-  recentIncomes: Array<{
+  recentIncomes?: Array<{
     id: string
     title: string
     amount: number
@@ -40,7 +40,7 @@ interface RecentActivityCardProps {
     categoryIcon?: string
     receivedByName: string
   }>
-  recentExpenses: Array<{
+  recentExpenses?: Array<{
     id: string
     title: string
     amount: number
@@ -49,13 +49,14 @@ interface RecentActivityCardProps {
     categoryIcon?: string
     paidByName: string
   }>
-  currency: string
+  currency?: string
+  projectId?: string
 }
 
 export function RecentActivityCard({
-  recentIncomes,
-  recentExpenses,
-  currency,
+  recentIncomes = [],
+  recentExpenses = [],
+  currency = 'تومان',
 }: RecentActivityCardProps) {
   // Combine and sort by date
   const allTransactions: Transaction[] = [
@@ -83,7 +84,7 @@ export function RecentActivityCard({
 
   return (
     <div
-      className="h-screen w-full flex flex-col p-6 snap-start overflow-y-auto"
+      className="h-screen w-full flex flex-col p-6 snap-start overflow-hidden"
       style={{ backgroundColor: familyTheme.colors.background }}
     >
       {/* Header */}

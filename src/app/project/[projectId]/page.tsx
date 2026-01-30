@@ -22,8 +22,9 @@ export default async function ProjectPage({ params }: PageProps) {
     redirect('/')
   }
 
-  // Redirect to family dashboard if template is family (SERVER-SIDE, before render)
-  if (project.template === 'family') {
+  // Redirect to family dashboard if template is family or personal tracking mode (SERVER-SIDE, before render)
+  // Personal tracking mode uses the same modern UI as family template
+  if (project.template === 'family' || (project.template === 'personal' && project.trackingOnly)) {
     redirect(`/project/${projectId}/family`)
   }
 

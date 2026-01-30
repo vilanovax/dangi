@@ -16,14 +16,14 @@ interface RecurringItem {
 }
 
 interface RecurringItemsCardProps {
-  items: RecurringItem[]
-  currency: string
+  items?: RecurringItem[]
+  currency?: string
   projectId: string
 }
 
 export function RecurringItemsCard({
-  items,
-  currency,
+  items = [],
+  currency = 'تومان',
   projectId,
 }: RecurringItemsCardProps) {
   const router = useRouter()
@@ -40,7 +40,7 @@ export function RecurringItemsCard({
 
   return (
     <div
-      className="h-screen w-full flex flex-col p-6 snap-start overflow-y-auto"
+      className="h-screen w-full flex flex-col p-6 snap-start overflow-hidden"
       style={{ backgroundColor: familyTheme.colors.background }}
     >
       {/* Header */}

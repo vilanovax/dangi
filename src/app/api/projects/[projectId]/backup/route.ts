@@ -82,7 +82,7 @@ export async function GET(
         id: p.id,
         name: p.name,
         avatar: p.avatar,
-        isOwner: p.isOwner,
+        isOwner: p.role === 'OWNER',
         createdAt: p.createdAt,
         user: p.user
           ? {
@@ -94,7 +94,6 @@ export async function GET(
       categories: project.categories.map((c) => ({
         id: c.id,
         name: c.name,
-        nameFa: c.nameFa,
         icon: c.icon,
         color: c.color,
       })),
@@ -112,7 +111,6 @@ export async function GET(
           ? {
               id: e.category.id,
               name: e.category.name,
-              nameFa: e.category.nameFa,
             }
           : null,
         shares: e.shares.map((s) => ({
@@ -137,11 +135,11 @@ export async function GET(
       })),
       shoppingList: project.shoppingItems.map((item) => ({
         id: item.id,
-        title: item.title,
+        text: item.text,
         quantity: item.quantity,
-        unit: item.unit,
-        isPurchased: item.isPurchased,
-        purchasedBy: item.purchasedBy,
+        note: item.note,
+        isChecked: item.isChecked,
+        addedById: item.addedById,
         createdAt: item.createdAt,
       })),
     }

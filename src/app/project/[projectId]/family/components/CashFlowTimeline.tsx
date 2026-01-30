@@ -7,10 +7,10 @@
 
 interface CashFlowTimelineProps {
   projectId: string
-  periodKey: string
+  periodKey?: string
 }
 
-export function CashFlowTimeline({ projectId, periodKey }: CashFlowTimelineProps) {
+export function CashFlowTimeline({ projectId, periodKey = '1403-01' }: CashFlowTimelineProps) {
   return (
     <div className="w-full max-w-2xl">
       <div className="text-center mb-6">

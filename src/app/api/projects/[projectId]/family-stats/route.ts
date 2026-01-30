@@ -27,10 +27,10 @@ export async function GET(
       return NextResponse.json({ error: 'پروژه پیدا نشد' }, { status: 404 })
     }
 
-    // Verify project is family template
-    if (project.template !== 'family') {
+    // Verify project is family or personal template
+    if (project.template !== 'family' && project.template !== 'personal') {
       return NextResponse.json(
-        { error: 'این ویژگی فقط برای تمپلیت خانواده در دسترس است' },
+        { error: 'این ویژگی فقط برای تمپلیت خانواده و حساب شخصی در دسترس است' },
         { status: 400 }
       )
     }
@@ -127,7 +127,7 @@ export async function GET(
 
         return {
           categoryName: category?.name || 'بدون دسته‌بندی',
-          categoryIcon: category?.icon,
+          categoryIcon: category?.icon ?? undefined,
           amount,
           percentage: Math.round(percentage * 100) / 100,
         }
@@ -142,7 +142,7 @@ export async function GET(
       amount: income.amount,
       date: income.incomeDate,
       categoryName: income.category?.name,
-      categoryIcon: income.category?.icon,
+      categoryIcon: income.category?.icon ?? undefined,
       receivedByName: income.receivedBy.name,
     }))
 
@@ -169,7 +169,7 @@ export async function GET(
       amount: expense.amount,
       date: expense.expenseDate,
       categoryName: expense.category?.name,
-      categoryIcon: expense.category?.icon,
+      categoryIcon: expense.category?.icon ?? undefined,
       paidByName: expense.paidBy.name,
     }))
 
