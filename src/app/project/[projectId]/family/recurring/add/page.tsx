@@ -9,6 +9,8 @@ import {
   getCardBackgroundClass,
   getTextColorClass,
 } from '@/styles/family-theme'
+import { FamilyIcon } from '../../components/FamilyIcon'
+import { FamilyButton } from '../../components/FamilyButton'
 
 interface Participant {
   id: string
@@ -145,7 +147,7 @@ export default function AddRecurringPage() {
             onClick={() => router.back()}
             className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
           >
-            ←
+            <FamilyIcon name="back" size={24} className="text-white" />
           </button>
           <h1 className="text-[22px] font-bold">
             افزودن تراکنش تکراری
@@ -168,24 +170,26 @@ export default function AddRecurringPage() {
               <button
                 type="button"
                 onClick={() => setType('EXPENSE')}
-                className={`flex-1 py-3 rounded-xl font-medium transition-all text-[14px] ${
+                className={`flex-1 py-3 rounded-xl font-medium transition-all text-[14px] flex items-center justify-center gap-2 ${
                   type === 'EXPENSE'
                     ? 'bg-[#EF4444] dark:bg-[#F87171] text-white shadow-sm'
                     : 'bg-[#FFFDF8] dark:bg-[#0F172A] text-[#6B7280] dark:text-[#CBD5E1]'
                 }`}
               >
-                💸 هزینه
+                <FamilyIcon name="expense" size={18} />
+                هزینه
               </button>
               <button
                 type="button"
                 onClick={() => setType('INCOME')}
-                className={`flex-1 py-3 rounded-xl font-medium transition-all text-[14px] ${
+                className={`flex-1 py-3 rounded-xl font-medium transition-all text-[14px] flex items-center justify-center gap-2 ${
                   type === 'INCOME'
                     ? 'bg-[#22C55E] dark:bg-[#4ADE80] text-white shadow-sm'
                     : 'bg-[#FFFDF8] dark:bg-[#0F172A] text-[#6B7280] dark:text-[#CBD5E1]'
                 }`}
               >
-                💰 درآمد
+                <FamilyIcon name="income" size={18} />
+                درآمد
               </button>
             </div>
           </div>
@@ -333,9 +337,16 @@ export default function AddRecurringPage() {
           <Button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#4F6EF7] dark:bg-[#818CF8] text-white py-4 rounded-xl font-bold text-[15px] shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="w-full bg-[#4F6EF7] dark:bg-[#818CF8] text-white py-4 rounded-xl font-bold text-[15px] shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
           >
-            {loading ? 'در حال ثبت...' : '🔄 ایجاد تراکنش تکراری'}
+            {loading ? (
+              'در حال ثبت...'
+            ) : (
+              <>
+                <FamilyIcon name="recurring" size={18} className="text-white" />
+                ایجاد تراکنش تکراری
+              </>
+            )}
           </Button>
         </form>
       </div>
