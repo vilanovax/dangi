@@ -10,18 +10,27 @@ export const familyTheme = {
     // Primary (نارنجی گرم)
     primary: '#FF8A00',
     primarySoft: '#FFF3E0',
+    primaryHover: '#E67A00',
 
     // Success (درآمد - سبز)
     success: '#22C55E',
     successSoft: '#EAFBF1',
+    successHover: '#16A34A',
 
     // Danger (هزینه - قرمز)
     danger: '#EF4444',
     dangerSoft: '#FEECEC',
+    dangerHover: '#DC2626',
+
+    // Warning (هشدار بودجه - زرد)
+    warning: '#F59E0B',
+    warningSoft: '#FEF3C7',
+    warningHover: '#D97706',
 
     // Info (گزارش - آبی)
     info: '#4F6EF7',
     infoSoft: '#EEF2FF',
+    infoHover: '#4338CA',
 
     // Neutral (پس‌زمینه‌ها)
     background: '#FFFDF8',
@@ -37,18 +46,27 @@ export const familyTheme = {
     // Primary (نارنجی گرم - کمی روشن‌تر)
     primary: '#FFA94D',
     primarySoft: '#2D1F0D',
+    primaryHover: '#FFB966',
 
     // Success (درآمد - سبز)
     success: '#4ADE80',
     successSoft: '#0F2417',
+    successHover: '#6EE7A7',
 
     // Danger (هزینه - قرمز)
     danger: '#F87171',
     dangerSoft: '#2D1212',
+    dangerHover: '#FCA5A5',
+
+    // Warning (هشدار بودجه - زرد)
+    warning: '#FBBF24',
+    warningSoft: '#2D2410',
+    warningHover: '#FCD34D',
 
     // Info (گزارش - آبی)
     info: '#818CF8',
     infoSoft: '#1E1B3A',
+    infoHover: '#A5B4FC',
 
     // Neutral (پس‌زمینه‌ها)
     background: '#0F172A',
@@ -132,6 +150,38 @@ export const familyTheme = {
   bottomNav: {
     height: '56px',
   },
+
+  // 💫 سایه‌ها (Shadow Scale)
+  shadows: {
+    sm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+    base: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
+    md: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+    lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+    xl: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+    '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+  },
+
+  // 🔲 Border Radius Scale
+  radius: {
+    sm: '8px',
+    md: '12px',
+    lg: '16px',
+    xl: '20px',
+    '2xl': '24px',
+    '3xl': '32px',
+    full: '9999px',
+  },
+
+  // 📏 فاصله‌گذاری (Spacing Scale)
+  spacing: {
+    xs: '4px',
+    sm: '8px',
+    md: '16px',
+    lg: '24px',
+    xl: '32px',
+    '2xl': '48px',
+    '3xl': '64px',
+  },
 }
 
 // 🎨 Helper: تولید کلاس‌های Tailwind بر اساس theme با پشتیبانی Dark Mode
@@ -194,4 +244,51 @@ export const getCardBackgroundClass = () => {
 
 export const getDividerClass = () => {
   return 'border-[#E5E7EB] dark:border-[#334155]'
+}
+
+// 💫 Helper: Shadow classes
+export const getShadowClass = (size: keyof typeof familyTheme.shadows = 'base') => {
+  const shadowMap = {
+    sm: 'shadow-sm',
+    base: 'shadow',
+    md: 'shadow-md',
+    lg: 'shadow-lg',
+    xl: 'shadow-xl',
+    '2xl': 'shadow-2xl',
+  }
+  return shadowMap[size]
+}
+
+// 📏 Helper: Spacing values
+export const getSpacingValue = (size: keyof typeof familyTheme.spacing) => {
+  return familyTheme.spacing[size]
+}
+
+// 🔲 Helper: Border radius classes
+export const getRadiusClass = (size: keyof typeof familyTheme.radius = 'lg') => {
+  const radiusMap = {
+    sm: 'rounded-lg',
+    md: 'rounded-xl',
+    lg: 'rounded-2xl',
+    xl: 'rounded-[20px]',
+    '2xl': 'rounded-3xl',
+    '3xl': 'rounded-[32px]',
+    full: 'rounded-full',
+  }
+  return radiusMap[size]
+}
+
+// ⚠️ Helper: Warning button classes
+export const getWarningButtonClasses = () => {
+  return 'h-[52px] bg-[#F59E0B] hover:bg-[#D97706] dark:bg-[#FBBF24] dark:hover:bg-[#FCD34D] text-white rounded-2xl font-bold text-[15px] transition-colors'
+}
+
+// ✅ Helper: Success button classes
+export const getSuccessButtonClasses = () => {
+  return 'h-[52px] bg-[#22C55E] hover:bg-[#16A34A] dark:bg-[#4ADE80] dark:hover:bg-[#6EE7A7] text-white rounded-2xl font-bold text-[15px] transition-colors'
+}
+
+// 🔴 Helper: Danger button classes
+export const getDangerButtonClasses = () => {
+  return 'h-[52px] bg-[#EF4444] hover:bg-[#DC2626] dark:bg-[#F87171] dark:hover:bg-[#FCA5A5] text-white rounded-2xl font-bold text-[15px] transition-colors'
 }
