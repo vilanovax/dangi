@@ -149,8 +149,11 @@ export default function FamilyDashboardPage({ params }: PageProps) {
 
       {/* Main Content */}
       <div className="max-w-2xl mx-auto px-4 space-y-6" style={{ paddingTop: '16px', paddingBottom: '24px' }}>
-        {/* 2️⃣ Hero Card - Monthly Financial Status */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-6">
+        {/* 2️⃣ Hero Card - Monthly Financial Status (Clickable) */}
+        <button
+          onClick={() => router.push(`/project/${projectId}/family/reports/${periodKey}`)}
+          className="w-full bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-6 text-right hover:shadow-md transition-all active:scale-[0.99]"
+        >
           <p className={`text-[13px] mb-3 ${getTextColorClass('secondary')}`}>
             وضعیت مالی این ماه
           </p>
@@ -179,7 +182,15 @@ export default function FamilyDashboardPage({ params }: PageProps) {
               </span>
             </div>
           </div>
-        </div>
+
+          {/* Tap hint */}
+          <div className="flex items-center justify-center gap-1 mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
+            <span className={`text-[11px] ${getTextColorClass('secondary')}`}>
+              ضربه بزن برای جزئیات
+            </span>
+            <FamilyIcon name="back" size={12} className="text-gray-400 dark:text-gray-600 rotate-180" />
+          </div>
+        </button>
 
         {/* 3️⃣ Stats Row - Three quick indicators */}
         <div className="grid grid-cols-3 gap-4">
@@ -262,6 +273,28 @@ export default function FamilyDashboardPage({ params }: PageProps) {
             </span>
           </Link>
         </div>
+
+        {/* Full Report CTA - Prominent */}
+        <button
+          onClick={() => router.push(`/project/${projectId}/family/reports/${periodKey}`)}
+          className="w-full bg-gradient-to-br from-[#4F6EF7] to-[#6D83FF] dark:from-[#6D83FF] dark:to-[#818CF8] hover:from-[#6D83FF] hover:to-[#4F6EF7] rounded-2xl p-5 shadow-lg transition-all text-white group active:scale-[0.98]"
+        >
+          <div className="flex items-center justify-between">
+            <div className="text-right">
+              <div className="font-bold text-[15px] mb-1">
+                مشاهده گزارش کامل {monthName}
+              </div>
+              <div className="text-[12px] opacity-90">
+                تحلیل عمیق درآمدها، هزینه‌ها و دسته‌بندی‌ها
+              </div>
+            </div>
+            <FamilyIcon
+              name="back"
+              size={20}
+              className="text-white rotate-180 group-hover:translate-x-1 transition-transform"
+            />
+          </div>
+        </button>
 
         {/* 5️⃣ Recent Transactions - Max 3 items */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm" style={{ padding: '20px' }}>

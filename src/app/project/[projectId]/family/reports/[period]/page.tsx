@@ -246,27 +246,37 @@ export default function PeriodDetailReportPage() {
     <div className={`min-h-screen ${getBackgroundClass()}`}>
       {/* Header با گرادیان آبی استاندارد */}
       <div className={`text-white p-6 shadow-lg sticky top-0 z-10 ${getHeaderGradient('info')}`}>
-        <div className="flex items-center justify-between mb-2">
+        {/* Breadcrumb - Subtle */}
+        <div className="flex items-center gap-1.5 mb-3 text-[11px] opacity-75">
+          <span>خانه</span>
+          <FamilyIcon name="back" size={10} className="text-white rotate-180" />
+          <span>گزارش‌ها</span>
+          <FamilyIcon name="back" size={10} className="text-white rotate-180" />
+          <span className="opacity-100 font-medium">{monthName} {year}</span>
+        </div>
+
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
               onClick={() => router.back()}
               className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+              aria-label="بازگشت"
             >
               <FamilyIcon name="back" size={24} className="text-white" />
             </button>
             <div>
-              <h1 className="text-2xl font-bold">گزارش تفصیلی</h1>
-              <p className="text-white/80 text-sm">
-                {monthName} {year}
+              <h1 className="text-[20px] font-bold">گزارش کامل {monthName}</h1>
+              <p className="text-white/80 text-[12px] mt-0.5">
+                تحلیل عمیق و جزئیات مالی
               </p>
             </div>
           </div>
           <button
             onClick={handleExportCSV}
-            className="bg-white text-[#4F6EF7] dark:text-[#818CF8] px-4 py-2 rounded-full font-medium hover:bg-white/90 dark:hover:bg-white/80 transition-colors text-sm flex items-center gap-2"
+            className="bg-white text-[#4F6EF7] dark:text-[#818CF8] px-4 py-2 rounded-full font-medium hover:bg-white/90 dark:hover:bg-white/80 transition-colors text-[13px] flex items-center gap-2"
           >
             <FamilyIcon name="backup" size={16} className="text-[#4F6EF7] dark:text-[#818CF8]" />
-            دانلود CSV
+            CSV
           </button>
         </div>
       </div>
@@ -688,6 +698,37 @@ export default function PeriodDetailReportPage() {
                   ))}
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Empty State - No transactions */}
+        {getAllTransactions().length === 0 && getAggregatedCategories().length === 0 && (
+          <div className={`rounded-2xl p-12 text-center ${getCardBackgroundClass()}`}>
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center bg-[#EEF2FF] dark:bg-[#1E1B3A]">
+              <FamilyIcon name="emptyList" size={36} className="text-[#4F6EF7] dark:text-[#818CF8]" />
+            </div>
+            <h3 className={`text-[16px] font-bold mb-2 ${getTextColorClass('primary')}`}>
+              هنوز تراکنشی برای {monthName} ثبت نشده
+            </h3>
+            <p className={`text-[13px] mb-6 ${getTextColorClass('secondary')}`}>
+              اولین درآمد یا هزینه خودت رو ثبت کن
+            </p>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => router.push(`/project/${projectId}/family/add-expense`)}
+                className="bg-[#EF4444] dark:bg-[#F87171] hover:bg-[#DC2626] dark:hover:bg-[#EF4444] text-white px-6 py-3 rounded-xl font-medium transition-colors text-[14px] flex items-center gap-2"
+              >
+                <FamilyIcon name="expense" size={16} className="text-white" />
+                ثبت هزینه
+              </button>
+              <button
+                onClick={() => router.push(`/project/${projectId}/family/add-income`)}
+                className="bg-[#22C55E] dark:bg-[#4ADE80] hover:bg-[#16A34A] dark:hover:bg-[#22C55E] text-white px-6 py-3 rounded-xl font-medium transition-colors text-[14px] flex items-center gap-2"
+              >
+                <FamilyIcon name="income" size={16} className="text-white" />
+                ثبت درآمد
+              </button>
             </div>
           </div>
         )}
