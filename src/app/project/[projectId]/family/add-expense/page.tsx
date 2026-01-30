@@ -2,16 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Button } from '@/components/ui'
 import { PersianDatePicker } from '@/components/ui/PersianDatePicker'
-import { formatPersianDate } from '@/lib/utils/persian-date'
-import {
-  familyTheme,
-  getBackgroundClass,
-  getHeaderGradient,
-  getCardBackgroundClass,
-  getTextColorClass,
-} from '@/styles/family-theme'
 
 interface Participant {
   id: string
@@ -33,7 +24,7 @@ export default function AddExpensePage() {
   // Form state
   const [title, setTitle] = useState('')
   const [amount, setAmount] = useState('')
-  const [expenseType, setExpenseType] = useState<'personal' | 'family'>('personal') // نوع هزینه
+  const [expenseType, setExpenseType] = useState<'personal' | 'family'>('personal')
   const [categoryId, setCategoryId] = useState('')
   const [description, setDescription] = useState('')
   const [expenseDate, setExpenseDate] = useState<Date>(new Date())
@@ -57,11 +48,9 @@ export default function AddExpensePage() {
 
         if (projectRes.ok) {
           const projectData = await projectRes.json()
-          // Get current user from project (first participant for now)
           if (projectData.project?.participants?.[0]) {
             setCurrentUserId(projectData.project.participants[0].id)
           }
-          // Get all participants for family expenses
           if (projectData.project?.participants) {
             setParticipants(projectData.project.participants)
           }
@@ -79,7 +68,6 @@ export default function AddExpensePage() {
     fetchData()
   }, [projectId])
 
-  // Helper functions
   const formatNumberWithCommas = (num: string) => {
     const cleaned = num.replace(/\D/g, '')
     return cleaned.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
@@ -106,7 +94,6 @@ export default function AddExpensePage() {
     e.preventDefault()
     setError('')
 
-    // Validation
     if (!title.trim()) {
       setError('لطفاً یک عنوان وارد کن')
       return
@@ -126,10 +113,8 @@ export default function AddExpensePage() {
     setLoading(true)
 
     try {
-      // تبدیل تومان به ریال (×10)
       const amountInRials = amountNum * 10
 
-      // تعیین participants بر اساس نوع هزینه
       const includedParticipantIds =
         expenseType === 'family'
           ? participants.map(p => p.id)
@@ -154,11 +139,10 @@ export default function AddExpensePage() {
         throw new Error(data.error || 'خطا در ثبت هزینه')
       }
 
-      // Success
       setSuccess(true)
       setTimeout(() => {
         router.push(`/project/${projectId}/family`)
-      }, 1500)
+      }, 1200)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'مشکلی پیش اومد، دوباره تلاش کن')
     } finally {
@@ -167,227 +151,236 @@ export default function AddExpensePage() {
   }
 
   return (
-    <div className={`min-h-screen ${getBackgroundClass()}`}>
+    <div className="min-h-screen" style={{ backgroundColor: '#FFFDF8' }}>
       {/* Success Toast */}
       {success && (
-        <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 bg-[#22C55E] dark:bg-[#4ADE80] text-white px-6 py-3 rounded-2xl shadow-2xl animate-in slide-in-from-top-4">
-          <div className="flex items-center gap-2 font-bold">
-            <span>ثبت شد!</span>
-            <span>💸</span>
+        <div
+          className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 text-white px-6 py-3 rounded-2xl shadow-lg animate-in slide-in-from-top-4"
+          style={{ backgroundColor: '#22C55E' }}
+        >
+          <div className="flex items-center gap-2 font-semibold" style={{ fontSize: '14px' }}>
+            <span>✓</span>
+            <span>ثبت شد</span>
           </div>
         </div>
       )}
 
-      {/* Header */}
-      <div className={`text-white p-6 shadow-lg ${getHeaderGradient('primary')}`}>
-        <div className="flex items-center gap-4 mb-2">
+      {/* Header - Minimal */}
+      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-100 dark:border-gray-800" style={{ padding: '16px 24px' }}>
+        <div className="flex items-center gap-3 max-w-2xl mx-auto">
           <button
             onClick={() => router.back()}
-            className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+            className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors p-2 -m-2"
+            aria-label="بازگشت"
           >
-            ←
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
           </button>
-          <h1 className="text-[22px] font-bold">
+          <h1 className="font-bold text-gray-900 dark:text-white" style={{ fontSize: '20px' }}>
             ثبت هزینه
           </h1>
         </div>
-        <p className="text-white/90 mr-14 text-sm">
-          امروز چی خرج کردی؟ 😊
-        </p>
       </div>
 
       {/* Form */}
-      <div className="p-6 max-w-2xl mx-auto">
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* 1. مبلغ (Hero Field) */}
-          <div className={`rounded-3xl p-8 shadow-sm border border-gray-200 dark:border-gray-700 ${getCardBackgroundClass()}`}>
-            <label className={`block font-medium mb-3 text-sm ${getTextColorClass('secondary')}`}>
-              مبلغ <span className={getTextColorClass('danger')}>*</span>
-            </label>
-            <div className="relative">
+      <div className="max-w-2xl mx-auto" style={{ padding: '24px' }}>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* PRIMARY SECTION - Above the fold */}
+          <div className="space-y-4">
+            {/* 1. Amount (Hero Input) */}
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm" style={{ padding: '32px 24px' }}>
+              <label className="block text-gray-500 dark:text-gray-400 mb-2" style={{ fontSize: '13px' }}>
+                مبلغ
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={formatNumberWithCommas(amount)}
+                  onChange={handleAmountChange}
+                  placeholder="0"
+                  className="w-full font-extrabold bg-transparent border-none focus:outline-none text-right placeholder:text-gray-200 dark:placeholder:text-gray-700 text-gray-900 dark:text-white"
+                  style={{ fontSize: '44px', lineHeight: '1.2' }}
+                  disabled={loading}
+                  autoFocus
+                />
+                <div className="text-gray-400 dark:text-gray-500" style={{ fontSize: '14px', marginTop: '4px' }}>
+                  تومان
+                </div>
+              </div>
+            </div>
+
+            {/* 2. Title */}
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm" style={{ padding: '20px' }}>
+              <label className="block text-gray-700 dark:text-gray-300 font-medium mb-2" style={{ fontSize: '14px' }}>
+                برای چی؟
+              </label>
               <input
                 type="text"
-                value={formatNumberWithCommas(amount)}
-                onChange={handleAmountChange}
-                placeholder="مبلغ را وارد کن"
-                className={`w-full font-bold bg-transparent border-none focus:outline-none text-right placeholder:text-gray-300 dark:placeholder:text-gray-600 text-[36px] ${getTextColorClass('primary')}`}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="مثلاً: شام رستوران"
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:border-transparent text-gray-900 dark:text-gray-100"
+                style={{ fontSize: '15px', focusRingColor: '#FF8A00' }}
                 disabled={loading}
-                autoFocus
               />
-              <div className={`mt-1 text-sm text-gray-400 dark:text-gray-500`}>
-                تومان
-              </div>
             </div>
-          </div>
 
-          {/* 2. عنوان */}
-          <div className={`rounded-2xl p-5 shadow-sm ${getCardBackgroundClass()}`}>
-            <label className={`block font-medium mb-2 text-sm ${getTextColorClass('primary')}`}>
-              عنوان <span className={getTextColorClass('danger')}>*</span>
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="مثلاً: شام بیرون 🍕"
-              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF8A00] dark:focus:ring-[#FFA94D] focus:border-transparent text-sm text-gray-900 dark:text-gray-100"
-              disabled={loading}
-            />
-          </div>
-
-          {/* 3. نوع هزینه */}
-          <div className={`rounded-2xl p-5 shadow-sm ${getCardBackgroundClass()}`}>
-            <label className={`block font-medium mb-3 text-sm ${getTextColorClass('primary')}`}>
-              این هزینه برای کیه؟
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setExpenseType('personal')}
-                disabled={loading}
-                className={`py-4 px-4 rounded-xl font-medium transition-all text-sm ${
-                  expenseType === 'personal'
-                    ? 'bg-[#FF8A00] dark:bg-[#FFA94D] text-white shadow-sm scale-105'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
-                }`}
-              >
-                <div className="text-2xl mb-1">👤</div>
-                <div>فقط من</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setExpenseType('family')}
-                disabled={loading}
-                className={`py-4 px-4 rounded-xl font-medium transition-all text-sm ${
-                  expenseType === 'family'
-                    ? 'bg-[#FF8A00] dark:bg-[#FFA94D] text-white shadow-sm scale-105'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
-                }`}
-              >
-                <div className="text-2xl mb-1">👥</div>
-                <div>خانواده</div>
-              </button>
-            </div>
-            <p className={`mt-3 text-xs ${getTextColorClass('secondary')}`}>
-              {expenseType === 'personal'
-                ? 'فقط خودت این هزینه رو می‌بینی'
-                : 'این هزینه برای همه اعضای خانواده ثبت می‌شه'}
-            </p>
-          </div>
-
-          {/* 4. دسته‌بندی */}
-          <div className={`rounded-2xl p-5 shadow-sm ${getCardBackgroundClass()}`}>
-            <div className="flex items-center justify-between mb-2">
-              <label className={`block font-medium text-sm ${getTextColorClass('primary')}`}>
-                دسته‌بندی
+            {/* 3. For Who? (Compact Segmented Control) */}
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm" style={{ padding: '20px' }}>
+              <label className="block text-gray-700 dark:text-gray-300 font-medium mb-3" style={{ fontSize: '14px' }}>
+                برای کی؟
               </label>
-              <button
-                type="button"
-                onClick={() => router.push(`/project/${projectId}/family/categories`)}
-                className={`font-medium hover:opacity-80 text-xs ${getTextColorClass('danger')}`}
-              >
-                مدیریت
-              </button>
+              <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
+                <button
+                  type="button"
+                  onClick={() => setExpenseType('family')}
+                  disabled={loading}
+                  className="flex-1 py-2 px-4 rounded-lg font-medium transition-all"
+                  style={{
+                    fontSize: '14px',
+                    backgroundColor: expenseType === 'family' ? '#FF8A00' : 'transparent',
+                    color: expenseType === 'family' ? 'white' : '#6B7280'
+                  }}
+                >
+                  خانواده
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setExpenseType('personal')}
+                  disabled={loading}
+                  className="flex-1 py-2 px-4 rounded-lg font-medium transition-all"
+                  style={{
+                    fontSize: '14px',
+                    backgroundColor: expenseType === 'personal' ? '#FF8A00' : 'transparent',
+                    color: expenseType === 'personal' ? 'white' : '#6B7280'
+                  }}
+                >
+                  فقط من
+                </button>
+              </div>
+              {expenseType === 'personal' && (
+                <p className="text-gray-500 dark:text-gray-400 mt-2" style={{ fontSize: '12px' }}>
+                  این هزینه فقط به نام شما ثبت می‌شود
+                </p>
+              )}
             </div>
-            <select
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF8A00] dark:focus:ring-[#FFA94D] focus:border-transparent text-sm text-gray-900 dark:text-gray-100"
-              disabled={loading}
-            >
-              <option value="">بدون دسته‌بندی</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.icon} {c.name}
-                </option>
-              ))}
-            </select>
-            <p className={`mt-2 text-xs ${getTextColorClass('secondary')}`}>
-              برای گزارش دقیق‌تر می‌تونی دسته انتخاب کنی
-            </p>
           </div>
 
-          {/* 5. تاریخ */}
-          <div className={`rounded-2xl p-5 shadow-sm ${getCardBackgroundClass()}`}>
-            <label className={`block font-medium mb-2 text-sm ${getTextColorClass('primary')}`}>
-              تاریخ
-            </label>
-            <div className="space-y-2">
-              <PersianDatePicker
-                value={expenseDate}
-                onChange={setExpenseDate}
+          {/* SECONDARY SECTION - Optional fields */}
+          <div className="space-y-4" style={{ paddingTop: '8px' }}>
+            {/* 4. Category */}
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm" style={{ padding: '20px' }}>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-gray-700 dark:text-gray-300 font-medium" style={{ fontSize: '14px' }}>
+                  دسته‌بندی
+                </label>
+                <span className="text-gray-400 dark:text-gray-500" style={{ fontSize: '12px' }}>
+                  اختیاری
+                </span>
+              </div>
+              <select
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:border-transparent text-gray-900 dark:text-gray-100"
+                style={{ fontSize: '14px' }}
                 disabled={loading}
-                placeholder="انتخاب تاریخ"
-              />
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={setToday}
+              >
+                <option value="">انتخاب کنید</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.icon} {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* 5. Date */}
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm" style={{ padding: '20px' }}>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-gray-700 dark:text-gray-300 font-medium" style={{ fontSize: '14px' }}>
+                  تاریخ
+                </label>
+                <span className="text-gray-400 dark:text-gray-500" style={{ fontSize: '12px' }}>
+                  اختیاری
+                </span>
+              </div>
+              <div className="space-y-2">
+                <PersianDatePicker
+                  value={expenseDate}
+                  onChange={setExpenseDate}
                   disabled={loading}
-                  className={`flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 font-medium rounded-lg transition-colors text-xs ${getTextColorClass('primary')}`}
-                >
-                  امروز
-                </button>
-                <button
-                  type="button"
-                  onClick={setYesterday}
-                  disabled={loading}
-                  className={`flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 font-medium rounded-lg transition-colors text-xs ${getTextColorClass('primary')}`}
-                >
-                  دیروز
-                </button>
+                  placeholder="انتخاب تاریخ"
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={setToday}
+                    disabled={loading}
+                    className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 font-medium rounded-lg transition-colors text-gray-700 dark:text-gray-300"
+                    style={{ fontSize: '13px' }}
+                  >
+                    امروز
+                  </button>
+                  <button
+                    type="button"
+                    onClick={setYesterday}
+                    disabled={loading}
+                    className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 font-medium rounded-lg transition-colors text-gray-700 dark:text-gray-300"
+                    style={{ fontSize: '13px' }}
+                  >
+                    دیروز
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* 6. توضیحات */}
-          <div className={`rounded-2xl p-5 shadow-sm ${getCardBackgroundClass()}`}>
-            <label className={`block font-medium mb-2 text-sm ${getTextColorClass('primary')}`}>
-              توضیحات (اختیاری)
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="مثلاً خرید هفتگی یا هزینه سفر ✈️"
-              rows={3}
-              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF8A00] dark:focus:ring-[#FFA94D] focus:border-transparent resize-none text-sm text-gray-900 dark:text-gray-100"
-              disabled={loading}
-            />
-          </div>
-
-          {/* 7. نوت */}
-          <div className="rounded-2xl p-3 bg-[#FFF3E0] dark:bg-[#2D1F0D] border border-[#FF8A00]/20 dark:border-[#FFA94D]/20">
-            <div className="flex items-start gap-2">
-              <span className="text-base">💡</span>
-              <div className={`text-xs text-[#FF8A00] dark:text-[#FFA94D]`}>
-                {expenseType === 'personal'
-                  ? 'این هزینه فقط به نام شما ثبت می‌شود.'
-                  : 'این هزینه در حساب خانوادگی ثبت می‌شود و همه اعضا آن را می‌بینند.'}
+            {/* 6. Description */}
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm" style={{ padding: '20px' }}>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-gray-700 dark:text-gray-300 font-medium" style={{ fontSize: '14px' }}>
+                  توضیحات
+                </label>
+                <span className="text-gray-400 dark:text-gray-500" style={{ fontSize: '12px' }}>
+                  اختیاری
+                </span>
               </div>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="یادداشت کوتاه..."
+                rows={3}
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:border-transparent resize-none text-gray-900 dark:text-gray-100"
+                style={{ fontSize: '14px' }}
+                disabled={loading}
+              />
             </div>
           </div>
 
           {/* Error message */}
           {error && (
-            <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl text-sm">
+            <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl" style={{ fontSize: '14px' }}>
               {error}
             </div>
           )}
 
-          {/* 8. دکمه ثبت */}
+          {/* CTA - Simple and calm */}
           <button
             type="submit"
             disabled={loading || !title.trim() || !amount}
-            className="w-full text-white py-4 rounded-2xl font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] h-[52px] shadow-sm bg-[#EF4444] dark:bg-[#F87171] text-[15px]"
+            className="w-full text-white py-4 rounded-2xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] shadow-sm"
+            style={{
+              backgroundColor: '#FF8A00',
+              fontSize: '16px'
+            }}
           >
-            {loading
-              ? 'در حال ثبت...'
-              : expenseType === 'personal'
-              ? '💸 ثبت هزینه شخصی'
-              : '👥 ثبت هزینه خانوادگی'}
+            {loading ? 'در حال ثبت...' : 'ثبت خرج'}
           </button>
         </form>
       </div>
+
+      {/* Bottom spacing */}
+      <div style={{ height: '80px' }}></div>
     </div>
   )
 }

@@ -198,7 +198,9 @@ export default function FamilyDashboardPage({ params }: PageProps) {
               className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center"
               style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#EF4444' }}></div>
+              <svg className="w-5 h-5" style={{ color: '#EF4444' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
             </div>
             <div className="text-gray-500 dark:text-gray-400 mb-1" style={{ fontSize: '12px' }}>
               هزینه
@@ -213,7 +215,9 @@ export default function FamilyDashboardPage({ params }: PageProps) {
               className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center"
               style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#22C55E' }}></div>
+              <svg className="w-5 h-5" style={{ color: '#22C55E' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+              </svg>
             </div>
             <div className="text-gray-500 dark:text-gray-400 mb-1" style={{ fontSize: '12px' }}>
               درآمد
@@ -228,8 +232,8 @@ export default function FamilyDashboardPage({ params }: PageProps) {
               className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center"
               style={{ backgroundColor: 'rgba(255, 138, 0, 0.1)' }}
             >
-              <svg className="w-5 h-5" style={{ color: '#FF8A00' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              <svg className="w-5 h-5" style={{ color: '#FF8A00' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
               </svg>
             </div>
             <div className="text-gray-500 dark:text-gray-400 mb-1" style={{ fontSize: '12px' }}>
@@ -330,12 +334,15 @@ export default function FamilyDashboardPage({ params }: PageProps) {
                           : 'rgba(34, 197, 94, 0.1)'
                       }}
                     >
-                      <div
-                        className="w-2 h-2 rounded-full"
-                        style={{
-                          backgroundColor: transaction.type === 'expense' ? '#EF4444' : '#22C55E'
-                        }}
-                      ></div>
+                      {transaction.type === 'expense' ? (
+                        <svg className="w-4 h-4" style={{ color: '#EF4444' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4" style={{ color: '#22C55E' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                        </svg>
+                      )}
                     </div>
                     <span className="text-gray-900 dark:text-white" style={{ fontSize: '14px' }}>
                       {transaction.title}
