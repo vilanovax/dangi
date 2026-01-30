@@ -9,6 +9,8 @@ import {
   getCardBackgroundClass,
   getTextColorClass,
 } from '@/styles/family-theme'
+import { FamilyIcon } from '../../components/FamilyIcon'
+import { FamilyButton } from '../../components/FamilyButton'
 
 export default function PeriodDetailReportPage() {
   const params = useParams()
@@ -126,14 +128,14 @@ export default function PeriodDetailReportPage() {
 
     if (stats.netSavings > 0) {
       if (stats.savingsRate >= 20) {
-        return `این ماه ${(stats.netSavings / 10).toLocaleString('fa-IR')} تومان پس‌انداز کردی، عالیه! 🎉`
+        return `این ماه ${(stats.netSavings / 10).toLocaleString('fa-IR')} تومان پس‌انداز کردی، عالیه!`
       } else if (stats.savingsRate >= 10) {
-        return `${(stats.netSavings / 10).toLocaleString('fa-IR')} تومان پس‌انداز این ماه، خوبه 👍`
+        return `${(stats.netSavings / 10).toLocaleString('fa-IR')} تومان پس‌انداز این ماه، خوبه`
       } else {
         return `پس‌انداز این ماه: ${(stats.netSavings / 10).toLocaleString('fa-IR')} تومان`
       }
     } else if (stats.netSavings < 0) {
-      return `این ماه ${Math.abs(stats.netSavings / 10).toLocaleString('fa-IR')} تومان بیشتر از درآمد خرج کردی ⚠️`
+      return `این ماه ${Math.abs(stats.netSavings / 10).toLocaleString('fa-IR')} تومان بیشتر از درآمد خرج کردی`
     } else {
       return 'این ماه درآمد و هزینه برابر بوده'
     }
@@ -144,10 +146,10 @@ export default function PeriodDetailReportPage() {
 
     const util = stats.budgetUtilization
     if (util === 0) return 'هنوز از بودجه‌های تعیین شده استفاده نشده'
-    if (util < 70) return 'بودجه این ماه به‌خوبی مدیریت شده 👌'
+    if (util < 70) return 'بودجه این ماه به‌خوبی مدیریت شده'
     if (util < 90) return 'داری نزدیک سقف بودجه می‌شی، کمی دقت کن'
-    if (util < 100) return 'تقریباً تمام بودجه مصرف شده ⚠️'
-    return 'بودجه این ماه رد شده، ماه بعد دقت بیشتری لازمه 🔴'
+    if (util < 100) return 'تقریباً تمام بودجه مصرف شده'
+    return 'بودجه این ماه رد شده، ماه بعد دقت بیشتری لازمه'
   }
 
   const getTopExpenseInsight = () => {
@@ -211,7 +213,7 @@ export default function PeriodDetailReportPage() {
               onClick={() => router.back()}
               className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
             >
-              ←
+              <FamilyIcon name="back" size={24} className="text-white" />
             </button>
             <div>
               <h1 className="text-2xl font-bold">گزارش تفصیلی</h1>
@@ -222,9 +224,10 @@ export default function PeriodDetailReportPage() {
           </div>
           <button
             onClick={handleExportCSV}
-            className="bg-white text-[#4F6EF7] dark:text-[#818CF8] px-4 py-2 rounded-full font-medium hover:bg-white/90 dark:hover:bg-white/80 transition-colors text-sm"
+            className="bg-white text-[#4F6EF7] dark:text-[#818CF8] px-4 py-2 rounded-full font-medium hover:bg-white/90 dark:hover:bg-white/80 transition-colors text-sm flex items-center gap-2"
           >
-            📥 دانلود CSV
+            <FamilyIcon name="backup" size={16} className="text-[#4F6EF7] dark:text-[#818CF8]" />
+            دانلود CSV
           </button>
         </div>
       </div>
@@ -235,7 +238,7 @@ export default function PeriodDetailReportPage() {
         {showExportSuccess && (
           <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-full shadow-lg z-50 animate-bounce">
             <div className="flex items-center gap-2">
-              <span className="text-xl">✓</span>
+              <FamilyIcon name="success" size={20} className="text-white" />
               <span className="font-medium">فایل CSV دانلود شد</span>
             </div>
           </div>
@@ -254,22 +257,30 @@ export default function PeriodDetailReportPage() {
           {/* Three key metrics */}
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-white/10 backdrop-blur rounded-xl p-4 text-center">
-              <div className="text-2xl mb-1">🟢</div>
+              <div className="mb-1 flex justify-center">
+                <FamilyIcon name="income" size={24} className="text-white" />
+              </div>
               <div className="text-xs opacity-80 mb-1">درآمد</div>
               <div className="text-lg font-bold">
                 {(stats.totalIncome / 10).toLocaleString('fa-IR')}
               </div>
             </div>
             <div className="bg-white/10 backdrop-blur rounded-xl p-4 text-center">
-              <div className="text-2xl mb-1">🔴</div>
+              <div className="mb-1 flex justify-center">
+                <FamilyIcon name="expense" size={24} className="text-white" />
+              </div>
               <div className="text-xs opacity-80 mb-1">هزینه</div>
               <div className="text-lg font-bold">
                 {(stats.totalExpenses / 10).toLocaleString('fa-IR')}
               </div>
             </div>
             <div className="bg-white/10 backdrop-blur rounded-xl p-4 text-center">
-              <div className="text-2xl mb-1">
-                {stats.netSavings >= 0 ? '📊' : '⚠️'}
+              <div className="mb-1 flex justify-center">
+                <FamilyIcon
+                  name={stats.netSavings >= 0 ? 'savings' : 'warning'}
+                  size={24}
+                  className="text-white"
+                />
               </div>
               <div className="text-xs opacity-80 mb-1">
                 {stats.netSavings >= 0 ? 'پس‌انداز' : 'کسری'}
@@ -285,7 +296,9 @@ export default function PeriodDetailReportPage() {
         {(getBudgetAnalysis() || getTopExpenseInsight()) && (
           <div className="bg-[#FFF3E0] dark:bg-[#2D1F0D] border-2 border-[#FF8A00]/20 dark:border-[#FFA94D]/20 rounded-2xl p-5 shadow-sm">
             <div className="flex items-start gap-3">
-              <div className="text-2xl flex-shrink-0">💡</div>
+              <div className="flex-shrink-0">
+                <FamilyIcon name="tip" size={24} className={getTextColorClass('primary')} />
+              </div>
               <div className="flex-1">
                 <h3 className={`font-bold mb-2 ${getTextColorClass('primary')}`}>نکات تحلیلی</h3>
                 <div className={`space-y-2 text-sm ${getTextColorClass('secondary')}`}>
@@ -390,7 +403,9 @@ export default function PeriodDetailReportPage() {
               </div>
             ) : (
               <div className={`text-center py-8 ${getTextColorClass('secondary')}`}>
-                <div className="text-3xl mb-2">💭</div>
+                <div className="mb-2 flex justify-center">
+                  <FamilyIcon name="info" size={32} className={getTextColorClass('secondary')} />
+                </div>
                 <div className="text-sm">
                   بودجه تعیین شده ولی هنوز خرجی ثبت نشده
                 </div>
@@ -399,7 +414,9 @@ export default function PeriodDetailReportPage() {
           </div>
         ) : (
           <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-8 text-center border-2 border-dashed border-gray-200 dark:border-gray-700">
-            <div className="text-4xl mb-3">🎯</div>
+            <div className="mb-3 flex justify-center">
+              <FamilyIcon name="budget" size={48} className={getTextColorClass('secondary')} />
+            </div>
             <div className={`text-sm ${getTextColorClass('secondary')}`}>
               برای این ماه بودجه‌ای تعیین نشده
             </div>
@@ -448,8 +465,9 @@ export default function PeriodDetailReportPage() {
               <div className={`rounded-2xl p-6 shadow-lg ${getCardBackgroundClass()}`}>
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h2 className="text-lg font-bold text-[#22C55E] dark:text-[#4ADE80]">
-                      💰 درآمدهای اخیر
+                    <h2 className="text-lg font-bold text-[#22C55E] dark:text-[#4ADE80] flex items-center gap-2">
+                      <FamilyIcon name="income" size={20} className="text-[#22C55E] dark:text-[#4ADE80]" />
+                      درآمدهای اخیر
                     </h2>
                     <p className={`text-xs mt-1 ${getTextColorClass('secondary')}`}>
                       {stats.recentIncomes.length > 5
@@ -492,8 +510,9 @@ export default function PeriodDetailReportPage() {
               <div className={`rounded-2xl p-6 shadow-lg ${getCardBackgroundClass()}`}>
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h2 className="text-lg font-bold text-[#EF4444] dark:text-[#F87171]">
-                      💸 هزینه‌های اخیر
+                    <h2 className="text-lg font-bold text-[#EF4444] dark:text-[#F87171] flex items-center gap-2">
+                      <FamilyIcon name="expense" size={20} className="text-[#EF4444] dark:text-[#F87171]" />
+                      هزینه‌های اخیر
                     </h2>
                     <p className={`text-xs mt-1 ${getTextColorClass('secondary')}`}>
                       {stats.recentExpenses.length > 5
