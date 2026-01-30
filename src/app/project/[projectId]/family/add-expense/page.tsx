@@ -45,6 +45,22 @@ export default function AddExpensePage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
 
+  // Recent categories state
+  const [recentCategoryIds, setRecentCategoryIds] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('recent-categories')
+      if (saved) {
+        try {
+          return JSON.parse(saved)
+        } catch {
+          return []
+        }
+      }
+    }
+    return []
+  })
+  const [showAllCategories, setShowAllCategories] = useState(false)
+
   // Fetch current user and categories
   useEffect(() => {
     const fetchData = async () => {
@@ -82,6 +98,35 @@ export default function AddExpensePage() {
       localStorage.setItem('expense-type-preference', expenseType)
     }
   }, [expenseType])
+
+  // Save recent categories to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('recent-categories', JSON.stringify(recentCategoryIds))
+    }
+  }, [recentCategoryIds])
+
+  // Update recent categories when a category is selected
+  const handleCategorySelect = (selectedCategoryId: string) => {
+    setCategoryId(selectedCategoryId)
+
+    if (selectedCategoryId) {
+      setRecentCategoryIds(prev => {
+        // Remove if already exists
+        const filtered = prev.filter(id => id !== selectedCategoryId)
+        // Add to beginning
+        const updated = [selectedCategoryId, ...filtered]
+        // Keep only 3 most recent
+        return updated.slice(0, 3)
+      })
+    }
+  }
+
+  // Get recent categories objects
+  const recentCategories = recentCategoryIds
+    .map(id => categories.find(c => c.id === id))
+    .filter((c): c is Category => c !== undefined)
+    .slice(0, 3)
 
   const formatNumberWithCommas = (num: string) => {
     const cleaned = num.replace(/\D/g, '')
@@ -286,7 +331,7 @@ export default function AddExpensePage() {
           <div className="space-y-4" style={{ paddingTop: '8px' }}>
             {/* 4. Category */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm" style={{ padding: '20px' }}>
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mb-3">
                 <label className="text-gray-700 dark:text-gray-300 font-medium" style={{ fontSize: '14px' }}>
                   دسته‌بندی
                 </label>
@@ -294,20 +339,65 @@ export default function AddExpensePage() {
                   اختیاری
                 </span>
               </div>
-              <select
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:border-transparent text-gray-900 dark:text-gray-100"
-                style={{ fontSize: '14px' }}
-                disabled={loading}
-              >
-                <option value="">انتخاب کنید</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.icon} {c.name}
-                  </option>
-                ))}
-              </select>
+
+              {/* Recent Categories Chips */}
+              {recentCategories.length > 0 && (
+                <div className="mb-3">
+                  <p className="text-gray-500 dark:text-gray-400 mb-2" style={{ fontSize: '12px' }}>
+                    دسته‌های اخیر
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {recentCategories.map((category) => (
+                      <button
+                        key={category.id}
+                        type="button"
+                        onClick={() => handleCategorySelect(category.id)}
+                        disabled={loading}
+                        className="flex items-center gap-2 px-3 py-2 rounded-xl transition-all border"
+                        style={{
+                          fontSize: '13px',
+                          backgroundColor: categoryId === category.id ? 'rgba(255, 138, 0, 0.1)' : '#F9FAFB',
+                          borderColor: categoryId === category.id ? '#FF8A00' : '#E5E7EB',
+                          color: categoryId === category.id ? '#FF8A00' : '#6B7280'
+                        }}
+                      >
+                        <span style={{ fontSize: '16px' }}>{category.icon}</span>
+                        <span className="font-medium">{category.name}</span>
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setShowAllCategories(!showAllCategories)}
+                      disabled={loading}
+                      className="flex items-center gap-1 px-3 py-2 rounded-xl transition-all border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      style={{ fontSize: '13px', color: '#6B7280' }}
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                      </svg>
+                      <span className="font-medium">بیشتر</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Full Category Dropdown */}
+              {(showAllCategories || recentCategories.length === 0) && (
+                <select
+                  value={categoryId}
+                  onChange={(e) => handleCategorySelect(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:border-transparent text-gray-900 dark:text-gray-100"
+                  style={{ fontSize: '14px' }}
+                  disabled={loading}
+                >
+                  <option value="">انتخاب کنید</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.icon} {c.name}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             {/* 5. Date */}
