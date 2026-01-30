@@ -11,6 +11,9 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { projectKeys } from '@/hooks/useProjects'
 import type { FamilyDashboardStats } from '@/types/family'
+import { FamilyButton } from './components/FamilyButton'
+import { FamilyIcon } from './components/FamilyIcon'
+import { getBackgroundClass, getTextColorClass } from '@/styles/family-theme'
 
 interface PageProps {
   params: Promise<{
@@ -59,10 +62,10 @@ export default function FamilyDashboardPage({ params }: PageProps) {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#FFFDF8' }}>
+      <div className={`flex min-h-screen items-center justify-center ${getBackgroundClass()}`}>
         <div className="text-center">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#FF8A00] border-t-transparent mx-auto"></div>
-          <p className="mt-4 text-gray-700 dark:text-gray-300" style={{ fontSize: '14px' }}>در حال بارگذاری...</p>
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#FF8A00] dark:border-[#FFA94D] border-t-transparent mx-auto"></div>
+          <p className={`mt-4 text-[14px] ${getTextColorClass('primary')}`}>در حال بارگذاری...</p>
         </div>
       </div>
     )
@@ -70,18 +73,12 @@ export default function FamilyDashboardPage({ params }: PageProps) {
 
   if (error || !stats) {
     return (
-      <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#FFFDF8' }}>
+      <div className={`flex min-h-screen items-center justify-center ${getBackgroundClass()}`}>
         <div className="text-center p-8">
-          <p className="mb-4" style={{ fontSize: '14px', color: '#EF4444' }}>خطا در بارگذاری داده‌ها</p>
-          <button
-            onClick={() => refetch()}
-            className="px-6 py-2 rounded-2xl transition-colors"
-            style={{ backgroundColor: '#FF8A00', color: 'white' }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E67A00'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FF8A00'}
-          >
+          <p className={`mb-4 text-[14px] ${getTextColorClass('danger')}`}>خطا در بارگذاری داده‌ها</p>
+          <FamilyButton variant="primary" onClick={() => refetch()} size="md">
             تلاش مجدد
-          </button>
+          </FamilyButton>
         </div>
       </div>
     )
@@ -110,16 +107,16 @@ export default function FamilyDashboardPage({ params }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen pb-24" style={{ backgroundColor: '#FFFDF8' }}>
+    <div className={`min-h-screen pb-24 ${getBackgroundClass()}`}>
       {/* 1️⃣ Header - Minimal and calm */}
       <div className="px-4 py-6" style={{ backgroundColor: 'rgba(255, 253, 248, 0.8)' }}>
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="font-bold text-gray-900 dark:text-white" style={{ fontSize: '22px', lineHeight: '1.3' }}>
+              <h1 className={`text-[22px] font-bold leading-tight ${getTextColorClass('primary')}`}>
                 {isPersonal ? 'حساب شخصی' : 'حساب خانواده'}
               </h1>
-              <p className="text-gray-500 dark:text-gray-400" style={{ fontSize: '13px', marginTop: '2px' }}>
+              <p className={`text-[13px] mt-0.5 ${getTextColorClass('secondary')}`}>
                 {monthName} {year}
               </p>
             </div>
@@ -129,28 +126,21 @@ export default function FamilyDashboardPage({ params }: PageProps) {
                 className="p-2 hover:bg-white/50 dark:hover:bg-gray-800/50 rounded-xl transition-colors"
                 aria-label="بازگشت به خانه"
               >
-                <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                </svg>
+                <FamilyIcon name="home" size={20} className="text-gray-600 dark:text-gray-400" />
               </button>
               <button
                 onClick={() => refetch()}
                 className="p-2 hover:bg-white/50 dark:hover:bg-gray-800/50 rounded-xl transition-colors"
                 aria-label="بارگذاری مجدد"
               >
-                <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
+                <FamilyIcon name="recurring" size={20} className="text-gray-600 dark:text-gray-400" />
               </button>
               <button
                 onClick={() => router.push(`/project/${projectId}/family/settings`)}
                 className="p-2 hover:bg-white/50 dark:hover:bg-gray-800/50 rounded-xl transition-colors"
                 aria-label="تنظیمات"
               >
-                <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
+                <FamilyIcon name="settings" size={20} className="text-gray-600 dark:text-gray-400" />
               </button>
             </div>
           </div>
@@ -160,41 +150,31 @@ export default function FamilyDashboardPage({ params }: PageProps) {
       {/* Main Content */}
       <div className="max-w-2xl mx-auto px-4 space-y-6" style={{ paddingTop: '16px', paddingBottom: '24px' }}>
         {/* 2️⃣ Hero Card - Monthly Financial Status */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm" style={{ padding: '24px' }}>
-          <p className="text-gray-500 dark:text-gray-400 mb-3" style={{ fontSize: '13px' }}>
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-6">
+          <p className={`text-[13px] mb-3 ${getTextColorClass('secondary')}`}>
             وضعیت مالی این ماه
           </p>
 
           <div className="mb-6">
-            <p
-              className="font-extrabold"
-              style={{
-                fontSize: '32px',
-                lineHeight: '1.2',
-                color: netBalance >= 0 ? '#22C55E' : '#EF4444'
-              }}
-            >
+            <p className={`text-[32px] font-extrabold leading-tight ${netBalance >= 0 ? 'text-[#22C55E] dark:text-[#4ADE80]' : 'text-[#EF4444] dark:text-[#F87171]'}`}>
               {netBalance >= 0 ? '+' : ''}{netBalance.toLocaleString('fa-IR')}
-              <span style={{ fontSize: '14px', fontWeight: 'normal', color: '#9CA3AF' }}> تومان</span>
+              <span className="text-[14px] font-normal text-gray-400 dark:text-gray-500"> تومان</span>
             </p>
-            <p className="text-gray-500 dark:text-gray-400" style={{ fontSize: '13px', marginTop: '4px' }}>
+            <p className={`text-[13px] mt-1 ${getTextColorClass('secondary')}`}>
               مانده خالص
             </p>
           </div>
 
-          <div
-            className="flex items-center justify-between border-t border-gray-100 dark:border-gray-800"
-            style={{ paddingTop: '16px', fontSize: '13px' }}
-          >
+          <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-800 pt-4 text-[13px]">
             <div>
-              <span className="text-gray-500 dark:text-gray-400">درآمد: </span>
-              <span className="font-semibold text-gray-900 dark:text-white">
+              <span className={getTextColorClass('secondary')}>درآمد: </span>
+              <span className={`font-semibold ${getTextColorClass('primary')}`}>
                 {totalIncome.toLocaleString('fa-IR')}
               </span>
             </div>
             <div>
-              <span className="text-gray-500 dark:text-gray-400">هزینه: </span>
-              <span className="font-semibold text-gray-900 dark:text-white">
+              <span className={getTextColorClass('secondary')}>هزینه: </span>
+              <span className={`font-semibold ${getTextColorClass('primary')}`}>
                 {totalExpenses.toLocaleString('fa-IR')}
               </span>
             </div>
@@ -204,52 +184,37 @@ export default function FamilyDashboardPage({ params }: PageProps) {
         {/* 3️⃣ Stats Row - Three quick indicators */}
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center">
-            <div
-              className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center"
-              style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)' }}
-            >
-              <svg className="w-5 h-5" style={{ color: '#EF4444' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-              </svg>
+            <div className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center bg-red-50 dark:bg-red-950/30">
+              <FamilyIcon name="expense" size={20} className="text-[#EF4444] dark:text-[#F87171]" />
             </div>
-            <div className="text-gray-500 dark:text-gray-400 mb-1" style={{ fontSize: '12px' }}>
+            <div className={`text-[12px] mb-1 ${getTextColorClass('secondary')}`}>
               هزینه
             </div>
-            <div className="font-bold text-gray-900 dark:text-white" style={{ fontSize: '18px' }}>
+            <div className={`text-[18px] font-bold ${getTextColorClass('primary')}`}>
               {formatLarge(totalExpenses)}
             </div>
           </div>
 
           <div className="text-center">
-            <div
-              className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center"
-              style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)' }}
-            >
-              <svg className="w-5 h-5" style={{ color: '#22C55E' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
-              </svg>
+            <div className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center bg-green-50 dark:bg-green-950/30">
+              <FamilyIcon name="income" size={20} className="text-[#22C55E] dark:text-[#4ADE80]" />
             </div>
-            <div className="text-gray-500 dark:text-gray-400 mb-1" style={{ fontSize: '12px' }}>
+            <div className={`text-[12px] mb-1 ${getTextColorClass('secondary')}`}>
               درآمد
             </div>
-            <div className="font-bold text-gray-900 dark:text-white" style={{ fontSize: '18px' }}>
+            <div className={`text-[18px] font-bold ${getTextColorClass('primary')}`}>
               {formatLarge(totalIncome)}
             </div>
           </div>
 
           <div className="text-center">
-            <div
-              className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center"
-              style={{ backgroundColor: 'rgba(255, 138, 0, 0.1)' }}
-            >
-              <svg className="w-5 h-5" style={{ color: '#FF8A00' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-              </svg>
+            <div className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center bg-orange-50 dark:bg-orange-950/30">
+              <FamilyIcon name="savings" size={20} className="text-[#FF8A00] dark:text-[#FFA94D]" />
             </div>
-            <div className="text-gray-500 dark:text-gray-400 mb-1" style={{ fontSize: '12px' }}>
+            <div className={`text-[12px] mb-1 ${getTextColorClass('secondary')}`}>
               پس‌انداز
             </div>
-            <div className="font-bold text-gray-900 dark:text-white" style={{ fontSize: '18px' }}>
+            <div className={`text-[18px] font-bold ${getTextColorClass('primary')}`}>
               {savingsRate.toFixed(0)}٪
             </div>
           </div>
@@ -259,52 +224,40 @@ export default function FamilyDashboardPage({ params }: PageProps) {
         <div className="grid grid-cols-2 gap-3">
           <Link
             href={`/project/${projectId}/family/add-expense`}
-            className="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-2xl transition-all shadow-sm hover:shadow-md active:scale-95 flex items-center justify-center gap-2"
-            style={{ padding: '16px' }}
+            className="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-2xl transition-all shadow-sm hover:shadow-md active:scale-95 flex items-center justify-center gap-2 p-4"
           >
-            <svg className="w-5 h-5" style={{ color: '#EF4444' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-            </svg>
-            <span className="font-semibold text-gray-900 dark:text-white" style={{ fontSize: '14px' }}>
+            <FamilyIcon name="expense" size={20} className="text-[#EF4444] dark:text-[#F87171]" />
+            <span className={`text-[14px] font-semibold ${getTextColorClass('primary')}`}>
               ثبت خرج
             </span>
           </Link>
 
           <Link
             href={`/project/${projectId}/family/add-income`}
-            className="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-2xl transition-all shadow-sm hover:shadow-md active:scale-95 flex items-center justify-center gap-2"
-            style={{ padding: '16px' }}
+            className="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-2xl transition-all shadow-sm hover:shadow-md active:scale-95 flex items-center justify-center gap-2 p-4"
           >
-            <svg className="w-5 h-5" style={{ color: '#22C55E' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            <span className="font-semibold text-gray-900 dark:text-white" style={{ fontSize: '14px' }}>
+            <FamilyIcon name="income" size={20} className="text-[#22C55E] dark:text-[#4ADE80]" />
+            <span className={`text-[14px] font-semibold ${getTextColorClass('primary')}`}>
               ثبت درآمد
             </span>
           </Link>
 
           <Link
             href={`/project/${projectId}/family/reports`}
-            className="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-2xl transition-all shadow-sm hover:shadow-md active:scale-95 flex items-center justify-center gap-2"
-            style={{ padding: '16px' }}
+            className="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-2xl transition-all shadow-sm hover:shadow-md active:scale-95 flex items-center justify-center gap-2 p-4"
           >
-            <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-            <span className="font-semibold text-gray-900 dark:text-white" style={{ fontSize: '14px' }}>
+            <FamilyIcon name="reports" size={20} className="text-gray-600 dark:text-gray-400" />
+            <span className={`text-[14px] font-semibold ${getTextColorClass('primary')}`}>
               گزارش‌ها
             </span>
           </Link>
 
           <Link
             href={`/project/${projectId}/family/budgets`}
-            className="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-2xl transition-all shadow-sm hover:shadow-md active:scale-95 flex items-center justify-center gap-2"
-            style={{ padding: '16px' }}
+            className="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-2xl transition-all shadow-sm hover:shadow-md active:scale-95 flex items-center justify-center gap-2 p-4"
           >
-            <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span className="font-semibold text-gray-900 dark:text-white" style={{ fontSize: '14px' }}>
+            <FamilyIcon name="budget" size={20} className="text-gray-600 dark:text-gray-400" />
+            <span className={`text-[14px] font-semibold ${getTextColorClass('primary')}`}>
               بودجه
             </span>
           </Link>
