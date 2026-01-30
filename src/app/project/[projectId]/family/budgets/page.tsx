@@ -10,6 +10,8 @@ import {
   getCardBackgroundClass,
   getTextColorClass,
 } from '@/styles/family-theme'
+import { FamilyIcon } from '../components/FamilyIcon'
+import { FamilyButton } from '../components/FamilyButton'
 
 interface BudgetItem {
   categoryId: string
@@ -86,8 +88,9 @@ export default function BudgetsPage() {
           <Link
             href={`/project/${projectId}/family`}
             className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+            aria-label="بازگشت"
           >
-            →
+            <FamilyIcon name="back" size={24} className="text-white" />
           </Link>
           <div>
             <h1 className="text-[22px] font-bold">
@@ -114,7 +117,7 @@ export default function BudgetsPage() {
               /* Empty state - بودجه تنظیم نشده */
               <div className={`rounded-3xl p-8 text-center shadow-lg border border-gray-200 dark:border-gray-700 ${getCardBackgroundClass()}`}>
                 <div className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center bg-[#FFF3E0] dark:bg-[#2D1F0D]">
-                  <span className="text-4xl">🎯</span>
+                  <FamilyIcon name="budget" size={36} className="text-[#FF8A00] dark:text-[#FFA94D]" />
                 </div>
                 <h2 className={`text-[22px] font-bold mb-2 ${getTextColorClass('primary')}`}>
                   هنوز بودجه‌ای برای این ماه تعیین نکردی
@@ -122,13 +125,14 @@ export default function BudgetsPage() {
                 <p className={`mb-6 leading-relaxed text-sm ${getTextColorClass('secondary')}`}>
                   با تنظیم بودجه، خرج‌هات شفاف‌تر می‌شن
                 </p>
-                <button
+                <FamilyButton
                   onClick={() => router.push(`/project/${projectId}/family/budgets/set`)}
-                  className="px-8 text-white rounded-2xl hover:shadow-lg transition-all inline-flex items-center gap-2 h-[52px] bg-[#FF8A00] dark:bg-[#FFA94D] text-[15px] font-bold"
+                  variant="primary"
+                  size="lg"
+                  icon="budget"
                 >
-                  <span>🎯</span>
-                  <span>تنظیم بودجه</span>
-                </button>
+                  تنظیم بودجه
+                </FamilyButton>
               </div>
             ) : (
               /* Budget exists - نمایش وضعیت بودجه */
@@ -204,7 +208,11 @@ export default function BudgetsPage() {
                   >
                     <div className="flex items-center gap-3 mb-3">
                       <div className="w-10 h-10 rounded-full flex items-center justify-center bg-[#FFF3E0] dark:bg-[#2D1F0D]">
-                        <span className="text-xl">{budget.categoryIcon || '📦'}</span>
+                        {budget.categoryIcon ? (
+                          <span className="text-xl">{budget.categoryIcon}</span>
+                        ) : (
+                          <FamilyIcon name="categories" size={20} className="text-[#FF8A00] dark:text-[#FFA94D]" />
+                        )}
                       </div>
                       <div className="flex-1">
                         <div className={`font-medium text-sm ${getTextColorClass('primary')}`}>
@@ -235,7 +243,7 @@ export default function BudgetsPage() {
             {/* Info Box */}
             <div className="rounded-2xl p-4 bg-[#EEF2FF] dark:bg-[#1E1B3A] border border-[#4F6EF7]/20 dark:border-[#818CF8]/20">
               <div className="flex items-start gap-2">
-                <span className="text-base">💡</span>
+                <FamilyIcon name="tip" size={18} className="text-[#4F6EF7] dark:text-[#818CF8] flex-shrink-0 mt-0.5" />
                 <div className={`text-xs ${getTextColorClass('info')}`}>
                   <p className="font-medium mb-1">نکته:</p>
                   <p>
