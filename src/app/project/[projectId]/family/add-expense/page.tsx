@@ -3,6 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { PersianDatePicker } from '@/components/ui/PersianDatePicker'
+import { FamilyButton } from '../components/FamilyButton'
+import { FamilyIcon } from '../components/FamilyIcon'
+import { FamilyInput } from '../components/FamilyInput'
+import { getBackgroundClass, getTextColorClass } from '@/styles/family-theme'
 
 interface Participant {
   id: string
@@ -211,33 +215,28 @@ export default function AddExpensePage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#FFFDF8' }}>
+    <div className={`min-h-screen ${getBackgroundClass()}`}>
       {/* Success Toast */}
       {success && (
-        <div
-          className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 text-white px-6 py-3 rounded-2xl shadow-lg animate-in slide-in-from-top-4"
-          style={{ backgroundColor: '#22C55E' }}
-        >
-          <div className="flex items-center gap-2 font-semibold" style={{ fontSize: '14px' }}>
-            <span>✓</span>
+        <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 bg-[#22C55E] dark:bg-[#4ADE80] text-white px-6 py-3 rounded-2xl shadow-lg animate-in slide-in-from-top-4">
+          <div className="flex items-center gap-2 font-semibold text-[14px]">
+            <FamilyIcon name="success" size={16} className="text-white" />
             <span>ثبت شد</span>
           </div>
         </div>
       )}
 
       {/* Header - Minimal */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-100 dark:border-gray-800" style={{ padding: '16px 24px' }}>
+      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-100 dark:border-gray-800 p-4 px-6">
         <div className="flex items-center gap-3 max-w-2xl mx-auto">
           <button
             onClick={() => router.back()}
             className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors p-2 -m-2"
             aria-label="بازگشت"
           >
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+            <FamilyIcon name="back" size={24} />
           </button>
-          <h1 className="font-bold text-gray-900 dark:text-white" style={{ fontSize: '20px' }}>
+          <h1 className={`text-[20px] font-bold ${getTextColorClass('primary')}`}>
             ثبت هزینه
           </h1>
         </div>
@@ -249,8 +248,8 @@ export default function AddExpensePage() {
           {/* PRIMARY SECTION - Above the fold */}
           <div className="space-y-4">
             {/* 1. Amount (Hero Input) */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm" style={{ padding: '32px 24px' }}>
-              <label className="block text-gray-500 dark:text-gray-400 mb-2" style={{ fontSize: '13px' }}>
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-8 px-6">
+              <label className={`block text-[13px] mb-2 ${getTextColorClass('secondary')}`}>
                 مبلغ
               </label>
               <div className="relative">
@@ -259,20 +258,19 @@ export default function AddExpensePage() {
                   value={formatNumberWithCommas(amount)}
                   onChange={handleAmountChange}
                   placeholder="0"
-                  className="w-full font-extrabold bg-transparent border-none focus:outline-none text-right placeholder:text-gray-200 dark:placeholder:text-gray-700 text-gray-900 dark:text-white"
-                  style={{ fontSize: '44px', lineHeight: '1.2' }}
+                  className={`w-full text-[44px] font-extrabold leading-tight bg-transparent border-none focus:outline-none text-right placeholder:text-gray-200 dark:placeholder:text-gray-700 ${getTextColorClass('primary')}`}
                   disabled={loading}
                   autoFocus
                 />
-                <div className="text-gray-400 dark:text-gray-500" style={{ fontSize: '14px', marginTop: '4px' }}>
+                <div className={`text-[14px] mt-1 ${getTextColorClass('secondary')}`}>
                   تومان
                 </div>
               </div>
             </div>
 
             {/* 2. Title */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm" style={{ padding: '20px' }}>
-              <label className="block text-gray-700 dark:text-gray-300 font-medium mb-2" style={{ fontSize: '14px' }}>
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-5">
+              <label className={`block text-[14px] font-medium mb-2 ${getTextColorClass('primary')}`}>
                 برای چی؟
               </label>
               <input
@@ -280,15 +278,14 @@ export default function AddExpensePage() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="مثلاً: شام رستوران"
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:border-transparent text-gray-900 dark:text-gray-100"
-                style={{ fontSize: '15px', focusRingColor: '#FF8A00' }}
+                className={`w-full text-[15px] px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF8A00] focus:border-transparent ${getTextColorClass('primary')}`}
                 disabled={loading}
               />
             </div>
 
             {/* 3. For Who? (Compact Segmented Control) */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm" style={{ padding: '20px' }}>
-              <label className="block text-gray-700 dark:text-gray-300 font-medium mb-3" style={{ fontSize: '14px' }}>
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-5">
+              <label className={`block text-[14px] font-medium mb-3 ${getTextColorClass('primary')}`}>
                 برای کی؟
               </label>
               <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
@@ -296,12 +293,11 @@ export default function AddExpensePage() {
                   type="button"
                   onClick={() => setExpenseType('family')}
                   disabled={loading}
-                  className="flex-1 py-2 px-4 rounded-lg font-medium transition-all"
-                  style={{
-                    fontSize: '14px',
-                    backgroundColor: expenseType === 'family' ? '#FF8A00' : 'transparent',
-                    color: expenseType === 'family' ? 'white' : '#6B7280'
-                  }}
+                  className={`flex-1 text-[14px] py-2 px-4 rounded-lg font-medium transition-all ${
+                    expenseType === 'family'
+                      ? 'bg-[#FF8A00] dark:bg-[#FFA94D] text-white'
+                      : 'bg-transparent text-gray-500 dark:text-gray-400'
+                  }`}
                 >
                   خانواده
                 </button>
@@ -309,18 +305,17 @@ export default function AddExpensePage() {
                   type="button"
                   onClick={() => setExpenseType('personal')}
                   disabled={loading}
-                  className="flex-1 py-2 px-4 rounded-lg font-medium transition-all"
-                  style={{
-                    fontSize: '14px',
-                    backgroundColor: expenseType === 'personal' ? '#FF8A00' : 'transparent',
-                    color: expenseType === 'personal' ? 'white' : '#6B7280'
-                  }}
+                  className={`flex-1 text-[14px] py-2 px-4 rounded-lg font-medium transition-all ${
+                    expenseType === 'personal'
+                      ? 'bg-[#FF8A00] dark:bg-[#FFA94D] text-white'
+                      : 'bg-transparent text-gray-500 dark:text-gray-400'
+                  }`}
                 >
                   فقط من
                 </button>
               </div>
               {expenseType === 'personal' && (
-                <p className="text-gray-500 dark:text-gray-400 mt-2" style={{ fontSize: '12px' }}>
+                <p className={`text-[12px] mt-2 ${getTextColorClass('secondary')}`}>
                   این هزینه فقط به نام شما ثبت می‌شود
                 </p>
               )}
@@ -330,12 +325,12 @@ export default function AddExpensePage() {
           {/* SECONDARY SECTION - Optional fields */}
           <div className="space-y-4" style={{ paddingTop: '8px' }}>
             {/* 4. Category */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm" style={{ padding: '20px' }}>
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-5">
               <div className="flex items-center justify-between mb-3">
-                <label className="text-gray-700 dark:text-gray-300 font-medium" style={{ fontSize: '14px' }}>
+                <label className={`text-[14px] font-medium ${getTextColorClass('primary')}`}>
                   دسته‌بندی
                 </label>
-                <span className="text-gray-400 dark:text-gray-500" style={{ fontSize: '12px' }}>
+                <span className={`text-[12px] ${getTextColorClass('secondary')}`}>
                   اختیاری
                 </span>
               </div>
@@ -343,7 +338,7 @@ export default function AddExpensePage() {
               {/* Recent Categories Chips */}
               {recentCategories.length > 0 && (
                 <div className="mb-3">
-                  <p className="text-gray-500 dark:text-gray-400 mb-2" style={{ fontSize: '12px' }}>
+                  <p className={`text-[12px] mb-2 ${getTextColorClass('secondary')}`}>
                     دسته‌های اخیر
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -353,29 +348,24 @@ export default function AddExpensePage() {
                         type="button"
                         onClick={() => handleCategorySelect(category.id)}
                         disabled={loading}
-                        className="flex items-center gap-2 px-3 py-2 rounded-xl transition-all border"
-                        style={{
-                          fontSize: '13px',
-                          backgroundColor: categoryId === category.id ? 'rgba(255, 138, 0, 0.1)' : '#F9FAFB',
-                          borderColor: categoryId === category.id ? '#FF8A00' : '#E5E7EB',
-                          color: categoryId === category.id ? '#FF8A00' : '#6B7280'
-                        }}
+                        className={`text-[13px] flex items-center gap-2 px-3 py-2 rounded-xl transition-all border font-medium ${
+                          categoryId === category.id
+                            ? 'bg-orange-50 dark:bg-orange-950/30 border-[#FF8A00] dark:border-[#FFA94D] text-[#FF8A00] dark:text-[#FFA94D]'
+                            : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'
+                        }`}
                       >
-                        <span style={{ fontSize: '16px' }}>{category.icon}</span>
-                        <span className="font-medium">{category.name}</span>
+                        <span className="text-[16px]">{category.icon}</span>
+                        <span>{category.name}</span>
                       </button>
                     ))}
                     <button
                       type="button"
                       onClick={() => setShowAllCategories(!showAllCategories)}
                       disabled={loading}
-                      className="flex items-center gap-1 px-3 py-2 rounded-xl transition-all border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      style={{ fontSize: '13px', color: '#6B7280' }}
+                      className={`text-[13px] flex items-center gap-1 px-3 py-2 rounded-xl transition-all border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium ${getTextColorClass('secondary')}`}
                     >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                      </svg>
-                      <span className="font-medium">بیشتر</span>
+                      <FamilyIcon name="add" size={16} />
+                      <span>بیشتر</span>
                     </button>
                   </div>
                 </div>
@@ -386,8 +376,7 @@ export default function AddExpensePage() {
                 <select
                   value={categoryId}
                   onChange={(e) => handleCategorySelect(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:border-transparent text-gray-900 dark:text-gray-100"
-                  style={{ fontSize: '14px' }}
+                  className={`text-[14px] w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF8A00] focus:border-transparent ${getTextColorClass('primary')}`}
                   disabled={loading}
                 >
                   <option value="">انتخاب کنید</option>
@@ -464,23 +453,22 @@ export default function AddExpensePage() {
 
           {/* Error message */}
           {error && (
-            <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl" style={{ fontSize: '14px' }}>
+            <div className={`text-[14px] bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 px-4 py-3 rounded-xl ${getTextColorClass('danger')}`}>
               {error}
             </div>
           )}
 
           {/* CTA - Simple and calm */}
-          <button
+          <FamilyButton
             type="submit"
+            variant="danger"
+            size="lg"
+            fullWidth
             disabled={loading || !title.trim() || !amount}
-            className="w-full text-white py-4 rounded-2xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] shadow-sm"
-            style={{
-              backgroundColor: '#FF8A00',
-              fontSize: '16px'
-            }}
+            loading={loading}
           >
             {loading ? 'در حال ثبت...' : 'ثبت خرج'}
-          </button>
+          </FamilyButton>
         </form>
       </div>
 
