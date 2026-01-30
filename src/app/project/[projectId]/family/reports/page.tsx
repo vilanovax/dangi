@@ -100,20 +100,29 @@ export default function ReportsOverviewPage() {
     router.push(`/project/${projectId}/family/reports/${periodKey}`)
   }
 
-  // تحلیل هوشمند
-  const getInsightMessage = () => {
-    if (!report) return ''
+  // جمع‌بندی هوشمند این ماه
+  const getMonthlyInsights = () => {
+    if (!report) return []
 
+    const insights: string[] = []
+
+    // Insight 1: بیشترین دسته
+    if (report.topExpenses && report.topExpenses.length > 0) {
+      insights.push(`بیشترین هزینه مربوط به «${report.topExpenses[0].categoryName}» بوده`)
+    }
+
+    // Insight 2: عملکرد پس‌انداز
     if (report.savingsRate >= 20) {
-      return 'این ماه عملکرد مالی‌تون عالی بوده 👏'
+      insights.push('عملکرد پس‌اندازت عالی بوده')
+    } else if (report.savingsRate >= 10) {
+      insights.push('عملکرد پس‌اندازت نسبتاً خوب بوده')
+    } else if (report.savingsRate >= 0) {
+      insights.push('با کمی کنترل هزینه، ماه بعد بهتر می‌شی')
+    } else {
+      insights.push('این ماه خرج‌ها بیشتر از درآمد بوده')
     }
-    if (report.savingsRate >= 10) {
-      return 'عملکرد مالی خوبی داشتی، ادامه بده 💪'
-    }
-    if (report.savingsRate >= 0) {
-      return 'این ماه کمتر پس‌انداز کردی، ماه بعد بهتر می‌شه'
-    }
-    return 'این ماه خرج‌ها بیشتر از درآمد بوده، یکم بیشتر دقت کن ⚠️'
+
+    return insights.slice(0, 3) // حداکثر 3 نکته
   }
 
   return (
@@ -235,223 +244,167 @@ export default function ReportsOverviewPage() {
             </FamilyButton>
           </div>
         ) : (
-          <div className="space-y-4">
-            {/* Hero Report Card - داستان‌گو */}
-            <div className={`rounded-3xl p-6 shadow-2xl border-2 border-gray-200 dark:border-gray-700 ${getCardBackgroundClass()}`}>
-              <div className="text-center mb-6">
-                <div className={`text-xs mb-2 uppercase tracking-wide ${getTextColorClass('secondary')}`}>
-                  {monthNames[selectedMonth - 1]} {selectedYear}
-                </div>
-                <div className={`text-sm mb-3 ${getTextColorClass('secondary')}`}>
-                  وضعیت مالی ماه
-                </div>
-                <div className={`text-5xl font-black mb-2 ${report.netSavings >= 0 ? 'text-[#22C55E] dark:text-[#4ADE80]' : 'text-[#EF4444] dark:text-[#F87171]'}`}>
+          <div className="space-y-5">
+            {/* 1️⃣ Monthly Summary (Hero Card) */}
+            <div className={`rounded-2xl p-6 shadow-md ${getCardBackgroundClass()}`}>
+              <div className={`text-sm mb-4 ${getTextColorClass('secondary')}`}>
+                وضعیت مالی این ماه
+              </div>
+
+              {/* Primary Metric - فقط یک عدد بزرگ */}
+              <div className="mb-6">
+                <div className={`text-[44px] font-extrabold leading-none ${report.netSavings >= 0 ? 'text-[#22C55E] dark:text-[#4ADE80]' : 'text-[#EF4444] dark:text-[#F87171]'}`}>
                   {report.netSavings >= 0 ? '+' : ''}
                   {(report.netSavings / 10).toLocaleString('fa-IR')}
                 </div>
-                <div className={`text-xs mb-1 ${getTextColorClass('secondary')}`}>تومان</div>
-                <div className={`text-sm font-medium ${getTextColorClass('primary')}`}>
-                  پس‌انداز خالص
+                <div className={`text-xs mt-1 ${getTextColorClass('secondary')}`}>
+                  تومان - پس‌انداز خالص
                 </div>
               </div>
 
-              {/* سه شاخص کلیدی */}
-              <div className="grid grid-cols-3 gap-3 mb-5">
-                <div className="text-center">
-                  <div className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center bg-green-50 dark:bg-green-950/30">
-                    <FamilyIcon name="income" size={20} className="text-[#22C55E] dark:text-[#4ADE80]" />
-                  </div>
-                  <div className={`text-xs mb-1 ${getTextColorClass('secondary')}`}>درآمد</div>
-                  <div className={`text-base font-bold ${getTextColorClass('success')}`}>
+              {/* Secondary Metrics - کوچک و inline */}
+              <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                <div>
+                  <div className={`text-[10px] mb-1 ${getTextColorClass('secondary')}`}>درآمد</div>
+                  <div className={`text-sm font-semibold ${getTextColorClass('primary')}`}>
                     {(report.totalIncome / 10).toLocaleString('fa-IR')}
                   </div>
                 </div>
-                <div className="text-center">
-                  <div className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center bg-red-50 dark:bg-red-950/30">
-                    <FamilyIcon name="expense" size={20} className="text-[#EF4444] dark:text-[#F87171]" />
-                  </div>
-                  <div className={`text-xs mb-1 ${getTextColorClass('secondary')}`}>هزینه</div>
-                  <div className={`text-base font-bold ${getTextColorClass('danger')}`}>
+                <div>
+                  <div className={`text-[10px] mb-1 ${getTextColorClass('secondary')}`}>هزینه</div>
+                  <div className={`text-sm font-semibold ${getTextColorClass('primary')}`}>
                     {(report.totalExpenses / 10).toLocaleString('fa-IR')}
                   </div>
                 </div>
-                <div className="text-center">
-                  <div className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center bg-orange-50 dark:bg-orange-950/30">
-                    <FamilyIcon name="savings" size={20} className="text-[#FF8A00] dark:text-[#FFA94D]" />
-                  </div>
-                  <div className={`text-xs mb-1 ${getTextColorClass('secondary')}`}>پس‌انداز</div>
-                  <div className={`text-base font-bold ${getTextColorClass('info')}`}>
-                    {(report.savingsRate ?? 0).toFixed(1)}%
-                  </div>
-                </div>
-              </div>
-
-              {/* تحلیل هوشمند */}
-              <div className="bg-[#EEF2FF] dark:bg-[#1E1B3A] rounded-xl p-4 border border-blue-200 dark:border-blue-800">
-                <div className="flex items-start gap-2">
-                  <FamilyIcon name="tip" size={18} className="text-[#4F6EF7] dark:text-[#818CF8] flex-shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <div className={`text-xs font-bold mb-1 ${getTextColorClass('info')}`}>
-                      تحلیل ماه
-                    </div>
-                    <div className={`text-sm leading-relaxed ${getTextColorClass('info')}`}>
-                      {getInsightMessage()}
-                    </div>
+                <div>
+                  <div className={`text-[10px] mb-1 ${getTextColorClass('secondary')}`}>نرخ پس‌انداز</div>
+                  <div className={`text-sm font-semibold ${getTextColorClass('primary')}`}>
+                    {(report.savingsRate ?? 0).toFixed(0)}٪
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* سهم دسته‌ها از هزینه - نمودار ساده */}
+            {/* 2️⃣ Main Insight Box - جمع‌بندی این ماه */}
+            <div className="bg-[#EEF2FF] dark:bg-[#1E1B3A] rounded-2xl p-5 border border-blue-100 dark:border-blue-900">
+              <div className={`font-semibold mb-3 text-sm ${getTextColorClass('info')}`}>
+                جمع‌بندی این ماه
+              </div>
+              <div className="space-y-2">
+                {getMonthlyInsights().map((insight, index) => (
+                  <div key={index} className="flex items-start gap-2">
+                    <span className={`text-[10px] mt-1 ${getTextColorClass('info')}`}>•</span>
+                    <div className={`text-sm leading-relaxed ${getTextColorClass('info')}`}>
+                      {insight}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 3️⃣ Expense Breakdown - بیشترین دسته‌های هزینه */}
             {report.topExpenses && report.topExpenses.length > 0 && (
               <div className={`rounded-2xl p-5 shadow-md ${getCardBackgroundClass()}`}>
-                <div className={`font-bold mb-4 flex items-center gap-2 ${getTextColorClass('primary')}`}>
-                  <FamilyIcon name="reports" size={20} />
-                  <span>سهم دسته‌ها از هزینه</span>
+                <div className={`font-semibold mb-4 text-sm ${getTextColorClass('primary')}`}>
+                  بیشترین دسته‌های هزینه
                 </div>
                 <div className="space-y-3">
-                  {report.topExpenses.slice(0, 5).map((category) => (
+                  {report.topExpenses.slice(0, 4).map((category) => (
                     <div key={category.categoryName}>
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center justify-between mb-1.5">
                         <div className="flex items-center gap-2">
-                          <span className="text-lg">{category.categoryIcon}</span>
-                          <span className={`text-sm font-medium ${getTextColorClass('primary')}`}>
+                          {category.categoryIcon ? (
+                            <span className="text-base">{category.categoryIcon}</span>
+                          ) : (
+                            <FamilyIcon name="categories" size={16} className="text-gray-400 dark:text-gray-600" />
+                          )}
+                          <span className={`text-sm ${getTextColorClass('primary')}`}>
                             {category.categoryName}
                           </span>
                         </div>
                         <div className={`text-sm font-bold ${getTextColorClass('primary')}`}>
-                          {category.percentage.toFixed(0)}%
+                          {category.percentage.toFixed(0)}٪
                         </div>
                       </div>
                       <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-[#4F6EF7] dark:bg-[#818CF8] transition-all"
+                          className="h-full bg-gradient-to-l from-[#4F6EF7] to-[#6D83FF] dark:from-[#818CF8] dark:to-[#A5B4FC] transition-all"
                           style={{ width: `${category.percentage}%` }}
                         />
                       </div>
                     </div>
                   ))}
                 </div>
+
+                {/* نمایش دکمه "مشاهده همه" اگر بیش از 4 دسته وجود دارد */}
+                {report.topExpenses.length > 4 && (
+                  <button
+                    onClick={handleViewDetails}
+                    className={`w-full mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 text-sm font-medium hover:opacity-70 transition-opacity ${getTextColorClass('info')}`}
+                  >
+                    مشاهده همه دسته‌ها
+                  </button>
+                )}
               </div>
             )}
 
-            {/* نکات این ماه - Insight Cards */}
-            <div className="bg-[#EEF2FF] dark:bg-[#1E1B3A] rounded-2xl p-5 shadow-md border-2 border-blue-200 dark:border-blue-800">
-              <div className={`font-bold mb-4 flex items-center gap-2 ${getTextColorClass('info')}`}>
-                <FamilyIcon name="tip" size={20} className="text-[#4F6EF7] dark:text-[#818CF8]" />
-                <span>نکات این ماه</span>
-              </div>
-              <div className="space-y-3">
-                {report.topExpenses && report.topExpenses.length > 0 && (
-                  <div className="flex items-start gap-2">
-                    <span className={`font-bold ${getTextColorClass('info')}`}>•</span>
-                    <div className={`text-sm ${getTextColorClass('info')}`}>
-                      بیشترین خرج مربوط به «{report.topExpenses[0]?.categoryName}» بوده
-                    </div>
-                  </div>
-                )}
-                {report.savingsRate < 10 && (
-                  <div className="flex items-start gap-2">
-                    <span className={`font-bold ${getTextColorClass('primary')}`}>•</span>
-                    <div className={`text-sm ${getTextColorClass('primary')}`}>
-                      این ماه کمتر پس‌انداز کردی، سعی کن ماه بعد بهتر باشه
-                    </div>
-                  </div>
-                )}
-                {report.savingsRate >= 15 && (
-                  <div className="flex items-start gap-2">
-                    <span className={`font-bold ${getTextColorClass('success')}`}>•</span>
-                    <div className={`text-sm ${getTextColorClass('success')}`}>
-                      پس‌انداز خوبی داشتی، همینطور ادامه بده 👏
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* گزارش کامل */}
+            {/* 4️⃣ Primary Action - گزارش کامل */}
             <button
               onClick={handleViewDetails}
-              className="w-full bg-[#4F6EF7] dark:bg-[#818CF8] hover:bg-[#6D83FF] dark:hover:bg-[#6D83FF] rounded-2xl p-5 shadow-lg transition-all text-white group"
+              className="w-full bg-[#4F6EF7] dark:bg-[#818CF8] hover:bg-[#6D83FF] dark:hover:bg-[#6D83FF] rounded-2xl p-5 shadow-lg transition-all text-white group active:scale-[0.98]"
             >
               <div className="flex items-center justify-between">
-                <div className="text-right flex items-center gap-3">
-                  <FamilyIcon name="reports" size={24} className="text-white" />
-                  <div>
-                    <div className="font-bold text-lg mb-1">
-                      گزارش کامل این ماه
-                    </div>
-                    <div className="text-sm opacity-90">
-                      جزئیات هزینه‌ها، درآمدها و بودجه
-                    </div>
+                <div className="text-right">
+                  <div className="font-bold text-base mb-1">
+                    مشاهده گزارش کامل این ماه
+                  </div>
+                  <div className="text-sm opacity-90">
+                    جزئیات هزینه‌ها، درآمدها و بودجه
                   </div>
                 </div>
-                <FamilyIcon name="back" size={24} className="text-white rotate-180 group-hover:translate-x-1 transition-transform" />
+                <FamilyIcon name="back" size={20} className="text-white rotate-180 group-hover:translate-x-1 transition-transform" />
               </div>
             </button>
 
-            {/* دسترسی سریع */}
+            {/* 5️⃣ Quick Actions Grid */}
             <div className={`rounded-2xl p-5 shadow-md ${getCardBackgroundClass()}`}>
-              <div className={`font-bold mb-4 flex items-center gap-2 ${getTextColorClass('primary')}`}>
-                <FamilyIcon name="budget" size={20} />
-                <span>دسترسی سریع</span>
+              <div className={`font-semibold mb-4 text-sm ${getTextColorClass('primary')}`}>
+                دسترسی سریع
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() =>
-                    router.push(`/project/${projectId}/family/budgets`)
-                  }
-                  className="bg-[#FFF3E0] dark:bg-[#2D1F0D] hover:bg-[#FFE4C4] dark:hover:bg-[#3D2F1D] rounded-xl p-4 text-sm font-medium transition-all border border-amber-200 dark:border-amber-800 hover:border-amber-300 dark:hover:border-amber-700"
-                >
-                  <div className="w-8 h-8 mb-2 mx-auto rounded-full bg-orange-50 dark:bg-orange-950/30 flex items-center justify-center">
-                    <FamilyIcon name="budget" size={18} className="text-[#FF8A00] dark:text-[#FFA94D]" />
-                  </div>
-                  <div className={getTextColorClass('primary')}>وضعیت بودجه</div>
-                </button>
+              <div className="grid grid-cols-3 gap-3">
                 <button
                   onClick={() =>
                     router.push(`/project/${projectId}/family/transactions`)
                   }
-                  className="bg-[#EAFBF1] dark:bg-[#0F2417] hover:bg-[#D4F7E0] dark:hover:bg-[#1F3427] rounded-xl p-4 text-sm font-medium transition-all border border-green-200 dark:border-green-800 hover:border-green-300 dark:hover:border-green-700"
+                  className="bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-xl p-4 text-sm transition-all active:scale-95"
                 >
-                  <div className="w-8 h-8 mb-2 mx-auto rounded-full bg-green-50 dark:bg-green-950/30 flex items-center justify-center">
-                    <FamilyIcon name="transactions" size={18} className="text-[#22C55E] dark:text-[#4ADE80]" />
+                  <div className="w-8 h-8 mb-2 mx-auto rounded-full bg-white dark:bg-gray-900 flex items-center justify-center shadow-sm">
+                    <FamilyIcon name="transactions" size={16} className="text-gray-600 dark:text-gray-400" />
                   </div>
-                  <div className={getTextColorClass('primary')}>همه تراکنش‌ها</div>
-                </button>
-                <button
-                  onClick={() =>
-                    router.push(`/project/${projectId}/family/recurring`)
-                  }
-                  className="bg-[#EEF2FF] dark:bg-[#1E1B3A] hover:bg-[#DDE4FF] dark:hover:bg-[#2E2B4A] rounded-xl p-4 text-sm font-medium transition-all border border-purple-200 dark:border-purple-800 hover:border-purple-300 dark:hover:border-purple-700"
-                >
-                  <div className="w-8 h-8 mb-2 mx-auto rounded-full bg-blue-50 dark:bg-blue-950/30 flex items-center justify-center">
-                    <FamilyIcon name="recurring" size={18} className="text-[#4F6EF7] dark:text-[#818CF8]" />
-                  </div>
-                  <div className={getTextColorClass('primary')}>تراکنش تکراری</div>
+                  <div className={`text-xs ${getTextColorClass('primary')}`}>همه تراکنش‌ها</div>
                 </button>
                 <button
                   onClick={() =>
                     router.push(`/project/${projectId}/family/budgets/set`)
                   }
-                  className="bg-[#EEF2FF] dark:bg-[#1E1B3A] hover:bg-[#DDE4FF] dark:hover:bg-[#2E2B4A] rounded-xl p-4 text-sm font-medium transition-all border border-blue-200 dark:border-blue-800 hover:border-blue-300 dark:hover:border-blue-700"
+                  className="bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-xl p-4 text-sm transition-all active:scale-95"
                 >
-                  <div className="w-8 h-8 mb-2 mx-auto rounded-full bg-orange-50 dark:bg-orange-950/30 flex items-center justify-center">
-                    <FamilyIcon name="wallet" size={18} className="text-[#FF8A00] dark:text-[#FFA94D]" />
+                  <div className="w-8 h-8 mb-2 mx-auto rounded-full bg-white dark:bg-gray-900 flex items-center justify-center shadow-sm">
+                    <FamilyIcon name="budget" size={16} className="text-gray-600 dark:text-gray-400" />
                   </div>
-                  <div className={getTextColorClass('primary')}>تنظیم بودجه</div>
+                  <div className={`text-xs ${getTextColorClass('primary')}`}>تنظیم بودجه</div>
                 </button>
-              </div>
-            </div>
-
-            {/* پیام انگیزشی */}
-            <div className="bg-[#EEF2FF] dark:bg-[#1E1B3A] border border-blue-200 dark:border-blue-800 rounded-xl p-4">
-              <div className="flex items-start gap-3">
-                <FamilyIcon name="info" size={20} className="text-[#4F6EF7] dark:text-[#818CF8] flex-shrink-0 mt-0.5" />
-                <div className={`text-sm leading-relaxed ${getTextColorClass('info')}`}>
-                  گزارش‌ها کمک می‌کنن الگوی خرج‌هات رو بشناسی.
-                  با شناخت، تصمیم بهتر می‌گیری.
-                </div>
+                <button
+                  onClick={() =>
+                    router.push(`/project/${projectId}/family/recurring`)
+                  }
+                  className="bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-xl p-4 text-sm transition-all active:scale-95"
+                >
+                  <div className="w-8 h-8 mb-2 mx-auto rounded-full bg-white dark:bg-gray-900 flex items-center justify-center shadow-sm">
+                    <FamilyIcon name="recurring" size={16} className="text-gray-600 dark:text-gray-400" />
+                  </div>
+                  <div className={`text-xs ${getTextColorClass('primary')}`}>تراکنش تکراری</div>
+                </button>
               </div>
             </div>
           </div>
