@@ -28,7 +28,7 @@ export function QuickActions({ projectId, template, isSettled = false }: QuickAc
     <div className="px-4 -mt-4 space-y-4">
       {/* Charge Dashboard - Only for building template */}
       {showChargeDashboard && (
-        <Link href={`/project/${projectId}/charge-dashboard`} className="block">
+        <Link href={`/project/${projectId}/building`} className="block">
           <div className="p-4 bg-gradient-to-l from-emerald-500/10 to-teal-500/10 dark:from-emerald-500/20 dark:to-teal-500/20 rounded-2xl border border-emerald-200/50 dark:border-emerald-800/50">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">

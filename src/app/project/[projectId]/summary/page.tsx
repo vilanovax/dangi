@@ -284,7 +284,7 @@ export default function SummaryPage() {
                     <p className="text-xl font-bold">{formatMoney(chargeInfo?.totalChargeDebt || 0, 'IRR')}</p>
                   </div>
                   <Link
-                    href={`/project/${projectId}/charge-dashboard`}
+                    href={`/project/${projectId}/building`}
                     className="text-xs bg-white/20 px-3 py-1.5 rounded-lg hover:bg-white/30 transition-colors"
                   >
                     پرداخت
@@ -514,7 +514,7 @@ export default function SummaryPage() {
                   </Card>
                 ))}
 
-                <Link href={`/project/${projectId}/charge-dashboard`}>
+                <Link href={`/project/${projectId}/building`}>
                   <Button className="w-full mt-4 !bg-blue-500 hover:!bg-blue-600">
                     ثبت پرداخت شارژ
                   </Button>
