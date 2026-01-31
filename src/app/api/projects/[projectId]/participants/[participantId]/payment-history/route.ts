@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
 import { requireProjectAccess } from '@/lib/utils/auth'
 import { logApiError } from '@/lib/utils/logger'
+import { getCurrentPersianYear, getCurrentPersianMonth } from '@/lib/utils/persian-date'
 
 type RouteContext = {
   params: Promise<{ projectId: string; participantId: string }>
@@ -93,7 +94,13 @@ export async function GET(request: NextRequest, context: RouteContext) {
     // Generate timeline for all months in the charge year
     // Persian calendar always has 12 months
     const chargeMonthCount = 12
-    const chargeYear = project.chargeYear || new Date().getFullYear()
+
+    // Get current Persian calendar info
+    const currentPersianYear = getCurrentPersianYear()
+    const currentPersianMonth = parseInt(getCurrentPersianMonth(), 10)
+
+    // Use Persian year for chargeYear if not set
+    const chargeYear = project.chargeYear || currentPersianYear
 
     // Generate all months in the charge year
     const allMonths: Array<{
@@ -129,13 +136,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
           status = 'paid'
         }
       } else {
-        // Check if month has started yet
-        const now = new Date()
-        const currentYear = now.getFullYear()
-        const currentMonth = now.getMonth() + 1
-
-        // Simple comparison (this should ideally use Jalali calendar logic)
-        if (chargeYear > currentYear || (chargeYear === currentYear && monthIndex > currentMonth)) {
+        // Check if month has started yet (using Persian calendar)
+        if (chargeYear > currentPersianYear || (chargeYear === currentPersianYear && monthIndex > currentPersianMonth)) {
           status = 'upcoming'
         }
       }

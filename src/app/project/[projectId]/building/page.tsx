@@ -100,6 +100,8 @@ export default function BuildingDashboard() {
   // Payment modal
   const [selectedUnit, setSelectedUnit] = useState<ParticipantStat | null>(null)
   const [showQuickActions, setShowQuickActions] = useState(false)
+  const [unitUnpaidMonths, setUnitUnpaidMonths] = useState<Array<{ monthName: string; periodKey: string }>>([])
+  const [loadingUnpaidMonths, setLoadingUnpaidMonths] = useState(false)
 
   // Month payment modal
   const [selectedMonth, setSelectedMonth] = useState<MonthStat | null>(null)
@@ -111,6 +113,15 @@ export default function BuildingDashboard() {
   useEffect(() => {
     fetchData()
   }, [projectId])
+
+  // Fetch unpaid months when a unit is selected
+  useEffect(() => {
+    if (selectedUnit) {
+      fetchUnitUnpaidMonths(selectedUnit.id)
+    } else {
+      setUnitUnpaidMonths([])
+    }
+  }, [selectedUnit])
 
   // Fetch month details when a month is selected
   useEffect(() => {
@@ -214,6 +225,26 @@ export default function BuildingDashboard() {
       setError('خطا در بارگذاری اطلاعات')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchUnitUnpaidMonths = async (participantId: string) => {
+    setLoadingUnpaidMonths(true)
+    try {
+      const res = await fetch(`/api/projects/${projectId}/participants/${participantId}/payment-history`)
+      if (res.ok) {
+        const data = await res.json()
+        // Filter only months that have started but are unpaid or partially paid
+        // Exclude 'upcoming' months (future months that haven't started yet)
+        const unpaid = data.timeline.filter((m: any) => {
+          return m.status !== 'paid' && m.status !== 'upcoming'
+        })
+        setUnitUnpaidMonths(unpaid)
+      }
+    } catch (err) {
+      console.error('Error fetching unpaid months:', err)
+    } finally {
+      setLoadingUnpaidMonths(false)
     }
   }
 
@@ -698,7 +729,13 @@ export default function BuildingDashboard() {
                     لیست واحدها ({monthDetails.units.length})
                   </h3>
                   <div className="space-y-2.5">
-                    {monthDetails.units.map((unit: any) => {
+                    {[...monthDetails.units]
+                      .sort((a, b) => {
+                        // Sort unpaid units first, paid units last
+                        if (a.hasPaid === b.hasPaid) return 0
+                        return a.hasPaid ? 1 : -1
+                      })
+                      .map((unit: any) => {
                       const isPaid = unit.hasPaid
                       return (
                         <div
@@ -848,7 +885,7 @@ export default function BuildingDashboard() {
       >
         {selectedUnit && (() => {
           const isComplete = selectedUnit.status === 'complete'
-          const isLowPayment = selectedUnit.percentage <= 30
+          const isLowPayment = selectedUnit.percentage < 50
           const remaining = selectedUnit.totalExpected - selectedUnit.totalPaid
 
           return (
@@ -930,6 +967,47 @@ export default function BuildingDashboard() {
                   </div>
                 </div>
               </div>
+
+              {/* Unpaid Months List - Compact */}
+              {!isComplete && unitUnpaidMonths.length > 0 && (
+                <div>
+                  <h3 className="font-bold mb-2.5 text-xs" style={{ color: 'var(--building-text-secondary)' }}>
+                    ماه‌های پرداخت نشده ({unitUnpaidMonths.length})
+                  </h3>
+                  <div className="flex flex-wrap gap-1.5">
+                    {unitUnpaidMonths.map((month: any) => (
+                      <span
+                        key={month.periodKey}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium"
+                        style={{
+                          backgroundColor: month.status === 'partial'
+                            ? 'var(--building-warning-alpha)'
+                            : 'var(--building-danger-alpha)',
+                          color: month.status === 'partial'
+                            ? 'var(--building-warning)'
+                            : 'var(--building-danger)',
+                          borderWidth: '1px',
+                          borderStyle: 'solid',
+                          borderColor: month.status === 'partial'
+                            ? 'var(--building-warning)'
+                            : 'var(--building-danger)'
+                        }}
+                      >
+                        {month.monthName}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {loadingUnpaidMonths && (
+                <div className="flex justify-center py-4">
+                  <div className="animate-spin w-5 h-5 border-2 rounded-full" style={{
+                    borderColor: 'var(--building-border-muted)',
+                    borderTopColor: 'var(--building-primary)'
+                  }} />
+                </div>
+              )}
 
               {/* CTA - Context Aware */}
               <Button
@@ -1329,8 +1407,7 @@ function UnitsTab({
       {sortedUnits.map((unit) => {
         // Visual priority logic
         const isComplete = unit.status === 'complete'
-        const isLowPayment = unit.percentage <= 30
-        const isPartial = unit.status === 'partial'
+        const isLowPayment = unit.percentage < 50
 
         return (
           <Card
@@ -1347,9 +1424,7 @@ function UnitsTab({
                 ? 'var(--building-border-muted)'
                 : isLowPayment
                 ? 'var(--building-danger)'
-                : isPartial
-                ? 'var(--building-warning)'
-                : 'var(--building-border)',
+                : 'var(--building-warning)',
               opacity: isComplete ? 0.7 : 1
             }}
           >
