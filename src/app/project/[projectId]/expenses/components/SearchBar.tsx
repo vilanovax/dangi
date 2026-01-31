@@ -9,12 +9,12 @@ interface SearchBarProps {
 }
 
 /**
- * Search and filter bar
+ * Search and filter bar - Final Polish
  *
  * UX Intent:
  * - Minimal UI that doesn't dominate the list
  * - Casual placeholder feels friendly
- * - Filter button clear but not prominent
+ * - Uses building design tokens for consistency
  */
 export function SearchBar({
   value,
@@ -24,12 +24,21 @@ export function SearchBar({
   onFilterClick,
 }: SearchBarProps) {
   return (
-    <div className="bg-white dark:bg-gray-900 px-4 py-3 border-b border-gray-100/50 dark:border-gray-800/50">
+    <div
+      className="px-4 py-3"
+      style={{
+        backgroundColor: 'var(--building-surface)',
+        borderBottomWidth: '1px',
+        borderBottomStyle: 'solid',
+        borderBottomColor: 'var(--building-border-muted)',
+      }}
+    >
       <div className="flex gap-2">
         {/* Search Input - casual placeholder */}
         <div className="flex-1 relative">
           <svg
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4"
+            style={{ color: 'var(--building-text-muted)' }}
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -46,12 +55,20 @@ export function SearchBar({
             placeholder="تو خرج‌ها بگرد…"
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="w-full pr-9 pl-9 py-2.5 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-800 outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-300 dark:focus:border-blue-700 text-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 transition-all"
+            className="w-full pr-9 pl-9 py-2.5 rounded-xl outline-none text-sm transition-all"
+            style={{
+              backgroundColor: 'var(--building-surface-muted)',
+              borderWidth: '1px',
+              borderStyle: 'solid',
+              borderColor: 'var(--building-border)',
+              color: 'var(--building-text-primary)',
+            }}
           />
           {value && (
             <button
               onClick={() => onChange('')}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors active:scale-95"
+              className="absolute left-3 top-1/2 -translate-y-1/2 transition-colors active:scale-95"
+              style={{ color: 'var(--building-text-muted)' }}
               aria-label="پاک کردن جستجو"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -61,14 +78,17 @@ export function SearchBar({
           )}
         </div>
 
-        {/* Filter Button - simple, not advanced looking */}
+        {/* Filter Button - uses building tokens */}
         <button
           onClick={onFilterClick}
-          className={`px-3 py-2.5 rounded-xl flex items-center gap-2 text-sm font-medium transition-all active:scale-95 ${
-            hasActiveFilter
-              ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/25'
-              : 'bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
-          }`}
+          className="px-3 py-2.5 rounded-xl flex items-center gap-2 text-sm font-medium transition-all active:scale-95"
+          style={{
+            backgroundColor: hasActiveFilter ? 'var(--building-primary)' : 'var(--building-surface-muted)',
+            color: hasActiveFilter ? 'white' : 'var(--building-text-secondary)',
+            borderWidth: '1px',
+            borderStyle: 'solid',
+            borderColor: hasActiveFilter ? 'var(--building-primary)' : 'var(--building-border)',
+          }}
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path

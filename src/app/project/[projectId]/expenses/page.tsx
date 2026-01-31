@@ -10,6 +10,7 @@ import {
   SearchBar,
   ExpensesList,
   FilterSheet,
+  ExpenseDetailSheet,
 } from './components'
 
 // ============================================
@@ -33,6 +34,7 @@ interface Expense {
   id: string
   title: string
   amount: number
+  currency: string
   expenseDate: string
   periodKey?: string | null
   paidBy: Participant
@@ -217,6 +219,10 @@ export default function ExpensesPage() {
   const [categoryFilterName, setCategoryFilterName] = useState<string | null>(null)
   const [payerFilterName, setPayerFilterName] = useState<string | null>(null)
 
+  // Expense detail sheet state
+  const [showExpenseDetail, setShowExpenseDetail] = useState(false)
+  const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null)
+
   // Apply filters from URL query params
   useEffect(() => {
     const categoryParam = searchParams.get('category')
@@ -310,6 +316,11 @@ export default function ExpensesPage() {
     [filterType, selectedCategoryId, selectedPayerId, selectedPeriodKey, dateRange, project]
   )
 
+  const selectedExpense = useMemo(
+    () => expenses.find(e => e.id === selectedExpenseId) || null,
+    [expenses, selectedExpenseId]
+  )
+
   // Handlers
   const handleBack = useCallback(() => router.back(), [router])
 
@@ -358,17 +369,59 @@ export default function ExpensesPage() {
     [router, projectId]
   )
 
+  const handleExpenseClick = useCallback((expenseId: string) => {
+    setSelectedExpenseId(expenseId)
+    setShowExpenseDetail(true)
+  }, [])
+
+  const handleEditExpense = useCallback(() => {
+    if (!selectedExpenseId) return
+    setShowExpenseDetail(false)
+    router.push(`/project/${projectId}/expense/${selectedExpenseId}`)
+  }, [selectedExpenseId, router, projectId])
+
+  const handleDeleteExpense = useCallback(async () => {
+    if (!selectedExpenseId) return
+
+    const confirmed = confirm('آیا از حذف این خرج مطمئن هستید؟')
+    if (!confirmed) return
+
+    try {
+      const res = await fetch(`/api/projects/${projectId}/expenses/${selectedExpenseId}`, {
+        method: 'DELETE',
+      })
+
+      if (res.ok) {
+        // Remove expense from local state
+        setExpenses(prev => prev.filter(e => e.id !== selectedExpenseId))
+        setShowExpenseDetail(false)
+        setSelectedExpenseId(null)
+      } else {
+        alert('خطا در حذف خرج')
+      }
+    } catch (error) {
+      console.error('Error deleting expense:', error)
+      alert('خطا در حذف خرج')
+    }
+  }, [selectedExpenseId, projectId])
+
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-dvh flex items-center justify-center bg-gray-50 dark:bg-gray-950">
-        <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full" />
+      <div
+        className="min-h-dvh flex items-center justify-center"
+        style={{ backgroundColor: 'var(--building-surface-muted)' }}
+      >
+        <div
+          className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full"
+          style={{ borderColor: 'var(--building-border)', borderTopColor: 'transparent' }}
+        />
       </div>
     )
   }
 
   return (
-    <main className="min-h-dvh bg-gray-50 dark:bg-gray-950 pb-24">
+    <main className="min-h-dvh pb-24" style={{ backgroundColor: 'var(--building-surface-muted)' }}>
       {/* Sticky Header Section */}
       <div className="sticky top-0 z-10">
         <ExpensesHeader
@@ -442,6 +495,7 @@ export default function ExpensesPage() {
         isFiltered={isFiltered}
         onClearFilters={handleClearFilters}
         showPeriod={supportsPeriod}
+        onExpenseClick={handleExpenseClick}
       />
 
       {/* Floating Add Button - secondary to list items, clear action */}
@@ -473,6 +527,16 @@ export default function ExpensesPage() {
         onClearFilters={handleClearFilters}
         supportsPeriod={supportsPeriod}
         availablePeriods={availablePeriods}
+      />
+
+      {/* Expense Detail Bottom Sheet */}
+      <ExpenseDetailSheet
+        isOpen={showExpenseDetail}
+        onClose={() => setShowExpenseDetail(false)}
+        expense={selectedExpense}
+        projectId={projectId}
+        onEdit={handleEditExpense}
+        onDelete={handleDeleteExpense}
       />
     </main>
   )

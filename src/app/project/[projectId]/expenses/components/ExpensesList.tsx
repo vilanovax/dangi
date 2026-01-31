@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import { ExpenseItem } from './ExpenseItem'
 import { DateSeparator } from './DateSeparator'
 import { EmptyState } from './EmptyState'
@@ -28,15 +29,16 @@ interface ExpensesListProps {
   isFiltered: boolean
   onClearFilters: () => void
   showPeriod?: boolean
+  onExpenseClick?: (expenseId: string) => void
 }
 
 /**
- * Timeline list of expenses grouped by date
+ * Timeline list of expenses grouped by date - Final Polish
  *
  * UX Intent:
  * - Breathable spacing, not dense
  * - Comfortable to scroll and scan
- * - Extra top padding for visual separation from search
+ * - Identify high-cost expenses for visual indicators
  */
 export function ExpensesList({
   expenses,
@@ -46,7 +48,16 @@ export function ExpensesList({
   isFiltered,
   onClearFilters,
   showPeriod = false,
+  onExpenseClick,
 }: ExpensesListProps) {
+  // Calculate high-cost threshold (top 25% of expenses)
+  const highCostThreshold = useMemo(() => {
+    if (expenses.length === 0) return 0
+    const amounts = expenses.map(e => e.amount).sort((a, b) => b - a)
+    const top25Index = Math.floor(amounts.length * 0.25)
+    return amounts[top25Index] || 0
+  }, [expenses])
+
   if (expenses.length === 0) {
     return <EmptyState isFiltered={isFiltered} onClearFilters={onClearFilters} />
   }
@@ -57,8 +68,8 @@ export function ExpensesList({
         <div key={date} className="space-y-2.5">
           <DateSeparator date={date} />
 
-          {/* Cards with slightly more spacing for better rhythm */}
-          <div className="space-y-2.5">
+          {/* Cards with improved spacing and indicators */}
+          <div className="space-y-3">
             {dateExpenses.map((expense) => (
               <ExpenseItem
                 key={expense.id}
@@ -71,6 +82,8 @@ export function ExpensesList({
                 category={expense.category}
                 periodKey={expense.periodKey}
                 showPeriod={showPeriod}
+                isHighCost={expense.amount >= highCostThreshold}
+                onClick={onExpenseClick ? () => onExpenseClick(expense.id) : undefined}
               />
             ))}
           </div>

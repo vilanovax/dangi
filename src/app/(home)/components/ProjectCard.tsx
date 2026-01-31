@@ -20,6 +20,7 @@ interface ProjectCardProps {
   onDelete?: (id: string) => void
   onExport?: (id: string) => void
   onArchive?: (id: string, isArchived: boolean) => void
+  onProjectClick?: (id: string) => void
   isDragging?: boolean
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>
 }
@@ -52,6 +53,7 @@ export const ProjectCard = memo(function ProjectCard({
   onDelete,
   onExport,
   onArchive,
+  onProjectClick,
   isDragging,
   dragHandleProps,
 }: ProjectCardProps) {
@@ -206,7 +208,7 @@ export const ProjectCard = memo(function ProjectCard({
           </div>
         )}
 
-        <Link href={`/project/${id}`}>
+        <Link href={`/project/${id}`} onClick={() => onProjectClick?.(id)}>
           <div className={`relative overflow-hidden bg-gradient-to-br ${getTemplateGradient()} bg-white dark:bg-gray-900 backdrop-blur-xl rounded-3xl p-5 shadow-sm hover:shadow-xl transition-all duration-500 active:scale-[0.98] border border-white/50 dark:border-gray-800/50`}>
             {/* Decorative Elements */}
             <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-white/30 to-transparent dark:from-white/5 rounded-full blur-2xl -translate-y-1/2 -translate-x-1/2" />

@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button, Card, BottomSheet } from '@/components/ui'
 import { formatMoney } from '@/lib/utils/money'
+import { ExpenseDetailSheet } from '../expenses/components/ExpenseDetailSheet'
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -110,6 +111,11 @@ export default function BuildingDashboard() {
   const [paymentAmount, setPaymentAmount] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
+  // Expense detail modal (for common expenses)
+  const [showExpenseDetail, setShowExpenseDetail] = useState(false)
+  const [selectedExpense, setSelectedExpense] = useState<any>(null)
+  const [loadingExpense, setLoadingExpense] = useState(false)
+
   useEffect(() => {
     fetchData()
   }, [projectId])
@@ -144,6 +150,53 @@ export default function BuildingDashboard() {
       console.error('Error fetching month details:', err)
     } finally {
       setLoadingMonth(false)
+    }
+  }
+
+  const handleExpenseClick = async (expenseId: string) => {
+    setLoadingExpense(true)
+    setShowExpenseDetail(true)
+    try {
+      const res = await fetch(`/api/projects/${projectId}/expenses/${expenseId}`)
+      if (res.ok) {
+        const data = await res.json()
+        setSelectedExpense(data.expense)
+      }
+    } catch (err) {
+      console.error('Error fetching expense details:', err)
+    } finally {
+      setLoadingExpense(false)
+    }
+  }
+
+  const handleEditExpense = () => {
+    if (!selectedExpense) return
+    // TODO: Implement edit page for common expenses
+    alert('قابلیت ویرایش هزینه‌های عمومی به زودی اضافه خواهد شد')
+  }
+
+  const handleDeleteExpense = async () => {
+    if (!selectedExpense) return
+
+    const confirmed = confirm('آیا از حذف این هزینه مطمئن هستید؟')
+    if (!confirmed) return
+
+    try {
+      const res = await fetch(`/api/projects/${projectId}/expenses/${selectedExpense.id}`, {
+        method: 'DELETE',
+      })
+
+      if (res.ok) {
+        setShowExpenseDetail(false)
+        setSelectedExpense(null)
+        // Refresh stats to update the list
+        fetchData()
+      } else {
+        alert('خطا در حذف هزینه')
+      }
+    } catch (error) {
+      console.error('Error deleting expense:', error)
+      alert('خطا در حذف هزینه')
     }
   }
 
@@ -342,7 +395,7 @@ export default function BuildingDashboard() {
           {[
             {
               key: 'overview',
-              label: 'نمای کلی',
+              label: 'داشبورد',
               icon: (
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -440,6 +493,7 @@ export default function BuildingDashboard() {
             commonExpenses={stats.commonExpenses}
             currency={project.currency}
             projectId={projectId}
+            onExpenseClick={handleExpenseClick}
           />
         )}
       </div>
@@ -1061,6 +1115,19 @@ export default function BuildingDashboard() {
           )
         })()}
       </BottomSheet>
+
+      {/* Expense Detail Bottom Sheet */}
+      <ExpenseDetailSheet
+        isOpen={showExpenseDetail}
+        onClose={() => {
+          setShowExpenseDetail(false)
+          setSelectedExpense(null)
+        }}
+        expense={selectedExpense}
+        projectId={projectId}
+        onEdit={handleEditExpense}
+        onDelete={handleDeleteExpense}
+      />
     </main>
   )
 }
@@ -1233,21 +1300,55 @@ function OverviewTab({
         <h3 className="font-bold mb-3" style={{ color: 'var(--building-text-primary)' }}>
           روند وصول ماهیانه
         </h3>
-        {stats.monthlyStats.every(m => m.percentage === 0) ? (
-          <div className="text-center py-8">
-            <div className="flex items-end gap-1 h-24 opacity-20 mb-4">
-              {stats.monthlyStats.map((month, i) => (
+        {stats.monthlyStats.every(m => m.totalPaid === 0) ? (
+          <div className="text-center py-6">
+            {/* Empty Chart Illustration */}
+            <div className="flex items-end gap-1 h-20 mb-4 opacity-15">
+              {stats.monthlyStats.slice(0, 6).map((month, i) => (
                 <div key={month.month} className="flex-1 flex flex-col items-center">
                   <div className="w-full rounded-t" style={{
-                    height: `${20 + (i % 3) * 15}%`,
+                    height: `${25 + (i % 3) * 20}%`,
                     backgroundColor: 'var(--building-text-muted)'
                   }} />
                 </div>
               ))}
             </div>
-            <p className="text-sm" style={{ color: 'var(--building-text-secondary)' }}>
-              با ثبت پرداخت‌ها، روند ماهیانه نمایش داده می‌شود
-            </p>
+
+            {/* Empty State Message */}
+            {stats.chargePerUnit === 0 ? (
+              <>
+                <p className="text-sm font-medium mb-1.5" style={{ color: 'var(--building-text-primary)' }}>
+                  برای مشاهده روند، ابتدا شارژ ماهیانه را تنظیم کنید
+                </p>
+                <p className="text-xs mb-4" style={{ color: 'var(--building-text-secondary)' }}>
+                  با تنظیم شارژ، می‌توانید پرداخت‌های ماهیانه واحدها را پیگیری کنید
+                </p>
+                <Link href={`/project/${projectId}/charge-rules`}>
+                  <button
+                    className="px-4 py-2 rounded-lg text-sm font-medium text-white transition-all active:scale-95"
+                    style={{ backgroundColor: 'var(--building-primary)' }}
+                  >
+                    تنظیم شارژ ماهیانه
+                  </button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <p className="text-sm font-medium mb-1.5" style={{ color: 'var(--building-text-primary)' }}>
+                  هنوز پرداختی ثبت نشده است
+                </p>
+                <p className="text-xs mb-4" style={{ color: 'var(--building-text-secondary)' }}>
+                  با ثبت پرداخت‌های ماهیانه، روند وصول نمایش داده می‌شود
+                </p>
+                <button
+                  onClick={() => setActiveTab('months')}
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-white transition-all active:scale-95"
+                  style={{ backgroundColor: 'var(--building-primary)' }}
+                >
+                  ثبت پرداخت ماهیانه
+                </button>
+              </>
+            )}
           </div>
         ) : (
           <div className="flex items-end gap-1 h-24">
@@ -1556,10 +1657,12 @@ function CommonExpensesTab({
   commonExpenses,
   currency,
   projectId,
+  onExpenseClick,
 }: {
   commonExpenses?: CommonExpensesStats
   currency: string
   projectId: string
+  onExpenseClick?: (expenseId: string) => void
 }) {
   if (!commonExpenses || commonExpenses.count === 0) {
     return (
@@ -1603,23 +1706,46 @@ function CommonExpensesTab({
 
       {/* Recent Common Expenses */}
       <div className="space-y-2">
-        <h3 className="font-bold text-gray-900 dark:text-white">هزینه‌های اخیر</h3>
+        <h3 className="font-bold" style={{ color: 'var(--building-text-primary)' }}>
+          هزینه‌های اخیر
+        </h3>
         {commonExpenses.recent.map((expense) => (
-          <Card key={expense.id} className="p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-sm">{expense.title}</p>
-                <p className="text-xs text-gray-500">
-                  پرداخت: {expense.paidBy} • {expense.date}
+          <div
+            key={expense.id}
+            onClick={() => onExpenseClick?.(expense.id)}
+            className="rounded-xl p-3.5 cursor-pointer transition-all active:scale-[0.98]"
+            style={{
+              backgroundColor: 'var(--building-surface)',
+              borderWidth: '1px',
+              borderStyle: 'solid',
+              borderColor: 'var(--building-border)',
+            }}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-sm mb-1" style={{ color: 'var(--building-text-primary)' }}>
+                  {expense.title}
+                </p>
+                <p className="text-xs" style={{ color: 'var(--building-text-secondary)' }}>
+                  {expense.paidBy} • {expense.date}
                 </p>
               </div>
-              <div className="text-left">
-                <p className="text-sm font-medium text-amber-600">
+              <div className="text-left flex items-center gap-2 flex-shrink-0">
+                <p className="text-sm font-bold" style={{ color: 'var(--building-warning)' }}>
                   {formatMoney(expense.amount, currency)}
                 </p>
+                <svg
+                  className="w-4 h-4"
+                  style={{ color: 'var(--building-text-muted)' }}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
               </div>
             </div>
-          </Card>
+          </div>
         ))}
       </div>
     </div>

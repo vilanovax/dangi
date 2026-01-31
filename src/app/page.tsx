@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button, HomeHeaderSkeleton, ProjectCardSkeleton } from '@/components/ui'
@@ -13,13 +13,14 @@ import {
   CreateProjectSheet,
   QuickResumeCard,
   ChecklistsSection,
+  FloatingActionButton,
 } from './(home)/components'
 
 // ─────────────────────────────────────────────────────────────
 // LocalStorage Keys
 // ─────────────────────────────────────────────────────────────
 
-const PROJECT_ORDER_KEY = 'dangi_project_order'
+const PROJECT_LAST_USED_KEY = 'dangi_project_last_used'
 const LAST_ACTIVE_PROJECT_KEY = 'dangi_last_active_project'
 
 // ─────────────────────────────────────────────────────────────
@@ -57,41 +58,48 @@ export default function HomePage() {
 
   // ── Drag & Drop State ─────────────────────────────────────
   const [orderedProjects, setOrderedProjects] = useState<Project[]>([])
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
-  const [isReordering, setIsReordering] = useState(false)
-  const dragRef = useRef<{ startY: number; currentY: number }>({ startY: 0, currentY: 0 })
 
-  // ── Load & Save Order ─────────────────────────────────────
+  // ── Load & Sort by Last Used ─────────────────────────────────────
   useEffect(() => {
     if (projects.length > 0) {
-      const savedOrder = localStorage.getItem(PROJECT_ORDER_KEY)
-      if (savedOrder) {
+      const lastUsedData = localStorage.getItem(PROJECT_LAST_USED_KEY)
+      let lastUsedMap: Record<string, number> = {}
+
+      if (lastUsedData) {
         try {
-          const orderIds: string[] = JSON.parse(savedOrder)
-          const sorted = [...projects].sort((a, b) => {
-            const indexA = orderIds.indexOf(a.id)
-            const indexB = orderIds.indexOf(b.id)
-            if (indexA === -1 && indexB === -1) return 0
-            if (indexA === -1) return 1
-            if (indexB === -1) return -1
-            return indexA - indexB
-          })
-          setOrderedProjects(sorted)
+          lastUsedMap = JSON.parse(lastUsedData)
         } catch {
-          setOrderedProjects(projects)
+          lastUsedMap = {}
         }
-      } else {
-        setOrderedProjects(projects)
       }
+
+      // Sort by last used timestamp (most recent first)
+      const sorted = [...projects].sort((a, b) => {
+        const timeA = lastUsedMap[a.id] || 0
+        const timeB = lastUsedMap[b.id] || 0
+        return timeB - timeA // Descending order (most recent first)
+      })
+
+      setOrderedProjects(sorted)
     } else {
       setOrderedProjects([])
     }
   }, [projects])
 
-  const saveOrder = useCallback((newOrder: Project[]) => {
-    const orderIds = newOrder.map((p) => p.id)
-    localStorage.setItem(PROJECT_ORDER_KEY, JSON.stringify(orderIds))
+  const updateProjectLastUsed = useCallback((projectId: string) => {
+    const lastUsedData = localStorage.getItem(PROJECT_LAST_USED_KEY)
+    let lastUsedMap: Record<string, number> = {}
+
+    if (lastUsedData) {
+      try {
+        lastUsedMap = JSON.parse(lastUsedData)
+      } catch {
+        lastUsedMap = {}
+      }
+    }
+
+    lastUsedMap[projectId] = Date.now()
+    localStorage.setItem(PROJECT_LAST_USED_KEY, JSON.stringify(lastUsedMap))
   }, [])
 
   // ── Filter Active & Archived Projects ───────────────────────
@@ -153,71 +161,17 @@ export default function HomePage() {
 
   const handleProjectDelete = useCallback(
     (id: string) => {
-      const newProjects = orderedProjects.filter((p) => p.id !== id)
-      setOrderedProjects(newProjects)
-      saveOrder(newProjects)
       refresh()
     },
-    [orderedProjects, refresh, saveOrder]
+    [refresh]
   )
 
   const handleProjectArchive = useCallback(
     (id: string, isArchived: boolean) => {
-      const newProjects = orderedProjects.map((p) =>
-        p.id === id ? { ...p, isArchived } : p
-      )
-      setOrderedProjects(newProjects)
-      saveOrder(newProjects)
       refresh()
     },
-    [orderedProjects, refresh, saveOrder]
+    [refresh]
   )
-
-  // ── Drag & Drop Handlers ──────────────────────────────────
-
-  const handleDragStart = useCallback((index: number, e: React.TouchEvent | React.MouseEvent) => {
-    setDraggedIndex(index)
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
-    dragRef.current = { startY: clientY, currentY: clientY }
-  }, [])
-
-  const handleDragMove = useCallback((e: React.TouchEvent | React.MouseEvent) => {
-    if (draggedIndex === null) return
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
-    dragRef.current.currentY = clientY
-
-    const elements = document.querySelectorAll('[data-project-index]')
-    elements.forEach((el, i) => {
-      const rect = el.getBoundingClientRect()
-      const midY = rect.top + rect.height / 2
-      if (clientY > midY - 20 && clientY < midY + 20 && i !== draggedIndex) {
-        setDragOverIndex(i)
-      }
-    })
-  }, [draggedIndex])
-
-  const handleDragEnd = useCallback(() => {
-    if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
-      const newProjects = [...orderedProjects]
-      const [removed] = newProjects.splice(draggedIndex, 1)
-      newProjects.splice(dragOverIndex, 0, removed)
-      setOrderedProjects(newProjects)
-      saveOrder(newProjects)
-    }
-    setDraggedIndex(null)
-    setDragOverIndex(null)
-  }, [draggedIndex, dragOverIndex, orderedProjects, saveOrder])
-
-  const moveProject = useCallback((fromIndex: number, direction: 'up' | 'down') => {
-    const toIndex = direction === 'up' ? fromIndex - 1 : fromIndex + 1
-    if (toIndex < 0 || toIndex >= orderedProjects.length) return
-
-    const newProjects = [...orderedProjects]
-    const [removed] = newProjects.splice(fromIndex, 1)
-    newProjects.splice(toIndex, 0, removed)
-    setOrderedProjects(newProjects)
-    saveOrder(newProjects)
-  }, [orderedProjects, saveOrder])
 
   // ── Loading State ───────────────────────────────────────────
 
@@ -298,117 +252,30 @@ export default function HomePage() {
                     مشاهده همه
                   </button>
                 )}
-
-                {showAllProjects && activeProjects.length > 2 && !isReordering && (
-                  <button
-                    onClick={() => setIsReordering(true)}
-                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                    </svg>
-                    ترتیب
-                  </button>
-                )}
-
-                {isReordering && (
-                  <button
-                    onClick={() => setIsReordering(false)}
-                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-emerald-500 text-white"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    تمام
-                  </button>
-                )}
               </div>
 
               {/* Projects Grid */}
-              <div
-                className="space-y-3"
-                onTouchMove={handleDragMove}
-                onMouseMove={handleDragMove}
-                onTouchEnd={handleDragEnd}
-                onMouseUp={handleDragEnd}
-                onMouseLeave={handleDragEnd}
-              >
-                {displayProjects.map((project, index) => {
+              <div className="space-y-3">
+                {displayProjects.map((project) => {
                   const templateInfo = getTemplateInfo(project.template)
                   return (
-                    <div
+                    <ProjectCard
                       key={project.id}
-                      data-project-index={index}
-                      className={`relative transition-all duration-300 ${
-                        draggedIndex === index
-                          ? 'opacity-60 scale-[0.98] z-50'
-                          : dragOverIndex === index
-                          ? 'translate-y-3'
-                          : ''
-                      }`}
-                    >
-                      {/* Reorder Controls */}
-                      {isReordering && (
-                        <div className="absolute -right-1 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-1">
-                          <button
-                            onClick={() => moveProject(index, 'up')}
-                            disabled={index === 0}
-                            className={`w-8 h-8 rounded-lg bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl shadow-md flex items-center justify-center transition-all ${
-                              index === 0 ? 'opacity-30 cursor-not-allowed' : 'hover:scale-110 active:scale-95'
-                            }`}
-                          >
-                            <svg className="w-4 h-4 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => moveProject(index, 'down')}
-                            disabled={index === activeProjects.length - 1}
-                            className={`w-8 h-8 rounded-lg bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl shadow-md flex items-center justify-center transition-all ${
-                              index === activeProjects.length - 1 ? 'opacity-30 cursor-not-allowed' : 'hover:scale-110 active:scale-95'
-                            }`}
-                          >
-                            <svg className="w-4 h-4 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </button>
-                        </div>
-                      )}
-
-                      {/* Drag Handle */}
-                      {isReordering && (
-                        <div
-                          className="absolute left-1 top-1/2 -translate-y-1/2 z-10 touch-none"
-                          onTouchStart={(e) => handleDragStart(index, e)}
-                          onMouseDown={(e) => handleDragStart(index, e)}
-                        >
-                          <div className="w-8 h-8 rounded-lg bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl shadow-md flex items-center justify-center cursor-grab active:cursor-grabbing hover:scale-110 transition-transform">
-                            <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M8 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm8-12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0z" />
-                            </svg>
-                          </div>
-                        </div>
-                      )}
-
-                      <div className={isReordering ? 'mr-9 ml-10' : ''}>
-                        <ProjectCard
-                          id={project.id}
-                          name={project.name}
-                          template={project.template}
-                          templateName={templateInfo.name}
-                          templateIcon={templateInfo.icon}
-                          participantCount={project.participantCount}
-                          expenseCount={project.expenseCount}
-                          totalExpenses={project.totalExpenses}
-                          myBalance={project.myBalance}
-                          currency={project.currency}
-                          isArchived={project.isArchived}
-                          onDelete={handleProjectDelete}
-                          onArchive={handleProjectArchive}
-                          isDragging={draggedIndex === index}
-                        />
-                      </div>
-                    </div>
+                      id={project.id}
+                      name={project.name}
+                      template={project.template}
+                      templateName={templateInfo.name}
+                      templateIcon={templateInfo.icon}
+                      participantCount={project.participantCount}
+                      expenseCount={project.expenseCount}
+                      totalExpenses={project.totalExpenses}
+                      myBalance={project.myBalance}
+                      currency={project.currency}
+                      isArchived={project.isArchived}
+                      onDelete={handleProjectDelete}
+                      onArchive={handleProjectArchive}
+                      onProjectClick={updateProjectLastUsed}
+                    />
                   )
                 })}
 
@@ -468,6 +335,7 @@ export default function HomePage() {
                             isArchived={project.isArchived}
                             onDelete={handleProjectDelete}
                             onArchive={handleProjectArchive}
+                            onProjectClick={updateProjectLastUsed}
                             isDragging={false}
                           />
                         </div>
@@ -478,36 +346,16 @@ export default function HomePage() {
               </div>
             )}
 
-            {/* Checklists Section - Secondary importance */}
+            {/* Checklists Section */}
             <ChecklistsSection compact />
 
-            {/* Spacer for fixed button */}
-            <div className="pb-28" />
+            {/* Spacer for FAB */}
+            <div className="pb-6" />
           </div>
         )}
 
-        {/* Single Fixed Bottom CTA */}
-        {user && (
-          <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white/95 to-transparent dark:from-gray-900 dark:via-gray-900/95 dark:to-transparent pt-10">
-            <Button
-              onClick={() => setShowCreate(true)}
-              className="w-full !bg-gradient-to-r !from-blue-500 !to-purple-600 hover:!from-blue-600 hover:!to-purple-700 !shadow-xl !shadow-blue-500/25 hover:!shadow-2xl hover:!shadow-blue-500/30 transition-all duration-300"
-              size="lg"
-            >
-              <span className="flex items-center justify-center gap-3">
-                <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-                  </svg>
-                </div>
-                <span className="font-bold">شروع پروژه جدید</span>
-              </span>
-            </Button>
-            <p className="text-center text-xs text-gray-400 dark:text-gray-500 mt-2">
-              سفر، دورهمی، خونه یا ساختمان
-            </p>
-          </div>
-        )}
+        {/* Floating Action Button */}
+        {user && <FloatingActionButton onCreateProject={() => setShowCreate(true)} />}
       </div>
 
       {/* Create Project Sheet */}
