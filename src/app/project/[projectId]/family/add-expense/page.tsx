@@ -6,6 +6,7 @@ import { PersianDatePicker } from '@/components/ui/PersianDatePicker'
 import { FamilyButton } from '../components/FamilyButton'
 import { FamilyIcon } from '../components/FamilyIcon'
 import { FamilyInput } from '../components/FamilyInput'
+import { designTokens as dt } from '@/styles/design-tokens'
 import { getBackgroundClass, getTextColorClass } from '@/styles/family-theme'
 
 interface Participant {
@@ -218,8 +219,24 @@ export default function AddExpensePage() {
     <div className={`min-h-screen ${getBackgroundClass()}`}>
       {/* Success Toast */}
       {success && (
-        <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 bg-[#22C55E] dark:bg-[#4ADE80] text-white px-6 py-3 rounded-2xl shadow-lg animate-in slide-in-from-top-4">
-          <div className="flex items-center gap-2 font-semibold text-[14px]">
+        <div
+          className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 text-white shadow-lg animate-in slide-in-from-top-4"
+          style={{
+            backgroundColor: dt.colors.semantic.income,
+            paddingLeft: dt.spacing[6],
+            paddingRight: dt.spacing[6],
+            paddingTop: dt.spacing[3],
+            paddingBottom: dt.spacing[3],
+            borderRadius: dt.radius.lg
+          }}
+        >
+          <div
+            className="flex items-center font-semibold"
+            style={{
+              gap: dt.spacing[2],
+              fontSize: dt.typography.sizes.body
+            }}
+          >
             <FamilyIcon name="success" size={16} className="text-white" />
             <span>ثبت شد</span>
           </div>
@@ -227,8 +244,15 @@ export default function AddExpensePage() {
       )}
 
       {/* Header - Minimal */}
-      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-100 dark:border-gray-800 p-4 px-6">
-        <div className="flex items-center gap-3 max-w-2xl mx-auto">
+      <div
+        className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-100 dark:border-gray-800"
+        style={{
+          padding: dt.spacing[4],
+          paddingLeft: dt.spacing[6],
+          paddingRight: dt.spacing[6]
+        }}
+      >
+        <div className="flex items-center max-w-2xl mx-auto" style={{ gap: dt.spacing[3] }}>
           <button
             onClick={() => router.back()}
             className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors p-2 -m-2"
@@ -236,20 +260,36 @@ export default function AddExpensePage() {
           >
             <FamilyIcon name="back" size={24} />
           </button>
-          <h1 className={`text-[20px] font-bold ${getTextColorClass('primary')}`}>
+          <h1
+            className={`font-bold ${getTextColorClass('primary')}`}
+            style={{ fontSize: dt.typography.sizes.headline }}
+          >
             ثبت هزینه
           </h1>
         </div>
       </div>
 
       {/* Form */}
-      <div className="max-w-2xl mx-auto" style={{ padding: '24px' }}>
-        <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="max-w-2xl mx-auto" style={{ padding: dt.layout.sectionGap }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: dt.spacing[6] }}>
           {/* PRIMARY SECTION - Above the fold */}
-          <div className="space-y-4">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: dt.spacing[4] }}>
             {/* 1. Amount (Hero Input) */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-8 px-6">
-              <label className={`block text-[13px] mb-2 ${getTextColorClass('secondary')}`}>
+            <div
+              className="bg-white dark:bg-gray-900"
+              style={{
+                borderRadius: dt.radius.lg,
+                boxShadow: dt.shadow.card,
+                padding: `${dt.spacing[8]}px ${dt.spacing[6]}px`
+              }}
+            >
+              <label
+                className={`block ${getTextColorClass('secondary')}`}
+                style={{
+                  fontSize: dt.typography.sizes.caption,
+                  marginBottom: dt.spacing[2]
+                }}
+              >
                 مبلغ
               </label>
               <div className="relative">
@@ -258,19 +298,36 @@ export default function AddExpensePage() {
                   value={formatNumberWithCommas(amount)}
                   onChange={handleAmountChange}
                   placeholder="0"
-                  className={`w-full text-[44px] font-extrabold leading-tight bg-transparent border-none focus:outline-none text-right placeholder:text-gray-200 dark:placeholder:text-gray-700 ${getTextColorClass('primary')}`}
+                  className={`w-full font-extrabold leading-tight bg-transparent border-none focus:outline-none text-right placeholder:text-gray-200 dark:placeholder:text-gray-700 ${getTextColorClass('primary')}`}
+                  style={{ fontSize: 44 }}
                   disabled={loading}
                   autoFocus
                 />
-                <div className={`text-[14px] mt-1 ${getTextColorClass('secondary')}`}>
+                <div
+                  className={`mt-1 ${getTextColorClass('secondary')}`}
+                  style={{ fontSize: dt.typography.sizes.body }}
+                >
                   تومان
                 </div>
               </div>
             </div>
 
             {/* 2. Title */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-5">
-              <label className={`block text-[14px] font-medium mb-2 ${getTextColorClass('primary')}`}>
+            <div
+              className="bg-white dark:bg-gray-900"
+              style={{
+                borderRadius: dt.radius.lg,
+                boxShadow: dt.shadow.card,
+                padding: dt.spacing[5]
+              }}
+            >
+              <label
+                className={`block font-medium ${getTextColorClass('primary')}`}
+                style={{
+                  fontSize: dt.typography.sizes.body,
+                  marginBottom: dt.spacing[2]
+                }}
+              >
                 برای چی؟
               </label>
               <input
@@ -278,26 +335,57 @@ export default function AddExpensePage() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="مثلاً: شام رستوران"
-                className={`w-full text-[15px] px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF8A00] focus:border-transparent ${getTextColorClass('primary')}`}
+                className={`w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:border-transparent ${getTextColorClass('primary')}`}
+                style={{
+                  fontSize: dt.typography.sizes.bodyLarge,
+                  padding: `${dt.spacing[3]}px ${dt.spacing[4]}px`,
+                  borderRadius: dt.radius.md,
+                  outlineColor: dt.colors.brand.primary
+                }}
                 disabled={loading}
               />
             </div>
 
             {/* 3. For Who? (Compact Segmented Control) */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-5">
-              <label className={`block text-[14px] font-medium mb-3 ${getTextColorClass('primary')}`}>
+            <div
+              className="bg-white dark:bg-gray-900"
+              style={{
+                borderRadius: dt.radius.lg,
+                boxShadow: dt.shadow.card,
+                padding: dt.spacing[5]
+              }}
+            >
+              <label
+                className={`block font-medium ${getTextColorClass('primary')}`}
+                style={{
+                  fontSize: dt.typography.sizes.body,
+                  marginBottom: dt.spacing[3]
+                }}
+              >
                 برای کی؟
               </label>
-              <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
+              <div
+                className="flex bg-gray-100 dark:bg-gray-800"
+                style={{
+                  borderRadius: dt.radius.md,
+                  padding: dt.spacing[1]
+                }}
+              >
                 <button
                   type="button"
                   onClick={() => setExpenseType('family')}
                   disabled={loading}
-                  className={`flex-1 text-[14px] py-2 px-4 rounded-lg font-medium transition-all ${
-                    expenseType === 'family'
-                      ? 'bg-[#FF8A00] dark:bg-[#FFA94D] text-white'
-                      : 'bg-transparent text-gray-500 dark:text-gray-400'
-                  }`}
+                  className="flex-1 font-medium transition-all"
+                  style={{
+                    fontSize: dt.typography.sizes.body,
+                    paddingTop: dt.spacing[2],
+                    paddingBottom: dt.spacing[2],
+                    paddingLeft: dt.spacing[4],
+                    paddingRight: dt.spacing[4],
+                    borderRadius: dt.radius.sm,
+                    backgroundColor: expenseType === 'family' ? dt.colors.brand.primary : 'transparent',
+                    color: expenseType === 'family' ? 'white' : dt.colors.text.secondary
+                  }}
                 >
                   خانواده
                 </button>
@@ -305,17 +393,29 @@ export default function AddExpensePage() {
                   type="button"
                   onClick={() => setExpenseType('personal')}
                   disabled={loading}
-                  className={`flex-1 text-[14px] py-2 px-4 rounded-lg font-medium transition-all ${
-                    expenseType === 'personal'
-                      ? 'bg-[#FF8A00] dark:bg-[#FFA94D] text-white'
-                      : 'bg-transparent text-gray-500 dark:text-gray-400'
-                  }`}
+                  className="flex-1 font-medium transition-all"
+                  style={{
+                    fontSize: dt.typography.sizes.body,
+                    paddingTop: dt.spacing[2],
+                    paddingBottom: dt.spacing[2],
+                    paddingLeft: dt.spacing[4],
+                    paddingRight: dt.spacing[4],
+                    borderRadius: dt.radius.sm,
+                    backgroundColor: expenseType === 'personal' ? dt.colors.brand.primary : 'transparent',
+                    color: expenseType === 'personal' ? 'white' : dt.colors.text.secondary
+                  }}
                 >
                   فقط من
                 </button>
               </div>
               {expenseType === 'personal' && (
-                <p className={`text-[12px] mt-2 ${getTextColorClass('secondary')}`}>
+                <p
+                  className={`${getTextColorClass('secondary')}`}
+                  style={{
+                    fontSize: dt.typography.sizes.caption,
+                    marginTop: dt.spacing[2]
+                  }}
+                >
                   این هزینه فقط به نام شما ثبت می‌شود
                 </p>
               )}
@@ -323,38 +423,68 @@ export default function AddExpensePage() {
           </div>
 
           {/* SECONDARY SECTION - Optional fields */}
-          <div className="space-y-4" style={{ paddingTop: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: dt.spacing[4], paddingTop: dt.spacing[2] }}>
             {/* 4. Category */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-5">
-              <div className="flex items-center justify-between mb-3">
-                <label className={`text-[14px] font-medium ${getTextColorClass('primary')}`}>
+            <div
+              className="bg-white dark:bg-gray-900"
+              style={{
+                borderRadius: dt.radius.lg,
+                boxShadow: dt.shadow.card,
+                padding: dt.spacing[5]
+              }}
+            >
+              <div
+                className="flex items-center justify-between"
+                style={{ marginBottom: dt.spacing[3] }}
+              >
+                <label
+                  className={`font-medium ${getTextColorClass('primary')}`}
+                  style={{ fontSize: dt.typography.sizes.body }}
+                >
                   دسته‌بندی
                 </label>
-                <span className={`text-[12px] ${getTextColorClass('secondary')}`}>
+                <span
+                  className={getTextColorClass('secondary')}
+                  style={{ fontSize: dt.typography.sizes.caption }}
+                >
                   اختیاری
                 </span>
               </div>
 
               {/* Recent Categories Chips */}
               {recentCategories.length > 0 && (
-                <div className="mb-3">
-                  <p className={`text-[12px] mb-2 ${getTextColorClass('secondary')}`}>
+                <div style={{ marginBottom: dt.spacing[3] }}>
+                  <p
+                    className={getTextColorClass('secondary')}
+                    style={{
+                      fontSize: dt.typography.sizes.caption,
+                      marginBottom: dt.spacing[2]
+                    }}
+                  >
                     دسته‌های اخیر
                   </p>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap" style={{ gap: dt.spacing[2] }}>
                     {recentCategories.map((category) => (
                       <button
                         key={category.id}
                         type="button"
                         onClick={() => handleCategorySelect(category.id)}
                         disabled={loading}
-                        className={`text-[13px] flex items-center gap-2 px-3 py-2 rounded-xl transition-all border font-medium ${
-                          categoryId === category.id
-                            ? 'bg-orange-50 dark:bg-orange-950/30 border-[#FF8A00] dark:border-[#FFA94D] text-[#FF8A00] dark:text-[#FFA94D]'
-                            : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'
-                        }`}
+                        className="flex items-center transition-all border font-medium"
+                        style={{
+                          fontSize: dt.typography.sizes.caption,
+                          gap: dt.spacing[2],
+                          paddingLeft: dt.spacing[3],
+                          paddingRight: dt.spacing[3],
+                          paddingTop: dt.spacing[2],
+                          paddingBottom: dt.spacing[2],
+                          borderRadius: dt.radius.md,
+                          backgroundColor: categoryId === category.id ? dt.colors.brand.primarySoft : 'rgb(249, 250, 251)',
+                          borderColor: categoryId === category.id ? dt.colors.brand.primary : 'rgb(229, 231, 235)',
+                          color: categoryId === category.id ? dt.colors.brand.primary : dt.colors.text.secondary
+                        }}
                       >
-                        <span className="text-[16px]">{category.icon}</span>
+                        <span style={{ fontSize: dt.typography.sizes.bodyLarge }}>{category.icon}</span>
                         <span>{category.name}</span>
                       </button>
                     ))}
@@ -362,7 +492,16 @@ export default function AddExpensePage() {
                       type="button"
                       onClick={() => setShowAllCategories(!showAllCategories)}
                       disabled={loading}
-                      className={`text-[13px] flex items-center gap-1 px-3 py-2 rounded-xl transition-all border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium ${getTextColorClass('secondary')}`}
+                      className={`flex items-center transition-all border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium ${getTextColorClass('secondary')}`}
+                      style={{
+                        fontSize: dt.typography.sizes.caption,
+                        gap: dt.spacing[1],
+                        paddingLeft: dt.spacing[3],
+                        paddingRight: dt.spacing[3],
+                        paddingTop: dt.spacing[2],
+                        paddingBottom: dt.spacing[2],
+                        borderRadius: dt.radius.md
+                      }}
                     >
                       <FamilyIcon name="add" size={16} />
                       <span>بیشتر</span>
@@ -376,7 +515,13 @@ export default function AddExpensePage() {
                 <select
                   value={categoryId}
                   onChange={(e) => handleCategorySelect(e.target.value)}
-                  className={`text-[14px] w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF8A00] focus:border-transparent ${getTextColorClass('primary')}`}
+                  className={`w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:border-transparent ${getTextColorClass('primary')}`}
+                  style={{
+                    fontSize: dt.typography.sizes.body,
+                    padding: `${dt.spacing[3]}px ${dt.spacing[4]}px`,
+                    borderRadius: dt.radius.md,
+                    outlineColor: dt.colors.brand.primary
+                  }}
                   disabled={loading}
                 >
                   <option value="">انتخاب کنید</option>
@@ -390,29 +535,49 @@ export default function AddExpensePage() {
             </div>
 
             {/* 5. Date */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm" style={{ padding: '20px' }}>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-gray-700 dark:text-gray-300 font-medium" style={{ fontSize: '14px' }}>
+            <div
+              className="bg-white dark:bg-gray-900"
+              style={{
+                borderRadius: dt.radius.lg,
+                boxShadow: dt.shadow.card,
+                padding: dt.spacing[5]
+              }}
+            >
+              <div
+                className="flex items-center justify-between"
+                style={{ marginBottom: dt.spacing[2] }}
+              >
+                <label
+                  className="text-gray-700 dark:text-gray-300 font-medium"
+                  style={{ fontSize: dt.typography.sizes.body }}
+                >
                   تاریخ
                 </label>
-                <span className="text-gray-400 dark:text-gray-500" style={{ fontSize: '12px' }}>
+                <span
+                  className="text-gray-400 dark:text-gray-500"
+                  style={{ fontSize: dt.typography.sizes.caption }}
+                >
                   اختیاری
                 </span>
               </div>
-              <div className="space-y-2">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: dt.spacing[2] }}>
                 <PersianDatePicker
                   value={expenseDate}
                   onChange={setExpenseDate}
                   disabled={loading}
                   placeholder="انتخاب تاریخ"
                 />
-                <div className="flex gap-2">
+                <div className="flex" style={{ gap: dt.spacing[2] }}>
                   <button
                     type="button"
                     onClick={setToday}
                     disabled={loading}
-                    className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 font-medium rounded-lg transition-colors text-gray-700 dark:text-gray-300"
-                    style={{ fontSize: '13px' }}
+                    className="flex-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 font-medium transition-colors text-gray-700 dark:text-gray-300"
+                    style={{
+                      padding: `${dt.spacing[2]}px ${dt.spacing[3]}px`,
+                      borderRadius: dt.radius.sm,
+                      fontSize: dt.typography.sizes.caption
+                    }}
                   >
                     امروز
                   </button>
@@ -420,8 +585,12 @@ export default function AddExpensePage() {
                     type="button"
                     onClick={setYesterday}
                     disabled={loading}
-                    className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 font-medium rounded-lg transition-colors text-gray-700 dark:text-gray-300"
-                    style={{ fontSize: '13px' }}
+                    className="flex-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 font-medium transition-colors text-gray-700 dark:text-gray-300"
+                    style={{
+                      padding: `${dt.spacing[2]}px ${dt.spacing[3]}px`,
+                      borderRadius: dt.radius.sm,
+                      fontSize: dt.typography.sizes.caption
+                    }}
                   >
                     دیروز
                   </button>
@@ -430,12 +599,28 @@ export default function AddExpensePage() {
             </div>
 
             {/* 6. Description */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm" style={{ padding: '20px' }}>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-gray-700 dark:text-gray-300 font-medium" style={{ fontSize: '14px' }}>
+            <div
+              className="bg-white dark:bg-gray-900"
+              style={{
+                borderRadius: dt.radius.lg,
+                boxShadow: dt.shadow.card,
+                padding: dt.spacing[5]
+              }}
+            >
+              <div
+                className="flex items-center justify-between"
+                style={{ marginBottom: dt.spacing[2] }}
+              >
+                <label
+                  className="text-gray-700 dark:text-gray-300 font-medium"
+                  style={{ fontSize: dt.typography.sizes.body }}
+                >
                   توضیحات
                 </label>
-                <span className="text-gray-400 dark:text-gray-500" style={{ fontSize: '12px' }}>
+                <span
+                  className="text-gray-400 dark:text-gray-500"
+                  style={{ fontSize: dt.typography.sizes.caption }}
+                >
                   اختیاری
                 </span>
               </div>
@@ -444,8 +629,13 @@ export default function AddExpensePage() {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="یادداشت کوتاه..."
                 rows={3}
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:border-transparent resize-none text-gray-900 dark:text-gray-100"
-                style={{ fontSize: '14px' }}
+                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:border-transparent resize-none text-gray-900 dark:text-gray-100"
+                style={{
+                  fontSize: dt.typography.sizes.body,
+                  padding: `${dt.spacing[3]}px ${dt.spacing[4]}px`,
+                  borderRadius: dt.radius.md,
+                  outlineColor: dt.colors.brand.primary
+                }}
                 disabled={loading}
               />
             </div>
@@ -453,7 +643,14 @@ export default function AddExpensePage() {
 
           {/* Error message */}
           {error && (
-            <div className={`text-[14px] bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 px-4 py-3 rounded-xl ${getTextColorClass('danger')}`}>
+            <div
+              className={`bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 ${getTextColorClass('danger')}`}
+              style={{
+                fontSize: dt.typography.sizes.body,
+                padding: `${dt.spacing[3]}px ${dt.spacing[4]}px`,
+                borderRadius: dt.radius.md
+              }}
+            >
               {error}
             </div>
           )}
@@ -473,7 +670,7 @@ export default function AddExpensePage() {
       </div>
 
       {/* Bottom spacing */}
-      <div style={{ height: '80px' }}></div>
+      <div style={{ height: dt.spacing[8] * 2 }}></div>
     </div>
   )
 }
