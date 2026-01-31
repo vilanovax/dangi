@@ -27,9 +27,13 @@ export const designTokens = {
     },
     semantic: {
       income: '#16A34A',
+      incomeSoft: '#EAFBF1',
       expense: '#EF4444',
+      expenseSoft: '#FEECEC',
       warning: '#F59E0B',
+      warningSoft: '#FEF3C7',
       info: '#3B82F6',
+      infoSoft: '#EEF2FF',
     },
     charts: {
       barPrimary: '#3B82F6',
@@ -48,7 +52,9 @@ export const designTokens = {
   },
   spacing: {
     0: 0,
+    0.5: 2,
     1: 4,
+    1.5: 6,
     2: 8,
     3: 12,
     4: 16,
@@ -56,6 +62,7 @@ export const designTokens = {
     6: 24,
     7: 32,
     8: 40,
+    12: 48,
   },
   radius: {
     none: 0,

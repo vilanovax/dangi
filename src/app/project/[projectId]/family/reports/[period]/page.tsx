@@ -9,6 +9,7 @@ import {
   getCardBackgroundClass,
   getTextColorClass,
 } from '@/styles/family-theme'
+import { designTokens as dt } from '@/styles/design-tokens'
 import { FamilyIcon } from '../../components/FamilyIcon'
 import { FamilyButton } from '../../components/FamilyButton'
 
@@ -214,9 +215,18 @@ export default function PeriodDetailReportPage() {
 
   if (error || !stats) {
     return (
-      <div className={`min-h-screen p-6 ${getBackgroundClass()}`}>
+      <div className={`min-h-screen ${getBackgroundClass()}`} style={{ padding: dt.spacing[6] }}>
         <div className="max-w-2xl mx-auto">
-          <div className="bg-[#FEECEC] dark:bg-[#2D1212] border border-[#EF4444]/20 dark:border-[#F87171]/20 text-[#EF4444] dark:text-[#F87171] px-4 py-3 rounded-xl">
+          <div
+            style={{
+              backgroundColor: dt.colors.semantic.expenseSoft,
+              borderColor: `${dt.colors.semantic.expense}33`,
+              color: dt.colors.semantic.expense,
+              padding: `${dt.spacing[3]}px ${dt.spacing[4]}px`,
+              borderRadius: dt.radius.lg,
+              borderWidth: 1,
+            }}
+          >
             {error || 'خطا در بارگذاری گزارش'}
           </div>
         </div>
@@ -245,9 +255,15 @@ export default function PeriodDetailReportPage() {
   return (
     <div className={`min-h-screen ${getBackgroundClass()}`}>
       {/* Header با گرادیان آبی استاندارد */}
-      <div className={`text-white p-6 shadow-lg sticky top-0 z-10 ${getHeaderGradient('info')}`}>
+      <div
+        className={`text-white shadow-lg sticky top-0 z-10 ${getHeaderGradient('info')}`}
+        style={{ padding: dt.spacing[6] }}
+      >
         {/* Breadcrumb - Subtle */}
-        <div className="flex items-center gap-1.5 mb-3 text-[11px] opacity-75">
+        <div
+          className="flex items-center opacity-75"
+          style={{ gap: dt.spacing[1.5], marginBottom: dt.spacing[3], fontSize: dt.typography.sizes.caption }}
+        >
           <span>خانه</span>
           <FamilyIcon name="back" size={10} className="text-white rotate-180" />
           <span>گزارش‌ها</span>
@@ -256,37 +272,49 @@ export default function PeriodDetailReportPage() {
         </div>
 
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center" style={{ gap: dt.spacing[4] }}>
             <button
               onClick={() => router.back()}
-              className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+              className="text-white hover:bg-white/20 rounded-full transition-colors"
+              style={{ padding: dt.spacing[2] }}
               aria-label="بازگشت"
             >
               <FamilyIcon name="back" size={24} className="text-white" />
             </button>
             <div>
-              <h1 className="text-[20px] font-bold">گزارش کامل {monthName}</h1>
-              <p className="text-white/80 text-[12px] mt-0.5">
+              <h1 className="font-bold" style={{ fontSize: dt.typography.sizes.title }}>
+                گزارش کامل {monthName}
+              </h1>
+              <p className="text-white/80" style={{ fontSize: dt.typography.sizes.body, marginTop: dt.spacing[0.5] }}>
                 تحلیل عمیق و جزئیات مالی
               </p>
             </div>
           </div>
           <button
             onClick={handleExportCSV}
-            className="bg-white text-[#4F6EF7] dark:text-[#818CF8] px-4 py-2 rounded-full font-medium hover:bg-white/90 dark:hover:bg-white/80 transition-colors text-[13px] flex items-center gap-2"
+            className="bg-white font-medium hover:bg-white/90 dark:hover:bg-white/80 transition-colors flex items-center rounded-full"
+            style={{
+              color: dt.colors.semantic.info,
+              padding: `${dt.spacing[2]}px ${dt.spacing[4]}px`,
+              fontSize: dt.typography.sizes.body,
+              gap: dt.spacing[2],
+            }}
           >
-            <FamilyIcon name="backup" size={16} className="text-[#4F6EF7] dark:text-[#818CF8]" />
+            <FamilyIcon name="backup" size={16} style={{ color: dt.colors.semantic.info }} />
             CSV
           </button>
         </div>
       </div>
 
       {/* Content */}
-      <div className="p-6 max-w-4xl mx-auto space-y-6">
+      <div className="max-w-4xl mx-auto" style={{ padding: dt.spacing[6], gap: dt.spacing[6], display: 'flex', flexDirection: 'column' }}>
         {/* Export Success Toast */}
         {showExportSuccess && (
-          <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-full shadow-lg z-50 animate-bounce">
-            <div className="flex items-center gap-2">
+          <div
+            className="fixed top-24 left-1/2 -translate-x-1/2 text-white rounded-full shadow-lg z-50 animate-bounce"
+            style={{ backgroundColor: dt.colors.semantic.income, padding: `${dt.spacing[3]}px ${dt.spacing[6]}px` }}
+          >
+            <div className="flex items-center" style={{ gap: dt.spacing[2] }}>
               <FamilyIcon name="success" size={20} className="text-white" />
               <span className="font-medium">فایل CSV دانلود شد</span>
             </div>
@@ -294,50 +322,62 @@ export default function PeriodDetailReportPage() {
         )}
 
         {/* Section 2: Financial Summary - Compact */}
-        <div className={`rounded-2xl p-5 shadow-sm ${getCardBackgroundClass()}`}>
-          <h2 className={`text-sm font-bold mb-4 ${getTextColorClass('secondary')}`}>
+        <div
+          className={getCardBackgroundClass()}
+          style={{ borderRadius: dt.radius.xl, padding: dt.spacing[5], boxShadow: dt.shadow.card }}
+        >
+          <h2
+            className={`font-bold ${getTextColorClass('secondary')}`}
+            style={{ fontSize: dt.typography.sizes.body, marginBottom: dt.spacing[4] }}
+          >
             خلاصه مالی
           </h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2" style={{ gap: dt.spacing[4] }}>
             {/* Net Savings */}
-            <div className="col-span-2 bg-gray-50 dark:bg-gray-800 rounded-xl p-4 text-center">
-              <div className={`text-xs mb-1 ${getTextColorClass('secondary')}`}>
+            <div
+              className="col-span-2 bg-gray-50 dark:bg-gray-800 text-center"
+              style={{ borderRadius: dt.radius.lg, padding: dt.spacing[4] }}
+            >
+              <div className={getTextColorClass('secondary')} style={{ fontSize: dt.typography.sizes.caption, marginBottom: dt.spacing[1] }}>
                 خالص پس‌انداز
               </div>
               <div
-                className={`text-3xl font-black ${
+                className={`font-black ${
                   stats.netSavings >= 0
                     ? getTextColorClass('success')
                     : getTextColorClass('danger')
                 }`}
+                style={{ fontSize: 30 }}
               >
                 {stats.netSavings >= 0 ? '+' : ''}
                 {(stats.netSavings / 10).toLocaleString('fa-IR')}
-                <span className="text-xs font-medium text-gray-400 dark:text-gray-600">
+                <span className="font-medium text-gray-400 dark:text-gray-600" style={{ fontSize: dt.typography.sizes.caption }}>
                   {' '}
                   تومان
                 </span>
               </div>
-              <div className={`text-xs mt-1 ${getTextColorClass('secondary')}`}>
+              <div className={getTextColorClass('secondary')} style={{ fontSize: dt.typography.sizes.caption, marginTop: dt.spacing[1] }}>
                 نرخ پس‌انداز: {stats.savingsRate.toFixed(1)}%
               </div>
             </div>
 
             {/* Total Income */}
-            <div className="bg-[#EAFBF1] dark:bg-[#0F2417] rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <FamilyIcon
-                  name="income"
-                  size={16}
-                  className="text-[#22C55E] dark:text-[#4ADE80]"
-                />
-                <span className={`text-xs ${getTextColorClass('secondary')}`}>
+            <div
+              style={{
+                backgroundColor: dt.colors.semantic.incomeSoft,
+                borderRadius: dt.radius.lg,
+                padding: dt.spacing[4],
+              }}
+            >
+              <div className="flex items-center" style={{ gap: dt.spacing[2], marginBottom: dt.spacing[2] }}>
+                <FamilyIcon name="income" size={16} style={{ color: dt.colors.semantic.income }} />
+                <span className={getTextColorClass('secondary')} style={{ fontSize: dt.typography.sizes.caption }}>
                   کل درآمد
                 </span>
               </div>
-              <div className="text-lg font-bold text-[#22C55E] dark:text-[#4ADE80]">
+              <div className="font-bold" style={{ fontSize: dt.typography.sizes.title, color: dt.colors.semantic.income }}>
                 {(stats.totalIncome / 10).toLocaleString('fa-IR')}
-                <span className="text-xs font-medium text-gray-400 dark:text-gray-600">
+                <span className="font-medium text-gray-400 dark:text-gray-600" style={{ fontSize: dt.typography.sizes.caption }}>
                   {' '}
                   تومان
                 </span>
@@ -345,20 +385,22 @@ export default function PeriodDetailReportPage() {
             </div>
 
             {/* Total Expenses */}
-            <div className="bg-[#FEECEC] dark:bg-[#2D1212] rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <FamilyIcon
-                  name="expense"
-                  size={16}
-                  className="text-[#EF4444] dark:text-[#F87171]"
-                />
-                <span className={`text-xs ${getTextColorClass('secondary')}`}>
+            <div
+              style={{
+                backgroundColor: dt.colors.semantic.expenseSoft,
+                borderRadius: dt.radius.lg,
+                padding: dt.spacing[4],
+              }}
+            >
+              <div className="flex items-center" style={{ gap: dt.spacing[2], marginBottom: dt.spacing[2] }}>
+                <FamilyIcon name="expense" size={16} style={{ color: dt.colors.semantic.expense }} />
+                <span className={getTextColorClass('secondary')} style={{ fontSize: dt.typography.sizes.caption }}>
                   کل هزینه
                 </span>
               </div>
-              <div className="text-lg font-bold text-[#EF4444] dark:text-[#F87171]">
+              <div className="font-bold" style={{ fontSize: dt.typography.sizes.title, color: dt.colors.semantic.expense }}>
                 {(stats.totalExpenses / 10).toLocaleString('fa-IR')}
-                <span className="text-xs font-medium text-gray-400 dark:text-gray-600">
+                <span className="font-medium text-gray-400 dark:text-gray-600" style={{ fontSize: dt.typography.sizes.caption }}>
                   {' '}
                   تومان
                 </span>
@@ -369,45 +411,51 @@ export default function PeriodDetailReportPage() {
 
         {/* Section 3: Expense Distribution Chart */}
         {getAggregatedCategories().length > 0 && (
-          <div className={`rounded-2xl p-5 shadow-sm ${getCardBackgroundClass()}`}>
-            <h2 className={`text-sm font-bold mb-4 ${getTextColorClass('secondary')}`}>
+          <div
+            className={getCardBackgroundClass()}
+            style={{ borderRadius: dt.radius.xl, padding: dt.spacing[5], boxShadow: dt.shadow.card }}
+          >
+            <h2
+              className={`font-bold ${getTextColorClass('secondary')}`}
+              style={{ fontSize: dt.typography.sizes.body, marginBottom: dt.spacing[4] }}
+            >
               توزیع هزینه‌ها
             </h2>
-            <div className="space-y-3">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: dt.spacing[3] }}>
               {getAggregatedCategories().map((category, index) => {
                 const barColor =
                   index === 0
-                    ? 'bg-[#EF4444] dark:bg-[#F87171]'
+                    ? dt.colors.semantic.expense
                     : index === 1
-                      ? 'bg-[#FF8A00] dark:bg-[#FFA94D]'
+                      ? dt.colors.brand.primary
                       : index === 2
-                        ? 'bg-[#F59E0B] dark:bg-[#FBBF24]'
-                        : 'bg-[#6B7280] dark:bg-[#9CA3AF]'
+                        ? dt.colors.semantic.warning
+                        : dt.colors.text.secondary
 
                 return (
                   <div key={category.categoryName}>
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between" style={{ marginBottom: dt.spacing[1] }}>
+                      <div className="flex items-center" style={{ gap: dt.spacing[2] }}>
                         {category.categoryIcon && (
-                          <span className="text-sm">{category.categoryIcon}</span>
+                          <span style={{ fontSize: dt.typography.sizes.body }}>{category.categoryIcon}</span>
                         )}
-                        <span className={`text-sm font-medium ${getTextColorClass('primary')}`}>
+                        <span className={`font-medium ${getTextColorClass('primary')}`} style={{ fontSize: dt.typography.sizes.body }}>
                           {category.categoryName}
                         </span>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className={`text-xs ${getTextColorClass('secondary')}`}>
+                      <div className="flex items-center" style={{ gap: dt.spacing[3] }}>
+                        <span className={getTextColorClass('secondary')} style={{ fontSize: dt.typography.sizes.caption }}>
                           {(category.amount / 10).toLocaleString('fa-IR')} تومان
                         </span>
-                        <span className={`text-sm font-bold ${getTextColorClass('primary')}`}>
+                        <span className={`font-bold ${getTextColorClass('primary')}`} style={{ fontSize: dt.typography.sizes.body }}>
                           {category.percentage.toFixed(0)}%
                         </span>
                       </div>
                     </div>
-                    <div className="h-2.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                    <div className="bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden" style={{ height: 10 }}>
                       <div
-                        className={`h-full ${barColor} transition-all`}
-                        style={{ width: `${category.percentage}%` }}
+                        className="h-full transition-all"
+                        style={{ width: `${category.percentage}%`, backgroundColor: barColor }}
                       />
                     </div>
                   </div>
@@ -419,79 +467,92 @@ export default function PeriodDetailReportPage() {
 
         {/* Section 5: Budget Status */}
         {stats.totalBudget > 0 && stats.budgets.filter((b) => b.spent > 0 || b.budgetAmount > 0).length > 0 && (
-          <div className={`rounded-2xl p-5 shadow-sm ${getCardBackgroundClass()}`}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className={`text-sm font-bold ${getTextColorClass('secondary')}`}>
+          <div
+            className={getCardBackgroundClass()}
+            style={{ borderRadius: dt.radius.xl, padding: dt.spacing[5], boxShadow: dt.shadow.card }}
+          >
+            <div className="flex items-center justify-between" style={{ marginBottom: dt.spacing[4] }}>
+              <h2 className={`font-bold ${getTextColorClass('secondary')}`} style={{ fontSize: dt.typography.sizes.body }}>
                 وضعیت بودجه
               </h2>
               <div
-                className={`text-lg font-bold ${
-                  stats.budgetUtilization >= 100
-                    ? getTextColorClass('danger')
-                    : stats.budgetUtilization >= 90
-                      ? 'text-[#FF8A00] dark:text-[#FFA94D]'
-                      : getTextColorClass('info')
-                }`}
+                className="font-bold"
+                style={{
+                  fontSize: dt.typography.sizes.title,
+                  color:
+                    stats.budgetUtilization >= 100
+                      ? dt.colors.semantic.expense
+                      : stats.budgetUtilization >= 90
+                        ? dt.colors.brand.primary
+                        : dt.colors.semantic.info,
+                }}
               >
                 {stats.budgetUtilization.toFixed(0)}%
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: dt.spacing[3] }}>
               {stats.budgets
                 .filter((b) => b.spent > 0 || b.budgetAmount > 0)
-                .map((budget, index) => (
-                  <div key={index}>
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2">
-                        {budget.categoryIcon && <span className="text-sm">{budget.categoryIcon}</span>}
-                        <span className={`text-sm font-medium ${getTextColorClass('primary')}`}>
-                          {budget.categoryName}
-                        </span>
+                .map((budget, index) => {
+                  const getBarColor = () => {
+                    if (budget.isOverBudget) return dt.colors.semantic.expense
+                    if (budget.percentage >= 90) return dt.colors.brand.primary
+                    if (budget.percentage >= 70) return dt.colors.semantic.warning
+                    return dt.colors.semantic.income
+                  }
+
+                  return (
+                    <div key={index}>
+                      <div className="flex items-center justify-between" style={{ marginBottom: dt.spacing[1] }}>
+                        <div className="flex items-center" style={{ gap: dt.spacing[2] }}>
+                          {budget.categoryIcon && <span style={{ fontSize: dt.typography.sizes.body }}>{budget.categoryIcon}</span>}
+                          <span className={`font-medium ${getTextColorClass('primary')}`} style={{ fontSize: dt.typography.sizes.body }}>
+                            {budget.categoryName}
+                          </span>
+                        </div>
+                        <div className="flex items-center" style={{ gap: dt.spacing[2] }}>
+                          <span className={getTextColorClass('secondary')} style={{ fontSize: dt.typography.sizes.caption }}>
+                            {(budget.spent / 10).toLocaleString('fa-IR')} /{' '}
+                            {(budget.budgetAmount / 10).toLocaleString('fa-IR')}
+                          </span>
+                          <span
+                            className="font-bold"
+                            style={{
+                              fontSize: dt.typography.sizes.body,
+                              color: budget.isOverBudget ? dt.colors.semantic.expense : dt.colors.text.secondary,
+                            }}
+                          >
+                            {budget.percentage.toFixed(0)}%
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs ${getTextColorClass('secondary')}`}>
-                          {(budget.spent / 10).toLocaleString('fa-IR')} /{' '}
-                          {(budget.budgetAmount / 10).toLocaleString('fa-IR')}
-                        </span>
-                        <span
-                          className={`text-sm font-bold ${
-                            budget.isOverBudget
-                              ? 'text-[#EF4444] dark:text-[#F87171]'
-                              : getTextColorClass('secondary')
-                          }`}
-                        >
-                          {budget.percentage.toFixed(0)}%
-                        </span>
+                      <div className="bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden" style={{ height: 8 }}>
+                        <div
+                          className="h-full transition-all"
+                          style={{ width: `${Math.min(budget.percentage, 100)}%`, backgroundColor: getBarColor() }}
+                        />
                       </div>
                     </div>
-                    <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full transition-all ${
-                          budget.isOverBudget
-                            ? 'bg-[#EF4444] dark:bg-[#F87171]'
-                            : budget.percentage >= 90
-                              ? 'bg-[#FF8A00] dark:bg-[#FFA94D]'
-                              : budget.percentage >= 70
-                                ? 'bg-yellow-500 dark:bg-yellow-400'
-                                : 'bg-[#22C55E] dark:bg-[#4ADE80]'
-                        }`}
-                        style={{ width: `${Math.min(budget.percentage, 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
             </div>
           </div>
         )}
 
         {/* Section 4: Category Drill-Down List */}
         {getAggregatedCategories().length > 0 && (
-          <div className={`rounded-2xl p-5 shadow-sm ${getCardBackgroundClass()}`}>
-            <h2 className={`text-sm font-bold mb-4 ${getTextColorClass('secondary')}`}>
+          <div
+            className={getCardBackgroundClass()}
+            style={{ borderRadius: dt.radius.xl, padding: dt.spacing[5], boxShadow: dt.shadow.card }}
+          >
+            <h2
+              className={`font-bold ${getTextColorClass('secondary')}`}
+              style={{ fontSize: dt.typography.sizes.body, marginBottom: dt.spacing[4] }}
+            >
               دسته‌بندی‌های هزینه
             </h2>
-            <div className="space-y-2">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: dt.spacing[2] }}>
               {getAggregatedCategories().map((category, index) => {
                 const isExpanded = expandedCategory === category.categoryName
                 const relatedExpenses = stats.recentExpenses.filter(
@@ -504,39 +565,45 @@ export default function PeriodDetailReportPage() {
                       onClick={() =>
                         setExpandedCategory(isExpanded ? null : category.categoryName)
                       }
-                      className={`w-full text-right p-3 rounded-xl transition-colors ${
-                        isExpanded
-                          ? 'bg-[#FFF3E0] dark:bg-[#2D1F0D]'
-                          : 'bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700'
-                      }`}
+                      className="w-full text-right transition-colors"
+                      style={{
+                        padding: dt.spacing[3],
+                        borderRadius: dt.radius.lg,
+                        backgroundColor: isExpanded
+                          ? dt.colors.brand.primarySoft
+                          : 'rgb(249, 250, 251)',
+                      }}
                     >
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center" style={{ gap: dt.spacing[3] }}>
                           <div
-                            className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                              isExpanded
-                                ? 'bg-[#FF8A00] dark:bg-[#FFA94D] text-white'
-                                : 'bg-[#FEECEC] dark:bg-[#2D1212] text-[#EF4444] dark:text-[#F87171]'
-                            }`}
+                            className="rounded-full flex items-center justify-center font-bold"
+                            style={{
+                              width: 32,
+                              height: 32,
+                              fontSize: dt.typography.sizes.body,
+                              backgroundColor: isExpanded ? dt.colors.brand.primary : dt.colors.semantic.expenseSoft,
+                              color: isExpanded ? 'white' : dt.colors.semantic.expense,
+                            }}
                           >
                             {index + 1}
                           </div>
                           <div>
-                            <div className={`font-medium text-sm ${getTextColorClass('primary')}`}>
+                            <div className={`font-medium ${getTextColorClass('primary')}`} style={{ fontSize: dt.typography.sizes.body }}>
                               {category.categoryIcon && (
                                 <span className="ml-1">{category.categoryIcon}</span>
                               )}
                               {category.categoryName}
                             </div>
-                            <div className={`text-xs ${getTextColorClass('secondary')}`}>
+                            <div className={getTextColorClass('secondary')} style={{ fontSize: dt.typography.sizes.caption }}>
                               {category.percentage.toFixed(0)}% از کل هزینه‌ها
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <div className={`text-sm font-bold ${getTextColorClass('primary')}`}>
+                        <div className="flex items-center" style={{ gap: dt.spacing[3] }}>
+                          <div className={`font-bold ${getTextColorClass('primary')}`} style={{ fontSize: dt.typography.sizes.body }}>
                             {(category.amount / 10).toLocaleString('fa-IR')}
-                            <span className="text-xs font-normal text-gray-400 dark:text-gray-600">
+                            <span className="font-normal text-gray-400 dark:text-gray-600" style={{ fontSize: dt.typography.sizes.caption }}>
                               {' '}
                               تومان
                             </span>
@@ -554,31 +621,30 @@ export default function PeriodDetailReportPage() {
 
                     {/* Expanded transactions */}
                     {isExpanded && relatedExpenses.length > 0 && (
-                      <div className="mt-2 mr-11 space-y-1">
+                      <div style={{ marginTop: dt.spacing[2], marginRight: 44, display: 'flex', flexDirection: 'column', gap: dt.spacing[1] }}>
                         {relatedExpenses.slice(0, 5).map((expense) => (
                           <div
                             key={expense.id}
-                            className="p-2 bg-white dark:bg-gray-900 rounded-lg text-xs"
+                            className="bg-white dark:bg-gray-900"
+                            style={{ padding: dt.spacing[2], borderRadius: dt.radius.md, fontSize: dt.typography.sizes.caption }}
                           >
                             <div className="flex items-center justify-between">
                               <div className="flex-1 min-w-0">
-                                <div
-                                  className={`font-medium truncate ${getTextColorClass('primary')}`}
-                                >
+                                <div className={`font-medium truncate ${getTextColorClass('primary')}`}>
                                   {expense.title}
                                 </div>
-                                <div className={`${getTextColorClass('secondary')}`}>
+                                <div className={getTextColorClass('secondary')}>
                                   {expense.paidByName}
                                 </div>
                               </div>
-                              <div className="text-[#EF4444] dark:text-[#F87171] font-bold flex-shrink-0 mr-2">
+                              <div className="font-bold flex-shrink-0" style={{ color: dt.colors.semantic.expense, marginRight: dt.spacing[2] }}>
                                 {(expense.amount / 10).toLocaleString('fa-IR')}
                               </div>
                             </div>
                           </div>
                         ))}
                         {relatedExpenses.length > 5 && (
-                          <div className={`text-center py-1 text-xs ${getTextColorClass('secondary')}`}>
+                          <div className={`text-center ${getTextColorClass('secondary')}`} style={{ paddingTop: dt.spacing[1], fontSize: dt.typography.sizes.caption }}>
                             و {relatedExpenses.length - 5} مورد دیگر
                           </div>
                         )}
@@ -593,49 +659,61 @@ export default function PeriodDetailReportPage() {
 
         {/* Section 6: Transaction List - Chronological */}
         {getAllTransactions().length > 0 && (
-          <div className={`rounded-2xl p-5 shadow-sm ${getCardBackgroundClass()}`}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className={`text-sm font-bold ${getTextColorClass('secondary')}`}>
+          <div
+            className={getCardBackgroundClass()}
+            style={{ borderRadius: dt.radius.xl, padding: dt.spacing[5], boxShadow: dt.shadow.card }}
+          >
+            <div className="flex items-center justify-between" style={{ marginBottom: dt.spacing[4] }}>
+              <h2 className={`font-bold ${getTextColorClass('secondary')}`} style={{ fontSize: dt.typography.sizes.body }}>
                 تراکنش‌های این ماه
               </h2>
-              <div className={`text-xs ${getTextColorClass('secondary')}`}>
+              <div className={getTextColorClass('secondary')} style={{ fontSize: dt.typography.sizes.caption }}>
                 {getAllTransactions().length} مورد
               </div>
             </div>
-            <div className="space-y-2">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: dt.spacing[2] }}>
               {getAllTransactions().slice(0, 20).map((transaction) => (
                 <div
                   key={transaction.id}
-                  className={`p-3 rounded-xl transition-colors ${
-                    transaction.type === 'income'
-                      ? 'bg-[#EAFBF1] dark:bg-[#0F2417] hover:bg-[#D4F7E0] dark:hover:bg-[#0F2417]/80'
-                      : 'bg-[#FEECEC] dark:bg-[#2D1212] hover:bg-[#FDDDDD] dark:hover:bg-[#2D1212]/80'
-                  }`}
+                  className="transition-colors"
+                  style={{
+                    padding: dt.spacing[3],
+                    borderRadius: dt.radius.lg,
+                    backgroundColor:
+                      transaction.type === 'income'
+                        ? dt.colors.semantic.incomeSoft
+                        : dt.colors.semantic.expenseSoft,
+                  }}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="flex items-center flex-1 min-w-0" style={{ gap: dt.spacing[3] }}>
                       <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                          transaction.type === 'income'
-                            ? 'bg-[#22C55E]/10 dark:bg-[#22C55E]/20'
-                            : 'bg-[#EF4444]/10 dark:bg-[#EF4444]/20'
-                        }`}
+                        className="rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{
+                          width: 32,
+                          height: 32,
+                          backgroundColor:
+                            transaction.type === 'income'
+                              ? `${dt.colors.semantic.income}1A`
+                              : `${dt.colors.semantic.expense}1A`,
+                        }}
                       >
                         <FamilyIcon
                           name={transaction.type === 'income' ? 'income' : 'expense'}
                           size={16}
-                          className={
-                            transaction.type === 'income'
-                              ? 'text-[#22C55E] dark:text-[#4ADE80]'
-                              : 'text-[#EF4444] dark:text-[#F87171]'
-                          }
+                          style={{
+                            color:
+                              transaction.type === 'income'
+                                ? dt.colors.semantic.income
+                                : dt.colors.semantic.expense,
+                          }}
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className={`font-medium text-sm truncate ${getTextColorClass('primary')}`}>
+                        <div className={`font-medium truncate ${getTextColorClass('primary')}`} style={{ fontSize: dt.typography.sizes.body }}>
                           {transaction.title}
                         </div>
-                        <div className={`text-xs flex items-center gap-2 ${getTextColorClass('secondary')}`}>
+                        <div className={`flex items-center ${getTextColorClass('secondary')}`} style={{ fontSize: dt.typography.sizes.caption, gap: dt.spacing[2] }}>
                           <span>
                             {transaction.type === 'income'
                               ? transaction.receivedByName
@@ -651,15 +729,19 @@ export default function PeriodDetailReportPage() {
                       </div>
                     </div>
                     <div
-                      className={`text-sm font-bold flex-shrink-0 mr-3 ${
-                        transaction.type === 'income'
-                          ? 'text-[#22C55E] dark:text-[#4ADE80]'
-                          : 'text-[#EF4444] dark:text-[#F87171]'
-                      }`}
+                      className="font-bold flex-shrink-0"
+                      style={{
+                        fontSize: dt.typography.sizes.body,
+                        marginRight: dt.spacing[3],
+                        color:
+                          transaction.type === 'income'
+                            ? dt.colors.semantic.income
+                            : dt.colors.semantic.expense,
+                      }}
                     >
                       {transaction.type === 'income' ? '+' : '−'}
                       {(transaction.amount / 10).toLocaleString('fa-IR')}
-                      <span className="text-xs font-normal text-gray-400 dark:text-gray-600">
+                      <span className="font-normal text-gray-400 dark:text-gray-600" style={{ fontSize: dt.typography.sizes.caption }}>
                         {' '}
                         تومان
                       </span>
@@ -668,7 +750,7 @@ export default function PeriodDetailReportPage() {
                 </div>
               ))}
               {getAllTransactions().length > 20 && (
-                <div className={`text-center py-2 text-xs ${getTextColorClass('secondary')}`}>
+                <div className={`text-center ${getTextColorClass('secondary')}`} style={{ paddingTop: dt.spacing[2], paddingBottom: dt.spacing[2], fontSize: dt.typography.sizes.caption }}>
                   و {getAllTransactions().length - 20} مورد دیگر
                 </div>
               )}
@@ -678,20 +760,29 @@ export default function PeriodDetailReportPage() {
 
         {/* Section 7: Smart Insights - Optional */}
         {getSmartInsights().length > 0 && (
-          <div className="bg-[#FFF3E0] dark:bg-[#2D1F0D] border border-[#FF8A00]/20 dark:border-[#FFA94D]/20 rounded-2xl p-4">
-            <div className="flex items-start gap-2">
+          <div
+            style={{
+              backgroundColor: dt.colors.brand.primarySoft,
+              borderColor: `${dt.colors.brand.primary}33`,
+              borderWidth: 1,
+              borderRadius: dt.radius.xl,
+              padding: dt.spacing[4],
+            }}
+          >
+            <div className="flex items-start" style={{ gap: dt.spacing[2] }}>
               <FamilyIcon
                 name="tip"
                 size={18}
-                className="text-[#FF8A00] dark:text-[#FFA94D] flex-shrink-0 mt-0.5"
+                className="flex-shrink-0"
+                style={{ color: dt.colors.brand.primary, marginTop: dt.spacing[0.5] }}
               />
               <div>
-                <h3 className={`text-sm font-bold mb-2 ${getTextColorClass('primary')}`}>
+                <h3 className={`font-bold ${getTextColorClass('primary')}`} style={{ fontSize: dt.typography.sizes.body, marginBottom: dt.spacing[2] }}>
                   نکات تحلیلی
                 </h3>
-                <div className={`space-y-1 text-xs ${getTextColorClass('secondary')}`}>
+                <div className={getTextColorClass('secondary')} style={{ display: 'flex', flexDirection: 'column', gap: dt.spacing[1], fontSize: dt.typography.sizes.caption }}>
                   {getSmartInsights().map((insight, index) => (
-                    <div key={index} className="flex items-start gap-2">
+                    <div key={index} className="flex items-start" style={{ gap: dt.spacing[2] }}>
                       <span className="flex-shrink-0">•</span>
                       <span>{insight}</span>
                     </div>
@@ -704,27 +795,49 @@ export default function PeriodDetailReportPage() {
 
         {/* Empty State - No transactions */}
         {getAllTransactions().length === 0 && getAggregatedCategories().length === 0 && (
-          <div className={`rounded-2xl p-12 text-center ${getCardBackgroundClass()}`}>
-            <div className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center bg-[#EEF2FF] dark:bg-[#1E1B3A]">
-              <FamilyIcon name="emptyList" size={36} className="text-[#4F6EF7] dark:text-[#818CF8]" />
+          <div className={`text-center ${getCardBackgroundClass()}`} style={{ borderRadius: dt.radius.xl, padding: dt.spacing[12] }}>
+            <div
+              className="mx-auto rounded-full flex items-center justify-center"
+              style={{
+                width: 80,
+                height: 80,
+                marginBottom: dt.spacing[4],
+                backgroundColor: dt.colors.semantic.infoSoft,
+              }}
+            >
+              <FamilyIcon name="emptyList" size={36} style={{ color: dt.colors.semantic.info }} />
             </div>
-            <h3 className={`text-[16px] font-bold mb-2 ${getTextColorClass('primary')}`}>
+            <h3 className={`font-bold ${getTextColorClass('primary')}`} style={{ fontSize: dt.typography.sizes.bodyLarge, marginBottom: dt.spacing[2] }}>
               هنوز تراکنشی برای {monthName} ثبت نشده
             </h3>
-            <p className={`text-[13px] mb-6 ${getTextColorClass('secondary')}`}>
+            <p className={getTextColorClass('secondary')} style={{ fontSize: dt.typography.sizes.body, marginBottom: dt.spacing[6] }}>
               اولین درآمد یا هزینه خودت رو ثبت کن
             </p>
-            <div className="flex gap-3 justify-center">
+            <div className="flex justify-center" style={{ gap: dt.spacing[3] }}>
               <button
                 onClick={() => router.push(`/project/${projectId}/family/add-expense`)}
-                className="bg-[#EF4444] dark:bg-[#F87171] hover:bg-[#DC2626] dark:hover:bg-[#EF4444] text-white px-6 py-3 rounded-xl font-medium transition-colors text-[14px] flex items-center gap-2"
+                className="text-white font-medium transition-colors flex items-center"
+                style={{
+                  backgroundColor: dt.colors.semantic.expense,
+                  padding: `${dt.spacing[3]}px ${dt.spacing[6]}px`,
+                  borderRadius: dt.radius.lg,
+                  fontSize: dt.typography.sizes.body,
+                  gap: dt.spacing[2],
+                }}
               >
                 <FamilyIcon name="expense" size={16} className="text-white" />
                 ثبت هزینه
               </button>
               <button
                 onClick={() => router.push(`/project/${projectId}/family/add-income`)}
-                className="bg-[#22C55E] dark:bg-[#4ADE80] hover:bg-[#16A34A] dark:hover:bg-[#22C55E] text-white px-6 py-3 rounded-xl font-medium transition-colors text-[14px] flex items-center gap-2"
+                className="text-white font-medium transition-colors flex items-center"
+                style={{
+                  backgroundColor: dt.colors.semantic.income,
+                  padding: `${dt.spacing[3]}px ${dt.spacing[6]}px`,
+                  borderRadius: dt.radius.lg,
+                  fontSize: dt.typography.sizes.body,
+                  gap: dt.spacing[2],
+                }}
               >
                 <FamilyIcon name="income" size={16} className="text-white" />
                 ثبت درآمد
