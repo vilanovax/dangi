@@ -10,6 +10,7 @@ import {
   getCardBackgroundClass,
   getTextColorClass,
 } from '@/styles/family-theme'
+import { designTokens as dt } from '@/styles/design-tokens'
 
 export default function FamilySettingsPage() {
   const params = useParams()
@@ -19,19 +20,23 @@ export default function FamilySettingsPage() {
   return (
     <div className={`min-h-screen ${getBackgroundClass()}`}>
       {/* Header */}
-      <div className={`text-white p-6 shadow-lg sticky top-0 z-10 ${getHeaderGradient('primary')}`}>
-        <div className="flex items-center gap-4">
+      <div
+        className={`text-white shadow-lg sticky top-0 z-10 ${getHeaderGradient('primary')}`}
+        style={{ padding: dt.spacing[6] }}
+      >
+        <div className="flex items-center" style={{ gap: dt.spacing[4] }}>
           <Link
             href={`/project/${projectId}/family`}
-            className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+            className="text-white hover:bg-white/20 rounded-full transition-colors"
+            style={{ padding: dt.spacing[2] }}
           >
             <FamilyIcon name="back" size={20} />
           </Link>
           <div>
-            <h1 className="text-[22px] font-bold">
+            <h1 className="font-bold" style={{ fontSize: dt.typography.sizes.headline }}>
               تنظیمات
             </h1>
-            <p className="text-white/90 mt-1 text-sm">
+            <p className="text-white/90" style={{ marginTop: dt.spacing[1], fontSize: dt.typography.sizes.body }}>
               مدیریت پروژه و تنظیمات
             </p>
           </div>
@@ -39,23 +44,32 @@ export default function FamilySettingsPage() {
       </div>
 
       {/* Content */}
-      <div className="p-4 space-y-4 pb-24">
+      <div style={{ padding: dt.spacing[4], paddingBottom: 96, display: 'flex', flexDirection: 'column', gap: dt.spacing[4] }}>
         {/* Settings Items */}
-        <div className="space-y-3">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: dt.spacing[3] }}>
           {/* Categories Management */}
           <Link
             href={`/project/${projectId}/family/categories`}
-            className={`flex items-center justify-between p-5 rounded-2xl shadow-sm hover:shadow-md transition-all ${getCardBackgroundClass()}`}
+            className={`flex items-center justify-between hover:shadow-md transition-all ${getCardBackgroundClass()}`}
+            style={{ padding: dt.spacing[5], borderRadius: dt.radius.xl, boxShadow: dt.shadow.card }}
           >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#FF8A00]/10">
-                <FamilyIcon name="categories" size={24} className="text-[#FF8A00]" />
+            <div className="flex items-center" style={{ gap: dt.spacing[4] }}>
+              <div
+                className="flex items-center justify-center"
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: dt.radius.lg,
+                  backgroundColor: `${dt.colors.brand.primary}1A`,
+                }}
+              >
+                <FamilyIcon name="categories" size={24} style={{ color: dt.colors.brand.primary }} />
               </div>
               <div>
-                <div className={`font-bold text-[15px] ${getTextColorClass('primary')}`}>
+                <div className={`font-bold ${getTextColorClass('primary')}`} style={{ fontSize: dt.typography.sizes.bodyLarge }}>
                   مدیریت دسته‌بندی‌ها
                 </div>
-                <div className={`text-xs mt-1 ${getTextColorClass('secondary')}`}>
+                <div className={getTextColorClass('secondary')} style={{ fontSize: dt.typography.sizes.caption, marginTop: dt.spacing[1] }}>
                   افزودن و ویرایش دسته‌بندی‌های هزینه و درآمد
                 </div>
               </div>
@@ -66,17 +80,26 @@ export default function FamilySettingsPage() {
           {/* Members Management */}
           <Link
             href={`/project/${projectId}/participants`}
-            className={`flex items-center justify-between p-5 rounded-2xl shadow-sm hover:shadow-md transition-all ${getCardBackgroundClass()}`}
+            className={`flex items-center justify-between hover:shadow-md transition-all ${getCardBackgroundClass()}`}
+            style={{ padding: dt.spacing[5], borderRadius: dt.radius.xl, boxShadow: dt.shadow.card }}
           >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#22C55E]/10">
-                <FamilyIcon name="members" size={24} className="text-[#22C55E]" />
+            <div className="flex items-center" style={{ gap: dt.spacing[4] }}>
+              <div
+                className="flex items-center justify-center"
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: dt.radius.lg,
+                  backgroundColor: `${dt.colors.semantic.income}1A`,
+                }}
+              >
+                <FamilyIcon name="members" size={24} style={{ color: dt.colors.semantic.income }} />
               </div>
               <div>
-                <div className={`font-bold text-[15px] ${getTextColorClass('primary')}`}>
+                <div className={`font-bold ${getTextColorClass('primary')}`} style={{ fontSize: dt.typography.sizes.bodyLarge }}>
                   مدیریت اعضا
                 </div>
-                <div className={`text-xs mt-1 ${getTextColorClass('secondary')}`}>
+                <div className={getTextColorClass('secondary')} style={{ fontSize: dt.typography.sizes.caption, marginTop: dt.spacing[1] }}>
                   اضافه یا حذف اعضای خانواده
                 </div>
               </div>
@@ -87,17 +110,26 @@ export default function FamilySettingsPage() {
           {/* Project Settings */}
           <Link
             href={`/project/${projectId}/settings`}
-            className={`flex items-center justify-between p-5 rounded-2xl shadow-sm hover:shadow-md transition-all ${getCardBackgroundClass()}`}
+            className={`flex items-center justify-between hover:shadow-md transition-all ${getCardBackgroundClass()}`}
+            style={{ padding: dt.spacing[5], borderRadius: dt.radius.xl, boxShadow: dt.shadow.card }}
           >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#3B82F6]/10">
-                <FamilyIcon name="settings" size={24} className="text-[#3B82F6]" />
+            <div className="flex items-center" style={{ gap: dt.spacing[4] }}>
+              <div
+                className="flex items-center justify-center"
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: dt.radius.lg,
+                  backgroundColor: `${dt.colors.semantic.info}1A`,
+                }}
+              >
+                <FamilyIcon name="settings" size={24} style={{ color: dt.colors.semantic.info }} />
               </div>
               <div>
-                <div className={`font-bold text-[15px] ${getTextColorClass('primary')}`}>
+                <div className={`font-bold ${getTextColorClass('primary')}`} style={{ fontSize: dt.typography.sizes.bodyLarge }}>
                   تنظیمات پروژه
                 </div>
-                <div className={`text-xs mt-1 ${getTextColorClass('secondary')}`}>
+                <div className={getTextColorClass('secondary')} style={{ fontSize: dt.typography.sizes.caption, marginTop: dt.spacing[1] }}>
                   نام، توضیحات و بایگانی پروژه
                 </div>
               </div>
@@ -110,17 +142,26 @@ export default function FamilySettingsPage() {
             onClick={() => {
               alert('پشتیبان‌گیری و بازیابی به زودی اضافه خواهد شد')
             }}
-            className={`w-full flex items-center justify-between p-5 rounded-2xl shadow-sm hover:shadow-md transition-all ${getCardBackgroundClass()}`}
+            className={`w-full flex items-center justify-between hover:shadow-md transition-all ${getCardBackgroundClass()}`}
+            style={{ padding: dt.spacing[5], borderRadius: dt.radius.xl, boxShadow: dt.shadow.card }}
           >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#6B7280]/10">
-                <FamilyIcon name="backup" size={24} className="text-[#6B7280]" />
+            <div className="flex items-center" style={{ gap: dt.spacing[4] }}>
+              <div
+                className="flex items-center justify-center"
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: dt.radius.lg,
+                  backgroundColor: `${dt.colors.text.secondary}1A`,
+                }}
+              >
+                <FamilyIcon name="backup" size={24} style={{ color: dt.colors.text.secondary }} />
               </div>
               <div className="text-right">
-                <div className={`font-bold text-[15px] ${getTextColorClass('primary')}`}>
+                <div className={`font-bold ${getTextColorClass('primary')}`} style={{ fontSize: dt.typography.sizes.bodyLarge }}>
                   پشتیبان‌گیری و بازیابی
                 </div>
-                <div className={`text-xs mt-1 ${getTextColorClass('secondary')}`}>
+                <div className={getTextColorClass('secondary')} style={{ fontSize: dt.typography.sizes.caption, marginTop: dt.spacing[1] }}>
                   ذخیره و بازگردانی اطلاعات
                 </div>
               </div>
@@ -130,10 +171,13 @@ export default function FamilySettingsPage() {
         </div>
 
         {/* Info Note */}
-        <div className={`rounded-xl p-4 border ${getCardBackgroundClass()}`} style={{ borderColor: familyTheme.colors.divider }}>
-          <div className="flex gap-3">
-            <FamilyIcon name="info" size={20} className="flex-shrink-0 text-[#3B82F6]" />
-            <p className={`text-xs leading-relaxed ${getTextColorClass('secondary')}`}>
+        <div
+          className={getCardBackgroundClass()}
+          style={{ borderRadius: dt.radius.lg, padding: dt.spacing[4], borderWidth: 1, borderColor: dt.colors.border.soft }}
+        >
+          <div className="flex" style={{ gap: dt.spacing[3] }}>
+            <FamilyIcon name="info" size={20} className="flex-shrink-0" style={{ color: dt.colors.semantic.info }} />
+            <p className={`leading-relaxed ${getTextColorClass('secondary')}`} style={{ fontSize: dt.typography.sizes.caption }}>
               برخی تنظیمات نیاز به دسترسی مدیریت دارند. اگر عضو پروژه هستید، برای تغییرات مهم با مدیر پروژه هماهنگ کنید.
             </p>
           </div>
