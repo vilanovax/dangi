@@ -134,7 +134,7 @@ export default function ParticipantsPage() {
       }
 
       setShowAddModal(false)
-      setSuccess('عضو جدید اضافه شد')
+      setSuccess('واحد جدید اضافه شد')
       setTimeout(() => setSuccess(''), 3000)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطا در افزودن')
@@ -217,7 +217,7 @@ export default function ParticipantsPage() {
 
       setDeletingParticipant(null)
       setEditingParticipant(null)
-      setSuccess('عضو حذف شد')
+      setSuccess('واحد حذف شد')
       setTimeout(() => setSuccess(''), 3000)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطا در حذف')
@@ -244,21 +244,32 @@ export default function ParticipantsPage() {
   }
 
   return (
-    <main className="min-h-dvh pb-24">
+    <main className="min-h-dvh pb-24" style={{ backgroundColor: 'var(--building-surface-muted)' }}>
       {/* Header */}
-      <div className="bg-gray-50 dark:bg-gray-900 px-4 py-4 border-b border-gray-200 dark:border-gray-800">
+      <div
+        className="px-4 py-4"
+        style={{
+          backgroundColor: 'var(--building-surface)',
+          borderBottomWidth: '1px',
+          borderBottomStyle: 'solid',
+          borderBottomColor: 'var(--building-border)',
+        }}
+      >
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.back()}
-            className="p-2 -mr-2 text-gray-500 hover:text-gray-700"
+            className="p-2 -mr-2 transition-colors active:scale-95"
+            style={{ color: 'var(--building-text-secondary)' }}
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
           <div>
-            <h1 className="text-xl font-bold">مدیریت اعضا</h1>
-            <p className="text-xs text-gray-500">
+            <h1 className="text-xl font-bold" style={{ color: 'var(--building-text-primary)' }}>
+              مدیریت واحدها
+            </h1>
+            <p className="text-xs" style={{ color: 'var(--building-text-secondary)' }}>
               {project.participants.length} {templateDef?.labels.participantTerm || 'نفر'}
             </p>
           </div>
@@ -268,67 +279,155 @@ export default function ParticipantsPage() {
       <div className="p-4 space-y-4">
         {/* Messages */}
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-xl text-sm">
+          <div
+            className="p-3 rounded-xl text-sm font-medium"
+            style={{
+              backgroundColor: 'var(--building-danger-alpha)',
+              color: 'var(--building-danger)',
+            }}
+          >
             {error}
           </div>
         )}
         {success && (
-          <div className="bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 p-3 rounded-xl text-sm">
+          <div
+            className="p-3 rounded-xl text-sm font-medium"
+            style={{
+              backgroundColor: 'var(--building-success-alpha)',
+              color: 'var(--building-success)',
+            }}
+          >
             {success}
           </div>
         )}
 
         {/* Participants List */}
-        <Card className="divide-y divide-gray-100 dark:divide-gray-800">
-          {project.participants.map((participant) => (
-            <button
-              key={participant.id}
-              onClick={() => openEditModal(participant)}
-              className="w-full flex items-center justify-between py-3 first:pt-0 last:pb-0"
-            >
-              <div className="flex items-center gap-3">
-                <AvatarComponent
-                  avatar={deserializeAvatar(participant.avatar, participant.name)}
-                  name={participant.name}
-                  size="lg"
-                />
-                <div className="text-right">
-                  <p className="font-medium">{participant.name}</p>
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
-                    {participant.role === 'OWNER' && (
-                      <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 px-1.5 py-0.5 rounded">
-                        مالک
-                      </span>
-                    )}
-                    {isWeighted && <span>وزن: {participant.weight}</span>}
+        <div className="space-y-2">
+          {project.participants.map((participant) => {
+            const isOwner = participant.role === 'OWNER'
+            return (
+              <button
+                key={participant.id}
+                onClick={() => openEditModal(participant)}
+                className="w-full p-4 rounded-xl transition-all active:scale-[0.98]"
+                style={{
+                  backgroundColor: isOwner
+                    ? 'var(--building-primary-alpha)'
+                    : 'var(--building-surface)',
+                  borderWidth: '1px',
+                  borderStyle: 'solid',
+                  borderColor: isOwner
+                    ? 'var(--building-primary)'
+                    : 'var(--building-border)',
+                }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {/* Avatar with role-based styling */}
+                    <div
+                      className="relative w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg"
+                      style={{
+                        backgroundColor: isOwner
+                          ? 'var(--building-primary)'
+                          : 'var(--building-surface-muted)',
+                        color: isOwner ? 'white' : 'var(--building-text-primary)',
+                      }}
+                    >
+                      {participant.name.charAt(0).toUpperCase()}
+                      {isOwner && (
+                        <div
+                          className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-xs"
+                          style={{
+                            backgroundColor: 'var(--building-warning)',
+                          }}
+                        >
+                          👑
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold" style={{ color: 'var(--building-text-primary)' }}>
+                        {participant.name}
+                      </p>
+                      <div className="flex items-center gap-2 text-xs mt-0.5">
+                        {isOwner && (
+                          <span
+                            className="px-2 py-0.5 rounded-md font-medium"
+                            style={{
+                              backgroundColor: 'var(--building-primary-soft)',
+                              color: 'var(--building-primary)',
+                            }}
+                          >
+                            مالک
+                          </span>
+                        )}
+                        {isWeighted && (
+                          <span style={{ color: 'var(--building-text-secondary)' }}>
+                            وزن: {participant.weight}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  {/* Clear interaction indicator */}
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center"
+                    style={{
+                      backgroundColor: 'var(--building-surface-muted)',
+                    }}
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      style={{ color: 'var(--building-text-muted)' }}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
                   </div>
                 </div>
-              </div>
-              <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-          ))}
-        </Card>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
-      {/* Fixed Add Button */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-t border-gray-100 dark:border-gray-800">
-        <Button onClick={openAddModal} className="w-full" size="lg">
-          + افزودن عضو جدید
-        </Button>
+      {/* Fixed Add Button - Less Dominant */}
+      <div
+        className="fixed bottom-0 left-0 right-0 p-4 backdrop-blur-md"
+        style={{
+          backgroundColor: 'var(--building-surface)',
+          borderTopWidth: '1px',
+          borderTopStyle: 'solid',
+          borderTopColor: 'var(--building-border)',
+        }}
+      >
+        <button
+          onClick={openAddModal}
+          className="w-full py-3 px-4 rounded-xl font-medium text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+          style={{
+            backgroundColor: 'var(--building-primary)',
+            color: 'white',
+          }}
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          افزودن واحد جدید
+        </button>
       </div>
 
       {/* Add Participant Modal */}
       <BottomSheet
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
-        title="افزودن عضو جدید"
+        title="افزودن واحد جدید"
       >
         <div className="space-y-4">
           <Input
             label="نام"
-            placeholder="نام عضو جدید"
+            placeholder="نام واحد"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             autoFocus
@@ -389,13 +488,13 @@ export default function ParticipantsPage() {
       <BottomSheet
         isOpen={!!editingParticipant}
         onClose={() => setEditingParticipant(null)}
-        title="ویرایش عضو"
+        title="ویرایش واحد"
       >
         {editingParticipant && (
           <div className="space-y-4">
             <Input
               label="نام"
-              placeholder="نام عضو"
+              placeholder="نام واحد"
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
               autoFocus
@@ -448,13 +547,19 @@ export default function ParticipantsPage() {
 
             <div className="flex gap-3 pt-2">
               {editingParticipant.role !== 'OWNER' && (
-                <Button
-                  variant="secondary"
+                <button
                   onClick={() => setDeletingParticipant(editingParticipant)}
-                  className="!text-red-600 !border-red-200 hover:!bg-red-50"
+                  className="px-4 py-2.5 rounded-xl font-medium text-sm transition-all active:scale-95"
+                  style={{
+                    backgroundColor: 'var(--building-danger-alpha)',
+                    color: 'var(--building-danger)',
+                    borderWidth: '1px',
+                    borderStyle: 'solid',
+                    borderColor: 'var(--building-danger)',
+                  }}
                 >
                   حذف
-                </Button>
+                </button>
               )}
               <Button
                 onClick={handleUpdate}
@@ -473,30 +578,40 @@ export default function ParticipantsPage() {
       <BottomSheet
         isOpen={!!deletingParticipant}
         onClose={() => setDeletingParticipant(null)}
-        title="حذف عضو"
+        title="حذف واحد"
       >
         <div className="space-y-4">
-          <p className="text-gray-600 dark:text-gray-400">
+          <p style={{ color: 'var(--building-text-primary)' }}>
             آیا مطمئن هستید که می‌خواهید «{deletingParticipant?.name}» را حذف کنید؟
           </p>
-          <p className="text-sm text-gray-500">
-            اگر این عضو در هزینه‌ها یا تسویه‌ها شرکت داشته باشد، امکان حذف وجود ندارد.
+          <p className="text-sm" style={{ color: 'var(--building-text-secondary)' }}>
+            اگر این واحد در هزینه‌ها یا تسویه‌ها شرکت داشته باشد، امکان حذف وجود ندارد.
           </p>
           <div className="flex gap-3">
-            <Button
-              variant="secondary"
+            <button
               onClick={() => setDeletingParticipant(null)}
-              className="flex-1"
+              className="flex-1 px-4 py-2.5 rounded-xl font-medium text-sm transition-all active:scale-95"
+              style={{
+                backgroundColor: 'var(--building-surface-muted)',
+                color: 'var(--building-text-primary)',
+                borderWidth: '1px',
+                borderStyle: 'solid',
+                borderColor: 'var(--building-border)',
+              }}
             >
               انصراف
-            </Button>
-            <Button
+            </button>
+            <button
               onClick={handleDelete}
-              loading={deleting}
-              className="flex-1 !bg-red-500 hover:!bg-red-600"
+              disabled={deleting}
+              className="flex-1 px-4 py-2.5 rounded-xl font-medium text-sm transition-all active:scale-95 disabled:opacity-50"
+              style={{
+                backgroundColor: 'var(--building-danger)',
+                color: 'white',
+              }}
             >
-              حذف
-            </Button>
+              {deleting ? 'در حال حذف...' : 'حذف'}
+            </button>
           </div>
         </div>
       </BottomSheet>
