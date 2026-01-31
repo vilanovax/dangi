@@ -27,7 +27,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
       include: {
         participants: {
           where: { id: participantId }
-        }
+        },
+        chargeRules: true
       }
     })
 
@@ -90,9 +91,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     // Generate timeline for all months in the charge year
-    // If project has chargeYear/chargeMonthCount, use that
-    // Otherwise, generate based on existing payments
-    const chargeMonthCount = project.chargeMonthCount || 12
+    // Persian calendar always has 12 months
+    const chargeMonthCount = 12
     const chargeYear = project.chargeYear || new Date().getFullYear()
 
     // Generate all months in the charge year
@@ -112,7 +112,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'
     ]
 
-    const expectedAmount = project.chargeAmountPerMonth || 0
+    const expectedAmount = project.chargeRules.reduce((sum, rule) => sum + rule.amount, 0)
 
     // Generate timeline for each month
     for (let i = 0; i < chargeMonthCount; i++) {
