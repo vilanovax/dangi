@@ -66,6 +66,7 @@ interface FamilyIconProps {
   className?: string
   size?: number
   strokeWidth?: number
+  style?: React.CSSProperties
 }
 
 const iconMap: Record<IconName, LucideIcon> = {
@@ -116,6 +117,7 @@ export function FamilyIcon({
   className = '',
   size = 20,
   strokeWidth = 2,
+  style,
 }: FamilyIconProps) {
   const Icon = iconMap[name]
 
@@ -124,5 +126,5 @@ export function FamilyIcon({
     return null
   }
 
-  return <Icon className={className} size={size} strokeWidth={strokeWidth} />
+  return <Icon className={className} size={size} strokeWidth={strokeWidth} style={style} />
 }

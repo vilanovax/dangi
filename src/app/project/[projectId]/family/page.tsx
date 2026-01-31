@@ -13,6 +13,7 @@ import { projectKeys } from '@/hooks/useProjects'
 import type { FamilyDashboardStats } from '@/types/family'
 import { FamilyButton } from './components/FamilyButton'
 import { FamilyIcon } from './components/FamilyIcon'
+import { designTokens as dt } from '@/styles/design-tokens'
 import { getBackgroundClass, getTextColorClass } from '@/styles/family-theme'
 
 interface PageProps {
@@ -64,8 +65,19 @@ export default function FamilyDashboardPage({ params }: PageProps) {
     return (
       <div className={`flex min-h-screen items-center justify-center ${getBackgroundClass()}`}>
         <div className="text-center">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#FF8A00] dark:border-[#FFA94D] border-t-transparent mx-auto"></div>
-          <p className={`mt-4 text-[14px] ${getTextColorClass('primary')}`}>در حال بارگذاری...</p>
+          <div
+            className="h-12 w-12 animate-spin rounded-full border-4 border-t-transparent mx-auto"
+            style={{
+              borderColor: dt.colors.brand.primary,
+              borderTopColor: 'transparent'
+            }}
+          ></div>
+          <p
+            className={`mt-4 ${getTextColorClass('primary')}`}
+            style={{ fontSize: dt.typography.sizes.body }}
+          >
+            در حال بارگذاری...
+          </p>
         </div>
       </div>
     )
@@ -74,8 +86,13 @@ export default function FamilyDashboardPage({ params }: PageProps) {
   if (error || !stats) {
     return (
       <div className={`flex min-h-screen items-center justify-center ${getBackgroundClass()}`}>
-        <div className="text-center p-8">
-          <p className={`mb-4 text-[14px] ${getTextColorClass('danger')}`}>خطا در بارگذاری داده‌ها</p>
+        <div className="text-center" style={{ padding: dt.spacing[8] }}>
+          <p
+            className={`mb-4 ${getTextColorClass('danger')}`}
+            style={{ fontSize: dt.typography.sizes.body }}
+          >
+            خطا در بارگذاری داده‌ها
+          </p>
           <FamilyButton variant="primary" onClick={() => refetch()} size="md">
             تلاش مجدد
           </FamilyButton>
@@ -110,16 +127,22 @@ export default function FamilyDashboardPage({ params }: PageProps) {
   }
 
   return (
-    <div className={`min-h-screen pb-24 ${getBackgroundClass()}`}>
+    <div className={`min-h-screen ${getBackgroundClass()}`} style={{ paddingBottom: dt.layout.bottomNavHeight }}>
       {/* 1️⃣ Header - Minimal and calm */}
-      <div className="px-4 py-6" style={{ backgroundColor: 'rgba(255, 253, 248, 0.8)' }}>
+      <div style={{ padding: `${dt.spacing[6]}px ${dt.spacing[4]}px`, backgroundColor: dt.colors.background.app }}>
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className={`text-[22px] font-bold leading-tight ${getTextColorClass('primary')}`}>
+              <h1
+                className={`font-bold leading-tight ${getTextColorClass('primary')}`}
+                style={{ fontSize: dt.typography.sizes.headline }}
+              >
                 {isPersonal ? 'حساب شخصی' : 'حساب خانواده'}
               </h1>
-              <p className={`text-[13px] mt-0.5 ${getTextColorClass('secondary')}`}>
+              <p
+                className={`mt-0.5 ${getTextColorClass('secondary')}`}
+                style={{ fontSize: dt.typography.sizes.caption }}
+              >
                 {monthName} {year}
               </p>
             </div>
@@ -151,27 +174,66 @@ export default function FamilyDashboardPage({ params }: PageProps) {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-2xl mx-auto px-4 space-y-6" style={{ paddingTop: '16px', paddingBottom: '24px' }}>
+      <div
+        className="max-w-2xl mx-auto space-y-6"
+        style={{
+          paddingLeft: dt.layout.pagePadding,
+          paddingRight: dt.layout.pagePadding,
+          paddingTop: dt.spacing[4],
+          paddingBottom: dt.layout.sectionGap
+        }}
+      >
         {/* 2️⃣ Hero Card - Monthly Financial Status (Clickable) */}
         <button
           onClick={() => router.push(`/project/${projectId}/family/reports/${periodKey}`)}
-          className="w-full bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-6 text-right hover:shadow-md transition-all active:scale-[0.99]"
+          className="w-full bg-white dark:bg-gray-900 text-right hover:shadow-md transition-all active:scale-[0.99]"
+          style={{
+            borderRadius: dt.radius.lg,
+            boxShadow: dt.shadow.card,
+            padding: dt.spacing[6]
+          }}
         >
-          <p className={`text-[13px] mb-3 ${getTextColorClass('secondary')}`}>
+          <p
+            className={`mb-3 ${getTextColorClass('secondary')}`}
+            style={{ fontSize: dt.typography.sizes.caption }}
+          >
             وضعیت مالی این ماه
           </p>
 
-          <div className="mb-6">
-            <p className={`text-[32px] font-extrabold leading-tight ${netBalance >= 0 ? 'text-[#22C55E] dark:text-[#4ADE80]' : 'text-[#EF4444] dark:text-[#F87171]'}`}>
+          <div style={{ marginBottom: dt.spacing[6] }}>
+            <p
+              className="font-extrabold leading-tight"
+              style={{
+                fontSize: 32,
+                color: netBalance >= 0 ? dt.colors.semantic.income : dt.colors.semantic.expense
+              }}
+            >
               {netBalance >= 0 ? '+' : ''}{netBalance.toLocaleString('fa-IR')}
-              <span className="text-[14px] font-normal text-gray-400 dark:text-gray-500"> تومان</span>
+              <span
+                className="font-normal"
+                style={{
+                  fontSize: dt.typography.sizes.body,
+                  color: dt.colors.text.muted
+                }}
+              >
+                {' '}تومان
+              </span>
             </p>
-            <p className={`text-[13px] mt-1 ${getTextColorClass('secondary')}`}>
+            <p
+              className={`mt-1 ${getTextColorClass('secondary')}`}
+              style={{ fontSize: dt.typography.sizes.caption }}
+            >
               مانده خالص
             </p>
           </div>
 
-          <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-800 pt-4 text-[13px]">
+          <div
+            className="flex items-center justify-between border-t border-gray-100 dark:border-gray-800"
+            style={{
+              paddingTop: dt.spacing[4],
+              fontSize: dt.typography.sizes.caption
+            }}
+          >
             <div>
               <span className={getTextColorClass('secondary')}>درآمد: </span>
               <span className={`font-semibold ${getTextColorClass('primary')}`}>
@@ -187,8 +249,17 @@ export default function FamilyDashboardPage({ params }: PageProps) {
           </div>
 
           {/* Tap hint */}
-          <div className="flex items-center justify-center gap-1 mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
-            <span className={`text-[11px] ${getTextColorClass('secondary')}`}>
+          <div
+            className="flex items-center justify-center gap-1 border-t border-gray-100 dark:border-gray-800"
+            style={{
+              marginTop: dt.spacing[4],
+              paddingTop: dt.spacing[3]
+            }}
+          >
+            <span
+              className={getTextColorClass('secondary')}
+              style={{ fontSize: dt.typography.sizes.caption }}
+            >
               ضربه بزن برای جزئیات
             </span>
             <FamilyIcon name="back" size={12} className="text-gray-400 dark:text-gray-600 rotate-180" />
@@ -196,83 +267,141 @@ export default function FamilyDashboardPage({ params }: PageProps) {
         </button>
 
         {/* 3️⃣ Stats Row - Three quick indicators */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3" style={{ gap: dt.spacing[4] }}>
           <div className="text-center">
-            <div className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center bg-red-50 dark:bg-red-950/30">
-              <FamilyIcon name="expense" size={20} className="text-[#EF4444] dark:text-[#F87171]" />
+            <div
+              className="w-10 h-10 rounded-full mx-auto flex items-center justify-center bg-red-50 dark:bg-red-950/30"
+              style={{ marginBottom: dt.spacing[2] }}
+            >
+              <FamilyIcon name="expense" size={20} style={{ color: dt.colors.semantic.expense }} />
             </div>
-            <div className={`text-[12px] mb-1 ${getTextColorClass('secondary')}`}>
+            <div
+              className={`mb-1 ${getTextColorClass('secondary')}`}
+              style={{ fontSize: dt.typography.sizes.caption }}
+            >
               هزینه
             </div>
-            <div className={`text-[18px] font-bold ${getTextColorClass('primary')}`}>
+            <div
+              className={`font-bold ${getTextColorClass('primary')}`}
+              style={{ fontSize: dt.typography.sizes.title }}
+            >
               {formatLarge(totalExpenses)}
             </div>
           </div>
 
           <div className="text-center">
-            <div className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center bg-green-50 dark:bg-green-950/30">
-              <FamilyIcon name="income" size={20} className="text-[#22C55E] dark:text-[#4ADE80]" />
+            <div
+              className="w-10 h-10 rounded-full mx-auto flex items-center justify-center bg-green-50 dark:bg-green-950/30"
+              style={{ marginBottom: dt.spacing[2] }}
+            >
+              <FamilyIcon name="income" size={20} style={{ color: dt.colors.semantic.income }} />
             </div>
-            <div className={`text-[12px] mb-1 ${getTextColorClass('secondary')}`}>
+            <div
+              className={`mb-1 ${getTextColorClass('secondary')}`}
+              style={{ fontSize: dt.typography.sizes.caption }}
+            >
               درآمد
             </div>
-            <div className={`text-[18px] font-bold ${getTextColorClass('primary')}`}>
+            <div
+              className={`font-bold ${getTextColorClass('primary')}`}
+              style={{ fontSize: dt.typography.sizes.title }}
+            >
               {formatLarge(totalIncome)}
             </div>
           </div>
 
           <div className="text-center">
-            <div className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center bg-orange-50 dark:bg-orange-950/30">
-              <FamilyIcon name="savings" size={20} className="text-[#FF8A00] dark:text-[#FFA94D]" />
+            <div
+              className="w-10 h-10 rounded-full mx-auto flex items-center justify-center bg-orange-50 dark:bg-orange-950/30"
+              style={{ marginBottom: dt.spacing[2] }}
+            >
+              <FamilyIcon name="savings" size={20} style={{ color: dt.colors.brand.primary }} />
             </div>
-            <div className={`text-[12px] mb-1 ${getTextColorClass('secondary')}`}>
+            <div
+              className={`mb-1 ${getTextColorClass('secondary')}`}
+              style={{ fontSize: dt.typography.sizes.caption }}
+            >
               پس‌انداز
             </div>
-            <div className={`text-[18px] font-bold ${getTextColorClass('primary')}`}>
+            <div
+              className={`font-bold ${getTextColorClass('primary')}`}
+              style={{ fontSize: dt.typography.sizes.title }}
+            >
               {savingsRate.toFixed(0)}٪
             </div>
           </div>
         </div>
 
         {/* 4️⃣ Primary Actions - ONLY add transactions */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2" style={{ gap: dt.spacing[3] }}>
           <Link
             href={`/project/${projectId}/family/add-expense`}
-            className="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-2xl transition-all shadow-sm hover:shadow-md active:scale-95 flex items-center justify-center gap-2 p-4"
+            className="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:shadow-md active:scale-95 flex items-center justify-center"
+            style={{
+              borderRadius: dt.radius.lg,
+              boxShadow: dt.shadow.card,
+              padding: dt.spacing[4],
+              gap: dt.spacing[2]
+            }}
           >
-            <FamilyIcon name="expense" size={20} className="text-[#EF4444] dark:text-[#F87171]" />
-            <span className={`text-[14px] font-semibold ${getTextColorClass('primary')}`}>
+            <FamilyIcon name="expense" size={20} style={{ color: dt.colors.semantic.expense }} />
+            <span
+              className={`font-semibold ${getTextColorClass('primary')}`}
+              style={{ fontSize: dt.typography.sizes.body }}
+            >
               ثبت خرج
             </span>
           </Link>
 
           <Link
             href={`/project/${projectId}/family/add-income`}
-            className="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-2xl transition-all shadow-sm hover:shadow-md active:scale-95 flex items-center justify-center gap-2 p-4"
+            className="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:shadow-md active:scale-95 flex items-center justify-center"
+            style={{
+              borderRadius: dt.radius.lg,
+              boxShadow: dt.shadow.card,
+              padding: dt.spacing[4],
+              gap: dt.spacing[2]
+            }}
           >
-            <FamilyIcon name="income" size={20} className="text-[#22C55E] dark:text-[#4ADE80]" />
-            <span className={`text-[14px] font-semibold ${getTextColorClass('primary')}`}>
+            <FamilyIcon name="income" size={20} style={{ color: dt.colors.semantic.income }} />
+            <span
+              className={`font-semibold ${getTextColorClass('primary')}`}
+              style={{ fontSize: dt.typography.sizes.body }}
+            >
               ثبت درآمد
             </span>
           </Link>
         </div>
 
         {/* 5️⃣ Recent Transactions Preview */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm" style={{ padding: '20px' }}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-900 dark:text-white" style={{ fontSize: '16px' }}>
+        <div
+          className="bg-white dark:bg-gray-900"
+          style={{
+            borderRadius: dt.radius.lg,
+            boxShadow: dt.shadow.card,
+            padding: dt.spacing[5]
+          }}
+        >
+          <div className="flex items-center justify-between" style={{ marginBottom: dt.spacing[4] }}>
+            <h2
+              className="font-semibold text-gray-900 dark:text-white"
+              style={{ fontSize: dt.typography.sizes.bodyLarge }}
+            >
               آخرین تراکنش‌ها
             </h2>
             <Link
               href={`/project/${projectId}/family/transactions`}
               className="hover:opacity-80 transition-opacity"
-              style={{ fontSize: '13px', color: '#FF8A00' }}
+              style={{
+                fontSize: dt.typography.sizes.caption,
+                color: dt.colors.brand.primary
+              }}
             >
               مشاهده همه ←
             </Link>
           </div>
 
-          <div className="space-y-3">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: dt.spacing[3] }}>
             {/* Combine and show max 3 */}
             {[
               ...(stats.recentExpenses?.slice(0, 2).map(e => ({ ...e, type: 'expense' })) || []),
@@ -281,8 +410,12 @@ export default function FamilyDashboardPage({ params }: PageProps) {
               .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
               .slice(0, 3)
               .map((transaction, idx) => (
-                <div key={idx} className="flex items-center justify-between py-2">
-                  <div className="flex items-center gap-3">
+                <div
+                  key={idx}
+                  className="flex items-center justify-between"
+                  style={{ paddingTop: dt.spacing[2], paddingBottom: dt.spacing[2] }}
+                >
+                  <div className="flex items-center" style={{ gap: dt.spacing[3] }}>
                     <div
                       className="w-8 h-8 rounded-full flex items-center justify-center"
                       style={{
@@ -292,24 +425,41 @@ export default function FamilyDashboardPage({ params }: PageProps) {
                       }}
                     >
                       {transaction.type === 'expense' ? (
-                        <svg className="w-4 h-4" style={{ color: '#EF4444' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <svg
+                          className="w-4 h-4"
+                          style={{ color: dt.colors.semantic.expense }}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
                           <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
                         </svg>
                       ) : (
-                        <svg className="w-4 h-4" style={{ color: '#22C55E' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <svg
+                          className="w-4 h-4"
+                          style={{ color: dt.colors.semantic.income }}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
                         </svg>
                       )}
                     </div>
-                    <span className="text-gray-900 dark:text-white" style={{ fontSize: '14px' }}>
+                    <span
+                      className="text-gray-900 dark:text-white"
+                      style={{ fontSize: dt.typography.sizes.body }}
+                    >
                       {transaction.title}
                     </span>
                   </div>
                   <span
                     className="font-semibold"
                     style={{
-                      fontSize: '14px',
-                      color: transaction.type === 'expense' ? '#EF4444' : '#22C55E'
+                      fontSize: dt.typography.sizes.body,
+                      color: transaction.type === 'expense' ? dt.colors.semantic.expense : dt.colors.semantic.income
                     }}
                   >
                     {transaction.type === 'expense' ? '-' : '+'}{transaction.amount.toLocaleString('fa-IR')}
@@ -319,19 +469,37 @@ export default function FamilyDashboardPage({ params }: PageProps) {
 
             {/* Empty State */}
             {(!stats.recentExpenses?.length && !stats.recentIncomes?.length) && (
-              <div className="text-center" style={{ padding: '32px 0' }}>
+              <div
+                className="text-center"
+                style={{ paddingTop: dt.spacing[7], paddingBottom: dt.spacing[7] }}
+              >
                 <div
-                  className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
-                  style={{ backgroundColor: 'rgba(255, 138, 0, 0.1)' }}
+                  className="w-16 h-16 rounded-full mx-auto flex items-center justify-center"
+                  style={{
+                    backgroundColor: dt.colors.brand.primarySoft,
+                    marginBottom: dt.spacing[4]
+                  }}
                 >
-                  <svg className="w-8 h-8" style={{ color: '#FF8A00' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg
+                    className="w-8 h-8"
+                    style={{ color: dt.colors.brand.primary }}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
                   </svg>
                 </div>
-                <p className="text-gray-600 dark:text-gray-300 font-medium mb-1" style={{ fontSize: '14px' }}>
+                <p
+                  className="text-gray-600 dark:text-gray-300 font-medium mb-1"
+                  style={{ fontSize: dt.typography.sizes.body }}
+                >
                   هنوز تراکنشی ثبت نشده
                 </p>
-                <p className="text-gray-400 dark:text-gray-500" style={{ fontSize: '12px' }}>
+                <p
+                  className="text-gray-400 dark:text-gray-500"
+                  style={{ fontSize: dt.typography.sizes.caption }}
+                >
                   با ثبت اولین تراکنش، همه‌چیز شفاف می‌شه
                 </p>
               </div>
@@ -341,23 +509,42 @@ export default function FamilyDashboardPage({ params }: PageProps) {
 
         {/* 6️⃣ Budget Status Preview */}
         {stats.budgets && stats.budgets.length > 0 ? (
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm" style={{ padding: '20px' }}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-gray-900 dark:text-white" style={{ fontSize: '16px' }}>
+          <div
+            className="bg-white dark:bg-gray-900"
+            style={{
+              borderRadius: dt.radius.lg,
+              boxShadow: dt.shadow.card,
+              padding: dt.spacing[5]
+            }}
+          >
+            <div className="flex items-center justify-between" style={{ marginBottom: dt.spacing[4] }}>
+              <h2
+                className="font-semibold text-gray-900 dark:text-white"
+                style={{ fontSize: dt.typography.sizes.bodyLarge }}
+              >
                 وضعیت بودجه ماه
               </h2>
               <Link
                 href={`/project/${projectId}/family/budgets`}
                 className="hover:opacity-80 transition-opacity"
-                style={{ fontSize: '13px', color: '#FF8A00' }}
+                style={{
+                  fontSize: dt.typography.sizes.caption,
+                  color: dt.colors.brand.primary
+                }}
               >
                 مشاهده همه ←
               </Link>
             </div>
 
             {/* Overall progress */}
-            <div className="mb-4">
-              <div className="flex items-center justify-between text-gray-500 dark:text-gray-400 mb-2" style={{ fontSize: '12px' }}>
+            <div style={{ marginBottom: dt.spacing[4] }}>
+              <div
+                className="flex items-center justify-between text-gray-500 dark:text-gray-400"
+                style={{
+                  fontSize: dt.typography.sizes.caption,
+                  marginBottom: dt.spacing[2]
+                }}
+              >
                 <span>استفاده شده</span>
                 <span>{stats.budgetUtilization?.toFixed(0)}٪</span>
               </div>
@@ -368,30 +555,33 @@ export default function FamilyDashboardPage({ params }: PageProps) {
                     width: `${Math.min(stats.budgetUtilization ?? 0, 100)}%`,
                     backgroundColor:
                       (stats.budgetUtilization ?? 0) > 100
-                        ? '#EF4444'
+                        ? dt.colors.semantic.expense
                         : (stats.budgetUtilization ?? 0) > 80
-                          ? '#F59E0B'
-                          : '#22C55E'
+                          ? dt.colors.semantic.warning
+                          : dt.colors.semantic.income
                   }}
                 />
               </div>
             </div>
 
             {/* Top 3 budgets */}
-            <div className="space-y-3">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: dt.spacing[3] }}>
               {stats.budgets.slice(0, 3).map((budget) => (
                 <div key={budget.categoryId} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span style={{ fontSize: '18px' }}>{budget.categoryIcon || '📦'}</span>
-                    <span className="text-gray-700 dark:text-gray-300" style={{ fontSize: '14px' }}>
+                  <div className="flex items-center" style={{ gap: dt.spacing[3] }}>
+                    <span style={{ fontSize: dt.typography.sizes.title }}>{budget.categoryIcon || '📦'}</span>
+                    <span
+                      className="text-gray-700 dark:text-gray-300"
+                      style={{ fontSize: dt.typography.sizes.body }}
+                    >
                       {budget.categoryName}
                     </span>
                   </div>
                   <span
                     className="font-semibold"
                     style={{
-                      fontSize: '14px',
-                      color: budget.isOverBudget ? '#EF4444' : '#6B7280'
+                      fontSize: dt.typography.sizes.body,
+                      color: budget.isOverBudget ? dt.colors.semantic.expense : dt.colors.text.secondary
                     }}
                   >
                     {budget.percentage.toFixed(0)}٪
@@ -401,19 +591,47 @@ export default function FamilyDashboardPage({ params }: PageProps) {
             </div>
           </div>
         ) : (
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-6 text-center">
-            <div className="w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center bg-orange-50 dark:bg-orange-950/30">
-              <FamilyIcon name="budget" size={28} className="text-[#FF8A00] dark:text-[#FFA94D]" />
+          <div
+            className="bg-white dark:bg-gray-900 text-center"
+            style={{
+              borderRadius: dt.radius.lg,
+              boxShadow: dt.shadow.card,
+              padding: dt.spacing[6]
+            }}
+          >
+            <div
+              className="w-16 h-16 rounded-full mx-auto flex items-center justify-center bg-orange-50 dark:bg-orange-950/30"
+              style={{ marginBottom: dt.spacing[3] }}
+            >
+              <FamilyIcon name="budget" size={28} style={{ color: dt.colors.brand.primary }} />
             </div>
-            <h3 className={`font-semibold mb-1 text-[14px] ${getTextColorClass('primary')}`}>
+            <h3
+              className={`font-semibold mb-1 ${getTextColorClass('primary')}`}
+              style={{ fontSize: dt.typography.sizes.body }}
+            >
               هنوز بودجه‌ای تعیین نکردی
             </h3>
-            <p className={`text-[12px] mb-4 ${getTextColorClass('secondary')}`}>
+            <p
+              className={getTextColorClass('secondary')}
+              style={{
+                fontSize: dt.typography.sizes.caption,
+                marginBottom: dt.spacing[4]
+              }}
+            >
               با تنظیم بودجه، خرج‌ها رو بهتر کنترل کن
             </p>
             <Link
               href={`/project/${projectId}/family/budgets/set`}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-colors text-[13px] font-medium text-gray-700 dark:text-gray-300"
+              className="inline-flex items-center bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors font-medium text-gray-700 dark:text-gray-300"
+              style={{
+                gap: dt.spacing[2],
+                paddingLeft: dt.spacing[4],
+                paddingRight: dt.spacing[4],
+                paddingTop: dt.spacing[2],
+                paddingBottom: dt.spacing[2],
+                borderRadius: dt.radius.md,
+                fontSize: dt.typography.sizes.caption
+              }}
             >
               تنظیم بودجه ←
             </Link>
