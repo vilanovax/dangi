@@ -34,8 +34,9 @@ interface SettlementHistorySheetProps {
 /**
  * Settlement history display with filtering and export options
  *
- * UX Principle: Transparency = Trust
- * Users should be able to see all past settlements with full details
+ * UX Principle: Transparency = Trust + Auditability
+ * This is a read-only log. No editing, no deletion, no recalculation.
+ * Focus on scannability, clarity of payment direction, and trust.
  */
 export function SettlementHistorySheet({
   isOpen,
@@ -67,6 +68,20 @@ export function SettlementHistorySheet({
   const displayedSettlements = filteredSettlements.slice(0, showCount)
   const hasMore = filteredSettlements.length > showCount
 
+  // Helper function for filter label
+  const getFilterLabel = () => {
+    switch (filter) {
+      case 'all':
+        return 'همه تسویه‌ها'
+      case 'last20':
+        return '۲۰ تای آخر'
+      case 'lastWeek':
+        return 'هفته اخیر'
+      default:
+        return 'همه تسویه‌ها'
+    }
+  }
+
   const formatDate = (date: string | Date) => {
     const d = new Date(date)
     return new Intl.DateTimeFormat('fa-IR', {
@@ -79,7 +94,7 @@ export function SettlementHistorySheet({
   }
 
   const handleExport = () => {
-    // Create CSV content
+    // UX: CSV export is a secondary, safe action for auditability
     const headers = ['تاریخ', 'پرداخت‌کننده', 'دریافت‌کننده', 'مبلغ', 'توضیحات']
     const rows = filteredSettlements.map(s => [
       formatDate(s.settledAt),
@@ -94,7 +109,7 @@ export function SettlementHistorySheet({
       ...rows.map(row => row.join(','))
     ].join('\n')
 
-    // Download CSV
+    // Download CSV with UTF-8 BOM for Excel compatibility
     const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
@@ -104,83 +119,110 @@ export function SettlementHistorySheet({
 
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose}>
-      <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between sticky top-0 bg-white dark:bg-gray-900 pb-4 border-b border-gray-100 dark:border-gray-800">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-            تاریخچه تسویه‌ها
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-          >
-            ✕
-          </button>
+      <div className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
+        {/* Header with subtitle for context */}
+        <div className="sticky top-0 bg-white dark:bg-gray-900 pb-4 border-b border-gray-100 dark:border-gray-800 -mt-6 pt-6">
+          <div className="flex items-start justify-between mb-2">
+            <div className="flex-1">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                تاریخچه تسویه‌ها
+              </h2>
+              {/* UX: Subtitle clarifies the purpose of this log */}
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                همه پرداخت‌هایی که برای صاف‌کردن حساب ثبت شده
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
-        {/* Filter Options */}
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-6 px-6 scrollbar-hide">
-          <button
-            onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-              filter === 'all'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-            }`}
-          >
-            همه
-          </button>
-          <button
-            onClick={() => setFilter('last20')}
-            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-              filter === 'last20'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-            }`}
-          >
-            ۲۰ تای آخر
-          </button>
-          <button
-            onClick={() => setFilter('lastWeek')}
-            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-              filter === 'lastWeek'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-            }`}
-          >
-            هفته اخیر
-          </button>
+        {/* Filter Options with improved active state */}
+        <div className="space-y-2">
+          <div className="flex gap-2 overflow-x-auto pb-2 -mx-6 px-6 scrollbar-hide">
+            {/* UX: Improved active state with shadow and bold text */}
+            <button
+              onClick={() => setFilter('all')}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                filter === 'all'
+                  ? 'bg-blue-500 text-white shadow-md shadow-blue-500/30'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
+            >
+              همه
+            </button>
+            <button
+              onClick={() => setFilter('last20')}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                filter === 'last20'
+                  ? 'bg-blue-500 text-white shadow-md shadow-blue-500/30'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
+            >
+              ۲۰ تای آخر
+            </button>
+            <button
+              onClick={() => setFilter('lastWeek')}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                filter === 'lastWeek'
+                  ? 'bg-blue-500 text-white shadow-md shadow-blue-500/30'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
+            >
+              هفته اخیر
+            </button>
+          </div>
+          {/* UX: Helper text shows current filter for clarity */}
+          <p className="text-xs text-gray-500 dark:text-gray-400 px-1">
+            نمایش: {getFilterLabel()}
+          </p>
         </div>
 
-        {/* Export Button */}
-        <button
-          onClick={handleExport}
-          className="w-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2"
-        >
-          <span>📥</span>
-          خروجی CSV
-        </button>
+        {/* CSV Export with helper caption */}
+        <div className="space-y-1.5">
+          <button
+            onClick={handleExport}
+            disabled={filteredSettlements.length === 0}
+            className="w-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2"
+          >
+            <span>📥</span>
+            خروجی CSV
+          </button>
+          {/* UX: Caption explains the purpose of CSV export (secondary, safe action) */}
+          <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
+            دانلود برای نگه‌داری یا ارسال
+          </p>
+        </div>
 
         {/* Settlements List */}
         {displayedSettlements.length === 0 ? (
+          /* UX: Improved empty state with clearer messaging */
           <div className="text-center py-12">
-            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3">
               <span className="text-3xl">📋</span>
             </div>
-            <p className="text-gray-500 dark:text-gray-400">
-              هنوز تسویه‌ای ثبت نشده
+            <p className="text-gray-700 dark:text-gray-300 font-medium mb-1">
+              هنوز تسویه‌ای انجام نشده
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              وقتی پرداختی ثبت بشه، اینجا می‌بینیش
             </p>
           </div>
         ) : (
+          /* UX: Improved spacing and rhythm for long lists */
           <div className="space-y-3">
             {displayedSettlements.map((settlement) => (
               <div
                 key={settlement.id}
-                className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 space-y-3"
+                className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 space-y-3 hover:bg-gray-100 dark:hover:bg-gray-750 transition-colors"
               >
-                {/* Participants */}
+                {/* UX: Top row shows participants visually */}
                 <div className="flex items-center gap-3">
-                  {/* From */}
+                  {/* From (Payer) */}
                   <div className="flex items-center gap-2 flex-1">
                     <Avatar
                       avatar={deserializeAvatar(settlement.from.avatar || null, settlement.from.name)}
@@ -192,9 +234,9 @@ export function SettlementHistorySheet({
                     </span>
                   </div>
 
-                  {/* Arrow */}
+                  {/* Arrow indicating payment direction */}
                   <svg
-                    className="w-5 h-5 text-gray-400 flex-shrink-0"
+                    className="w-5 h-5 text-gray-400 dark:text-gray-500 flex-shrink-0"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -207,7 +249,7 @@ export function SettlementHistorySheet({
                     />
                   </svg>
 
-                  {/* To */}
+                  {/* To (Receiver) */}
                   <div className="flex items-center gap-2 flex-1 justify-end">
                     <span className="text-sm font-medium text-gray-900 dark:text-white">
                       {settlement.to.name}
@@ -220,23 +262,30 @@ export function SettlementHistorySheet({
                   </div>
                 </div>
 
-                {/* Amount */}
-                <div className="flex items-center justify-between">
+                {/* UX: NEW - Second row clarifies payment direction in plain language */}
+                <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                  پرداخت از <span className="font-medium text-gray-700 dark:text-gray-300">{settlement.from.name}</span> به <span className="font-medium text-gray-700 dark:text-gray-300">{settlement.to.name}</span>
+                </p>
+
+                {/* UX: Amount on its own line for scannability */}
+                <div className="flex items-baseline justify-between pt-1">
+                  {/* Date/time in muted text */}
                   <span className="text-xs text-gray-500 dark:text-gray-400">
                     {formatDate(settlement.settledAt)}
                   </span>
-                  <span className="text-lg font-bold text-green-600 dark:text-green-400">
+                  {/* Amount emphasized with success color (green = completed) */}
+                  <span className="text-xl font-bold text-green-600 dark:text-green-400 tabular-nums">
                     {formatMoney(settlement.amount, currency)}
                   </span>
                 </div>
 
-                {/* Receipt */}
+                {/* UX: Receipt link as subtle secondary action */}
                 {settlement.receiptUrl && (
                   <a
                     href={settlement.receiptUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs text-blue-500 hover:underline flex items-center gap-1"
+                    className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline flex items-center gap-1 pt-1"
                   >
                     <span>📎</span>
                     مشاهده رسید
