@@ -84,12 +84,10 @@ export function SettlementHistorySheet({
 
   const formatDate = (date: string | Date) => {
     const d = new Date(date)
+    // UX: History log - only day + month (no year, no time) for cleaner display
     return new Intl.DateTimeFormat('fa-IR', {
-      year: 'numeric',
       month: 'long',
       day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
     }).format(d)
   }
 
@@ -278,18 +276,25 @@ export function SettlementHistorySheet({
 
                 {/* UX: Amount on its own line for scannability */}
                 <div className="flex items-baseline justify-between pt-1">
-                  {/* Date/time in muted text */}
+                  {/* Date in muted text (day + month only, no year/time) */}
                   <span className="text-xs text-gray-500 dark:text-gray-400">
                     {formatDate(settlement.settledAt)}
                   </span>
-                  {/* Amount emphasized with calm success color (history token) */}
-                  {/* Note: Using --history-amount-success (calm green #16a34a) not bright alert green */}
-                  <span
-                    className="text-xl font-bold tabular-nums"
-                    style={{ color: 'var(--history-amount-success, #16a34a)' }}
-                  >
-                    {formatMoney(settlement.amount, currency)}
-                  </span>
+                  {/* Amount: Large number + small currency for better space usage */}
+                  <div className="flex items-baseline gap-1.5">
+                    <span
+                      className="text-xl font-bold tabular-nums"
+                      style={{ color: 'var(--history-amount-success, #16a34a)' }}
+                    >
+                      {settlement.amount.toLocaleString('fa-IR')}
+                    </span>
+                    <span
+                      className="text-xs font-medium"
+                      style={{ color: 'var(--history-amount-success, #16a34a)' }}
+                    >
+                      تومان
+                    </span>
+                  </div>
                 </div>
 
                 {/* UX: Receipt link as subtle secondary action */}
