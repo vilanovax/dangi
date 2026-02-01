@@ -204,17 +204,43 @@ export function formatPersianDate(
   format: string = 'DD MMMM YYYY'
 ): string {
   try {
-    // Lazy load to avoid SSR issues
-    const DateObject = require('react-date-object').default
-    const persian = require('react-date-object/calendars/persian').default
-    const persian_fa = require('react-date-object/locales/persian_fa').default
+    const dateObj = typeof date === 'string' ? new Date(date) : date
 
-    const dateObj = new DateObject(date)
-    dateObj.convert(persian, persian_fa)
-    return dateObj.format(format)
+    // Use Intl.DateTimeFormat for reliable Persian date formatting
+    if (format === 'D MMMM YYYY') {
+      // Format: "۱۰ بهمن ۱۴۰۴"
+      return dateObj.toLocaleDateString('fa-IR', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
+    } else if (format === 'DD MMMM YYYY') {
+      // Format: "۱۰ بهمن ۱۴۰۴" (same as above for Persian)
+      return dateObj.toLocaleDateString('fa-IR', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
+    } else if (format === 'YYYY/MM/DD') {
+      // Format: "۱۴۰۴/۱۱/۱۰"
+      return dateObj.toLocaleDateString('fa-IR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      })
+    } else {
+      // Default: full date
+      return dateObj.toLocaleDateString('fa-IR', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
+    }
   } catch (error) {
     console.error('Error formatting Persian date:', error)
-    return new Date(date).toLocaleDateString('fa-IR')
+    // Fallback
+    const dateObj = typeof date === 'string' ? new Date(date) : date
+    return dateObj.toLocaleDateString('fa-IR')
   }
 }
 
