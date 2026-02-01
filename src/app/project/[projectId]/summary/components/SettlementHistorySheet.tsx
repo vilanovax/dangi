@@ -228,7 +228,8 @@ export function SettlementHistorySheet({
                 className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 space-y-3 hover:bg-gray-100 dark:hover:bg-gray-750 transition-colors"
               >
                 {/* UX: Top row shows participants visually */}
-                <div className="flex items-center gap-3">
+                {/* Force LTR for payment direction (From → To) to match arrow */}
+                <div className="flex items-center gap-3" dir="ltr">
                   {/* From (Payer) */}
                   <div className="flex items-center gap-2 flex-1">
                     <Avatar
