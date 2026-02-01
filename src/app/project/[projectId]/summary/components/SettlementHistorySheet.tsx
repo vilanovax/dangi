@@ -230,13 +230,6 @@ export function SettlementHistorySheet({
                   </span>
                 </div>
 
-                {/* Note */}
-                {settlement.note && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-900 rounded-lg p-2">
-                    {settlement.note}
-                  </p>
-                )}
-
                 {/* Receipt */}
                 {settlement.receiptUrl && (
                   <a
