@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { getProjectById, updateProject, deleteProject } from '@/lib/services/project.service'
 import { prisma } from '@/lib/db/prisma'
-import { requireProjectAccess } from '@/lib/utils/auth'
+import { requireProjectAccess, requireProjectAccessWithLink } from '@/lib/utils/auth'
 import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
@@ -16,8 +16,8 @@ export async function GET(
   try {
     const { projectId } = await context.params
 
-    // Authorization check: user must be a participant
-    const authResult = await requireProjectAccess(projectId)
+    // Authorization check: user must be a participant OR have valid access link
+    const authResult = await requireProjectAccessWithLink(projectId, ['project:read'])
     if (!authResult.authorized) {
       return authResult.response
     }
@@ -35,8 +35,16 @@ export async function GET(
       )
     }
 
-    // Use the authenticated participant's ID
-    const myParticipantId = authResult.participant.id
+    // Determine participant ID based on access type
+    let myParticipantId: string | null = null
+
+    if (authResult.accessType === 'link') {
+      // Link-based access - no participant ID
+      myParticipantId = null
+    } else {
+      // Regular participant access
+      myParticipantId = authResult.participant.id
+    }
 
     return NextResponse.json({ project, myParticipantId })
   } catch (error) {
