@@ -432,7 +432,8 @@ export default function ExpensesPage() {
   const handleEditExpense = useCallback(() => {
     if (!selectedExpenseId) return
     setShowExpenseDetail(false)
-    router.push(`/project/${projectId}/expense/${selectedExpenseId}`)
+    // Add ?edit=true to automatically enter edit mode
+    router.push(`/project/${projectId}/expense/${selectedExpenseId}?edit=true`)
   }, [selectedExpenseId, router, projectId])
 
   const handleDeleteExpense = useCallback(async () => {

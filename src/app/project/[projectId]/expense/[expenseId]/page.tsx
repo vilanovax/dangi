@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { parseMoney } from '@/lib/utils/money'
 import { getTemplateLabels } from '@/lib/domain/templates'
 import type { TemplateLabels } from '@/lib/types/domain'
@@ -104,8 +104,12 @@ function canUserEditExpense(
 export default function ExpenseDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const projectId = params.projectId as string
   const expenseId = params.expenseId as string
+
+  // Check if edit mode should be enabled from URL parameter
+  const shouldAutoEdit = searchParams.get('edit') === 'true'
 
   // ── Data State ──────────────────────────────────────────────
   const [expense, setExpense] = useState<Expense | null>(null)
@@ -115,7 +119,7 @@ export default function ExpenseDetailPage() {
   const [error, setError] = useState('')
 
   // ── UI State ────────────────────────────────────────────────
-  const [isEditing, setIsEditing] = useState(false)
+  const [isEditing, setIsEditing] = useState(shouldAutoEdit)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
