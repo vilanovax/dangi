@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getTravelChecklist, createTravelChecklistItem } from '@/lib/services/checklist.service'
-import { requireProjectAccess } from '@/lib/utils/auth'
+import { requireProjectAccess, requireProjectAccessWithLink } from '@/lib/utils/auth'
 import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
@@ -11,7 +11,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { projectId } = await context.params
 
-    const authResult = await requireProjectAccess(projectId)
+    // Allow both participant and link-based access (read-only)
+    const authResult = await requireProjectAccessWithLink(projectId, ['project:read'])
     if (!authResult.authorized) {
       return authResult.response
     }
