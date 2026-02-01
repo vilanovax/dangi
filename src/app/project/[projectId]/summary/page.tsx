@@ -806,7 +806,8 @@ function SettlementSuggestionCard({
 }) {
   return (
     <Card className="p-4">
-      <div className="flex items-center gap-3">
+      {/* Force LTR for payment direction (From → To) to match arrow */}
+      <div className="flex items-center gap-3" dir="ltr">
         <div className="flex items-center gap-2 flex-1">
           {fromAvatar ? (
             <Avatar avatar={fromAvatar} name={fromName} size="sm" />

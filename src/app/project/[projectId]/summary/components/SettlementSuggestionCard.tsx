@@ -43,7 +43,8 @@ export function SettlementSuggestionCard({
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm">
-      <div className="flex items-center gap-3">
+      {/* Force LTR for payment direction (From → To) to match arrow */}
+      <div className="flex items-center gap-3" dir="ltr">
         {/* From Avatar */}
         <div className="w-11 h-11 flex-shrink-0 ring-2 ring-red-100 dark:ring-red-900/50 rounded-full">
           {fromAvatar ? (

@@ -43,7 +43,8 @@ export function QuickSettleSheet({
       <div className="space-y-5">
         {/* Transfer Preview */}
         <div className="bg-gradient-to-l from-green-50 via-emerald-50 to-teal-50 dark:from-green-900/20 dark:via-emerald-900/20 dark:to-teal-900/20 rounded-2xl p-5 border border-green-100 dark:border-green-800/30">
-          <div className="flex items-center justify-between">
+          {/* Force LTR for payment direction (From → To) to match arrow */}
+          <div className="flex items-center justify-between" dir="ltr">
             {/* From */}
             <div className="flex-1 text-center">
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium">

@@ -217,7 +217,8 @@ export default function SettlementsPage() {
                       className="block"
                     >
                       <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="flex items-center gap-3">
+                        {/* Force LTR for payment direction (From → To) to match arrow */}
+                        <div className="flex items-center gap-3" dir="ltr">
                           {/* From Avatar */}
                           <div className="flex items-center gap-2">
                             <div className="w-10 h-10">

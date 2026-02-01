@@ -308,7 +308,8 @@ export default function SettlementDetailPage() {
           <>
             {/* Visual Transfer Display */}
             <div className="bg-gradient-to-l from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-2xl p-4">
-              <div className="flex items-center justify-between">
+              {/* Force LTR for payment direction (From → To) to match arrow */}
+              <div className="flex items-center justify-between" dir="ltr">
                 <div className="flex-1 text-center">
                   <p className="text-xs text-gray-500 mb-2">پرداخت‌کننده</p>
                   {fromParticipant && (
@@ -487,7 +488,8 @@ export default function SettlementDetailPage() {
           <>
             {/* Transfer Visual */}
             <div className="bg-gradient-to-l from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-2xl p-6">
-              <div className="flex items-center justify-between">
+              {/* Force LTR for payment direction (From → To) to match arrow */}
+              <div className="flex items-center justify-between" dir="ltr">
                 <div className="flex-1 text-center">
                   <p className="text-xs text-gray-500 mb-2">پرداخت‌کننده</p>
                   <div className="flex flex-col items-center gap-2">

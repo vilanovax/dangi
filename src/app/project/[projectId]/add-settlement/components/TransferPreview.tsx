@@ -32,7 +32,8 @@ export function TransferPreview({
   return (
     <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-2xl p-4">
       <div className="bg-white dark:bg-gray-900/80 rounded-2xl p-4 border border-green-100 dark:border-green-800/30 shadow-sm">
-        <div className="flex items-center justify-between">
+        {/* Force LTR for payment direction (From → To) to match arrow */}
+        <div className="flex items-center justify-between" dir="ltr">
           {/* From */}
           <div className="flex-1 text-center">
             <p className="text-green-600 dark:text-green-400 text-[10px] mb-1.5 font-medium">
