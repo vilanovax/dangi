@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Button, Input, BottomSheet, ImageUpload } from '@/components/ui'
 import { UnifiedHeader, FormLayout, FormSection, FormError } from '@/components/layout'
-import { parseMoney, formatMoney } from '@/lib/utils/money'
+import { parseMoney, formatMoney, formatNumber } from '@/lib/utils/money'
 import { getTemplate } from '@/lib/domain/templates'
 import type { TemplateDefinition } from '@/lib/types/domain'
 import {
@@ -315,8 +315,9 @@ export default function AddExpensePage() {
   const getSubmitButtonLabel = () => {
     if (submitting) return labels.submittingButton
     if (parsedAmount && parsedAmount > 0) {
-      return `ثبت خرج ${formatMoney(parsedAmount, project.currency)} ${
-        project.currency === 'IRR' ? 'تومانی' : ''
+      // Use formatNumber to avoid duplicate currency (تومان + تومانی)
+      return `ثبت خرج ${formatNumber(parsedAmount)}${
+        project.currency === 'IRR' ? ' تومانی' : ` ${project.currency}`
       }`
     }
     return labels.submitButton
