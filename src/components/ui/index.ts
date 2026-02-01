@@ -7,6 +7,7 @@ export { Avatar } from './Avatar'
 export { AvatarPicker } from './AvatarPicker'
 export { ImageUpload } from './ImageUpload'
 export { PersianDatePicker } from './PersianDatePicker'
+export { Toast } from './Toast'
 // TravelHeader deprecated - use UnifiedHeader from '@/components/layout' instead
 export {
   Skeleton,

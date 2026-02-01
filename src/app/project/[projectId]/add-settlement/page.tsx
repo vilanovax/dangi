@@ -1,15 +1,17 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Button, Input } from '@/components/ui'
+import { Button, Input, Toast } from '@/components/ui'
 import { UnifiedHeader, FormLayout, FormSection, FormError } from '@/components/layout'
 import { parseMoney } from '@/lib/utils/money'
+import { useProject, useProjectSummary, useCreateSettlement } from '@/hooks/useProjects'
 import {
   TransferPreview,
   ParticipantSelector,
   AmountInput,
   ReceiptUpload,
+  SettlementConfirmSheet,
 } from './components'
 
 // ─────────────────────────────────────────────────────────────
@@ -29,6 +31,29 @@ interface Project {
   participants: Participant[]
 }
 
+interface ParticipantBalance {
+  participantId: string
+  participantName: string
+  totalPaid: number
+  totalShare: number
+  balance: number
+}
+
+interface ProjectSummary {
+  projectId: string
+  projectName: string
+  totalExpenses: number
+  currency: string
+  participantBalances: ParticipantBalance[]
+  settlements: Array<{
+    fromId: string
+    fromName: string
+    toId: string
+    toName: string
+    amount: number
+  }>
+}
+
 // ─────────────────────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────────────────────
@@ -38,12 +63,20 @@ export default function AddSettlementPage() {
   const router = useRouter()
   const projectId = params.projectId as string
 
-  // ── Data State ──────────────────────────────────────────────
-  const [project, setProject] = useState<Project | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [submitting, setSubmitting] = useState(false)
+  // ── React Query Hooks ───────────────────────────────────────
+  const { data: projectData, isLoading: projectLoading } = useProject(projectId, { includeExpenses: false })
+  const { data: summaryData, isLoading: summaryLoading } = useProjectSummary(projectId)
+  const createSettlementMutation = useCreateSettlement(projectId)
+
+  // ── Extract Data ────────────────────────────────────────────
+  const project = useMemo(() => projectData?.project || null, [projectData])
+  const summary = useMemo(() => summaryData?.summary || null, [summaryData])
+
+  // ── UI State ────────────────────────────────────────────────
   const [uploadingImage, setUploadingImage] = useState(false)
   const [error, setError] = useState('')
+  const [showConfirmation, setShowConfirmation] = useState(false)
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
   // ── Form State ──────────────────────────────────────────────
   const [fromId, setFromId] = useState('')
@@ -53,33 +86,44 @@ export default function AddSettlementPage() {
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null)
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null)
 
-  // ── Fetch Project ───────────────────────────────────────────
+  // ── Loading State ───────────────────────────────────────────
+  const loading = projectLoading || summaryLoading
 
+  // ── Set Contextual Defaults ─────────────────────────────────
+  // UX: Pre-fill largest debtor → largest creditor for convenience
   useEffect(() => {
-    const fetchProject = async () => {
-      try {
-        const res = await fetch(`/api/projects/${projectId}`)
-        if (!res.ok) throw new Error('پروژه یافت نشد')
+    if (!project || !summary || fromId || toId) return
 
-        const data = await res.json()
-        setProject(data.project)
-
-        // Set defaults - first two participants
-        if (data.project.participants.length >= 2) {
-          setFromId(data.project.participants[0].id)
-          setToId(data.project.participants[1].id)
-        } else if (data.project.participants.length === 1) {
-          setFromId(data.project.participants[0].id)
-        }
-      } catch {
-        setError('خطا در بارگذاری پروژه')
-      } finally {
-        setLoading(false)
+    const balances = summary.participantBalances
+    if (!balances || balances.length === 0) {
+      // Fallback: first two participants if no balance data
+      if (project.participants.length >= 2) {
+        setFromId(project.participants[0].id)
+        setToId(project.participants[1].id)
       }
+      return
     }
 
-    fetchProject()
-  }, [projectId])
+    // Find largest debtor (most negative balance)
+    const largestDebtor = balances.reduce((max, p) =>
+      p.balance < max.balance ? p : max
+    )
+
+    // Find largest creditor (most positive balance)
+    const largestCreditor = balances.reduce((max, p) =>
+      p.balance > max.balance ? p : max
+    )
+
+    // Set defaults if they're different people
+    if (largestDebtor.participantId !== largestCreditor.participantId) {
+      setFromId(largestDebtor.participantId)
+      setToId(largestCreditor.participantId)
+    } else if (project.participants.length >= 2) {
+      // Fallback if same person (shouldn't happen, but safety)
+      setFromId(project.participants[0].id)
+      setToId(project.participants[1].id)
+    }
+  }, [project, summary, fromId, toId])
 
   // ── Handlers ────────────────────────────────────────────────
 
@@ -133,7 +177,7 @@ export default function AddSettlementPage() {
     setReceiptPreview(null)
   }, [])
 
-  const handleSubmit = useCallback(async () => {
+  const handleSubmit = useCallback(() => {
     // Validation
     if (!fromId) {
       setError('پرداخت‌کننده رو انتخاب کن')
@@ -156,41 +200,88 @@ export default function AddSettlementPage() {
       return
     }
 
-    setSubmitting(true)
+    // Balance validation
+    if (summary) {
+      const fromBalance = summary.participantBalances.find(b => b.participantId === fromId)
+      const toBalance = summary.participantBalances.find(b => b.participantId === toId)
+
+      if (fromBalance && toBalance) {
+        // Calculate the actual outstanding balance between these two participants
+        const outstandingBalance = Math.abs(fromBalance.balance - toBalance.balance)
+
+        if (parsedAmount > outstandingBalance) {
+          setError(`مبلغ نباید از بدهی واقعی (${outstandingBalance.toLocaleString('fa-IR')} ${summary.currency}) بیشتر باشه`)
+          return
+        }
+
+        // UX: Show confirmation for large amounts (> 50% of outstanding balance)
+        if (parsedAmount > outstandingBalance * 0.5) {
+          setShowConfirmation(true)
+          return
+        }
+      }
+    }
+
+    // All validations passed - proceed with submission
+    confirmSubmit()
+  }, [fromId, toId, amount, summary])
+
+  const confirmSubmit = useCallback(async () => {
+    setShowConfirmation(false)
     setError('')
 
+    const parsedAmount = parseMoney(amount)
+    if (!parsedAmount) return
+
     try {
-      const res = await fetch(`/api/projects/${projectId}/settlements`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fromId,
-          toId,
-          amount: parsedAmount,
-          note: note.trim() || undefined,
-          receiptUrl: receiptUrl || undefined,
-        }),
+      await createSettlementMutation.mutateAsync({
+        fromId,
+        toId,
+        amount: parsedAmount,
+        note: note.trim() || undefined,
+        receiptUrl: receiptUrl || undefined,
       })
 
-      if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'خطا در ثبت تسویه')
-      }
+      // Success feedback
+      setToast({ message: 'تسویه با موفقیت ثبت شد ✓', type: 'success' })
 
-      router.push(`/project/${projectId}`)
+      // Navigate back after brief delay to show toast
+      setTimeout(() => {
+        router.push(`/project/${projectId}`)
+      }, 1000)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطا در ثبت تسویه')
-    } finally {
-      setSubmitting(false)
+      setToast({ message: 'خطا در ثبت تسویه', type: 'error' })
     }
-  }, [fromId, toId, amount, note, receiptUrl, projectId, router])
+  }, [fromId, toId, amount, note, receiptUrl, createSettlementMutation, router, projectId])
 
   // ── Computed Values ─────────────────────────────────────────
 
   const fromParticipant = project?.participants.find((p) => p.id === fromId) || null
   const toParticipant = project?.participants.find((p) => p.id === toId) || null
   const parsedAmount = parseMoney(amount)
-  const isValid = fromId && toId && fromId !== toId && parsedAmount && parsedAmount > 0
+
+  // Validation state
+  const amountValid = parsedAmount && parsedAmount > 0
+  const participantsValid = fromId && toId && fromId !== toId
+  let balanceValid = true
+  let balanceError = ''
+
+  if (summary && fromId && toId && parsedAmount) {
+    const fromBalance = summary.participantBalances.find(b => b.participantId === fromId)
+    const toBalance = summary.participantBalances.find(b => b.participantId === toId)
+
+    if (fromBalance && toBalance) {
+      const outstandingBalance = Math.abs(fromBalance.balance - toBalance.balance)
+      if (parsedAmount > outstandingBalance) {
+        balanceValid = false
+        balanceError = `بیشتر از بدهی واقعی (${outstandingBalance.toLocaleString('fa-IR')} ${summary.currency})`
+      }
+    }
+  }
+
+  const isValid = participantsValid && amountValid && balanceValid
+  const submitting = createSettlementMutation.isPending
 
   // ── Loading State ───────────────────────────────────────────
 
@@ -283,7 +374,12 @@ export default function AddSettlementPage() {
       />
 
       {/* Amount */}
-      <AmountInput value={amount} onChange={setAmount} currency={project.currency} />
+      <AmountInput
+        value={amount}
+        onChange={setAmount}
+        currency={project.currency}
+        error={!amountValid && amount ? 'مبلغ باید بیشتر از صفر باشه' : balanceError}
+      />
 
       {/* Note - Optional */}
       <FormSection title="توضیح" optional>
@@ -300,6 +396,27 @@ export default function AddSettlementPage() {
         uploading={uploadingImage}
         onSelect={handleImageSelect}
         onRemove={handleRemoveReceipt}
+      />
+
+      {/* Confirmation Dialog for Large Amounts */}
+      <SettlementConfirmSheet
+        isOpen={showConfirmation}
+        onClose={() => setShowConfirmation(false)}
+        onConfirm={confirmSubmit}
+        fromName={fromParticipant?.name || ''}
+        toName={toParticipant?.name || ''}
+        amount={parsedAmount || 0}
+        currency={project.currency}
+        loading={submitting}
+      />
+
+      {/* Success/Error Toast */}
+      <Toast
+        isOpen={!!toast}
+        onClose={() => setToast(null)}
+        message={toast?.message || ''}
+        type={toast?.type || 'info'}
+        duration={3000}
       />
     </FormLayout>
   )

@@ -6,6 +6,7 @@ interface AmountInputProps {
   value: string
   onChange: (value: string) => void
   currency: string
+  error?: string
 }
 
 /**
@@ -16,17 +17,23 @@ interface AmountInputProps {
  * - Large, prominent, impossible to miss
  * - Green focus state for settlement identity
  */
-export function AmountInput({ value, onChange, currency }: AmountInputProps) {
+export function AmountInput({ value, onChange, currency, error }: AmountInputProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange(formatInputAmount(e.target.value))
   }
+
+  const hasError = !!error
 
   return (
     <div>
       <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">
         مبلغ پرداختی
       </label>
-      <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-2xl border border-green-100 dark:border-green-800/30 p-5 focus-within:ring-2 focus-within:ring-green-500 focus-within:border-transparent transition-all shadow-sm">
+      <div className={`bg-gradient-to-br rounded-2xl border p-5 focus-within:ring-2 transition-all shadow-sm ${
+        hasError
+          ? 'from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30 border-red-200 dark:border-red-800/50 focus-within:ring-red-500 focus-within:border-transparent'
+          : 'from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-100 dark:border-green-800/30 focus-within:ring-green-500 focus-within:border-transparent'
+      }`}>
         <div className="flex items-center justify-center gap-3">
           <input
             type="text"
@@ -34,14 +41,28 @@ export function AmountInput({ value, onChange, currency }: AmountInputProps) {
             value={value}
             onChange={handleChange}
             placeholder="۰"
-            className="flex-1 text-4xl font-bold text-center bg-transparent border-none outline-none placeholder:text-green-300 dark:placeholder:text-green-800 text-green-700 dark:text-green-300"
+            className={`flex-1 text-4xl font-bold text-center bg-transparent border-none outline-none ${
+              hasError
+                ? 'placeholder:text-red-300 dark:placeholder:text-red-800 text-red-700 dark:text-red-300'
+                : 'placeholder:text-green-300 dark:placeholder:text-green-800 text-green-700 dark:text-green-300'
+            }`}
             dir="ltr"
           />
-          <span className="text-base text-green-600 dark:text-green-400 font-medium flex-shrink-0">
+          <span className={`text-base font-medium flex-shrink-0 ${
+            hasError
+              ? 'text-red-600 dark:text-red-400'
+              : 'text-green-600 dark:text-green-400'
+          }`}>
             {getCurrencyLabel(currency)}
           </span>
         </div>
       </div>
+      {/* Inline error message */}
+      {hasError && (
+        <p className="mt-2 text-sm text-red-600 dark:text-red-400 text-right">
+          {error}
+        </p>
+      )}
     </div>
   )
 }
