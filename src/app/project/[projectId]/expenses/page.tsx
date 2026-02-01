@@ -644,6 +644,7 @@ export default function ExpensesPage() {
         onClose={() => setShowExpenseDetail(false)}
         expense={selectedExpense}
         projectId={projectId}
+        myParticipantId={myParticipantId}
         onEdit={handleEditExpense}
         onDelete={handleDeleteExpense}
       />
