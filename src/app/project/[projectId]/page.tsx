@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
 import { getProjectById } from '@/lib/services/project.service'
-import { getCurrentUser } from '@/lib/utils/auth'
+import { getCurrentUser, requireProjectAccess } from '@/lib/utils/auth'
+import { validateAccessLink } from '@/lib/services/access-link.service'
 import ProjectPageClient from './ProjectPageClient'
 
 interface PageProps {
@@ -10,10 +12,34 @@ interface PageProps {
 export default async function ProjectPage({ params }: PageProps) {
   const { projectId } = await params
 
-  // Check authentication
+  // Check authentication - support both user auth and access link auth
   const currentUser = await getCurrentUser()
+
   if (!currentUser) {
-    redirect('/auth')
+    // If no user, check for access_token cookie (link-based access)
+    const cookieStore = await cookies()
+    const accessToken = cookieStore.get('access_token')?.value
+
+    if (accessToken) {
+      // Validate access link
+      const validation = await validateAccessLink(accessToken)
+
+      if (!validation.valid || validation.projectId !== projectId) {
+        // Invalid or wrong project - redirect to auth
+        redirect('/auth')
+      }
+
+      // Valid access link - allow access (no further checks needed)
+    } else {
+      // No user and no access token - require authentication
+      redirect('/auth')
+    }
+  } else {
+    // User is authenticated - verify they have access to this project
+    const authResult = await requireProjectAccess(projectId)
+    if (!authResult.authorized) {
+      redirect('/')
+    }
   }
 
   // Fetch project to check template
