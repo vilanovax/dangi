@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getExpenseById, updateExpense, deleteExpense } from '@/lib/services/expense.service'
 import { getProjectById } from '@/lib/services/project.service'
-import { requireProjectAccess } from '@/lib/utils/auth'
+import { requireProjectAccess, requireProjectAccessWithLink } from '@/lib/utils/auth'
 import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
@@ -12,8 +12,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { projectId, expenseId } = await context.params
 
-    // Authorization check: user must be a participant
-    const authResult = await requireProjectAccess(projectId)
+    // Allow both participant and link-based access
+    const authResult = await requireProjectAccessWithLink(projectId, ['expenses:read'])
     if (!authResult.authorized) {
       return authResult.response
     }
