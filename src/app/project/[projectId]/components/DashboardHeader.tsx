@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { UnifiedHeader, HeaderBadge, HeaderTotalCard } from '@/components/layout'
+import { UnifiedHeader } from '@/components/layout'
+import { formatMoney } from '@/lib/utils/money'
 
 interface DashboardHeaderProps {
   projectId: string
@@ -10,14 +11,18 @@ interface DashboardHeaderProps {
   participantCount: number
   totalExpenses: number
   currency: string
+  /** User's current balance (positive = creditor, negative = debtor) */
+  myBalance?: number
 }
 
 /**
- * Travel dashboard header - uses UnifiedHeader with variant="travel"
+ * Travel dashboard header - gradient with total and balance micro-summary
  *
  * UX Intent:
- * - Project name as hero, not total amount
- * - Total expenses shown contextually with helper text
+ * - Project name as hero
+ * - Total expenses as primary visual element (large, prominent)
+ * - User balance status as secondary micro-summary (creditor/debtor/settled)
+ * - Clear typography hierarchy: amount > label > balance status
  * - Sky blue gradients for travel/journey vibe
  * - Tappable total card links to summary
  */
@@ -27,8 +32,29 @@ export function DashboardHeader({
   participantCount,
   totalExpenses,
   currency,
+  myBalance = 0,
 }: DashboardHeaderProps) {
   const router = useRouter()
+
+  // Determine balance status with friendly Persian microcopy
+  const getBalanceStatus = () => {
+    const absBalance = Math.abs(myBalance)
+    if (absBalance < 1) {
+      return { text: 'تسویه هستی ✓', color: 'text-white/60' }
+    }
+    if (myBalance > 0) {
+      return {
+        text: `${formatMoney(absBalance, currency)} بهت بدهکارن`,
+        color: 'text-emerald-300/90',
+      }
+    }
+    return {
+      text: `${formatMoney(absBalance, currency)} بدهکاری`,
+      color: 'text-orange-300/90',
+    }
+  }
+
+  const balanceStatus = getBalanceStatus()
 
   return (
     <UnifiedHeader
@@ -60,15 +86,24 @@ export function DashboardHeader({
         </Link>
       }
     >
-      {/* Total Card - Tappable, links to summary */}
-      <Link href={`/project/${projectId}/summary`}>
-        <HeaderTotalCard
-          label="مجموع خرج‌ها"
-          amount={totalExpenses}
-          currency={currency}
-          helperText="تا این لحظه"
-          onClick={() => {}}
-        />
+      {/* Total Card - Improved hierarchy with balance micro-summary */}
+      <Link href={`/project/${projectId}/summary`} className="block">
+        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-5 hover:bg-white/15 active:scale-[0.99] transition-all border border-white/20">
+          {/* Label - Small, secondary */}
+          <p className="text-xs text-white/70 font-medium mb-1">
+            مجموع خرج‌ها
+          </p>
+
+          {/* Amount - Large, primary visual element */}
+          <p className="text-3xl font-bold text-white mb-2">
+            {formatMoney(totalExpenses, currency)}
+          </p>
+
+          {/* Balance Status - Micro-summary, tertiary */}
+          <p className={`text-xs font-medium ${balanceStatus.color}`}>
+            {balanceStatus.text}
+          </p>
+        </div>
       </Link>
     </UnifiedHeader>
   )

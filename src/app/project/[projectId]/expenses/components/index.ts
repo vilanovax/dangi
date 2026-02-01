@@ -3,6 +3,7 @@
 
 export { ExpensesHeader } from './ExpensesHeader'
 export { SearchBar } from './SearchBar'
+export { SmartFilterChips } from './SmartFilterChips'
 export { ExpenseItem } from './ExpenseItem'
 export { DateSeparator } from './DateSeparator'
 export { EmptyState } from './EmptyState'

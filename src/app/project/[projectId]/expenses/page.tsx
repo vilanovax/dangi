@@ -6,12 +6,18 @@ import { FloatingButton } from '@/components/ui'
 import { getTemplate } from '@/lib/domain/templates'
 import { getRecentPeriods, formatPeriodKey } from '@/lib/utils/persian-date'
 import {
+  calculateHeavyExpenseThreshold,
+  type Expense as AnalyticsExpense,
+} from '@/lib/utils/expense-analytics'
+import {
   ExpensesHeader,
   SearchBar,
+  SmartFilterChips,
   ExpensesList,
   FilterSheet,
   ExpenseDetailSheet,
 } from './components'
+import type { SmartFilter } from './components/SmartFilterChips'
 
 // ============================================
 // Types
@@ -219,6 +225,12 @@ export default function ExpensesPage() {
   const [categoryFilterName, setCategoryFilterName] = useState<string | null>(null)
   const [payerFilterName, setPayerFilterName] = useState<string | null>(null)
 
+  // Smart filter state
+  const [smartFilter, setSmartFilter] = useState<SmartFilter>('all')
+
+  // User participant ID (for computing user share)
+  const [myParticipantId, setMyParticipantId] = useState<string | null>(null)
+
   // Expense detail sheet state
   const [showExpenseDetail, setShowExpenseDetail] = useState(false)
   const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null)
@@ -260,8 +272,9 @@ export default function ExpensesPage() {
         ])
 
         if (projectRes.ok) {
-          const { project } = await projectRes.json()
+          const { project, myParticipantId: participantId } = await projectRes.json()
           setProject(project)
+          setMyParticipantId(participantId || null)
         }
 
         if (expensesRes.ok) {
@@ -284,10 +297,30 @@ export default function ExpensesPage() {
   const supportsPeriod = templateDef?.periodRequired || false
   const availablePeriods = useMemo(() => getRecentPeriods(12), [])
 
+  // Smart filter logic - applies BEFORE general filters
+  const smartFilteredExpenses = useMemo(() => {
+    if (smartFilter === 'all') return expenses
+
+    if (smartFilter === 'heavy') {
+      // Top 20% by amount - using analytics utility
+      const threshold = calculateHeavyExpenseThreshold(expenses as AnalyticsExpense[])
+      return expenses.filter((e) => e.amount >= threshold)
+    }
+
+    if (smartFilter === 'unsettled') {
+      // Future feature: filter unsettled expenses
+      // For now, return empty array
+      return []
+    }
+
+    // Category filter (smartFilter is categoryId)
+    return expenses.filter((e) => e.categoryId === smartFilter)
+  }, [expenses, smartFilter])
+
   // Computed values
   const filteredExpenses = useMemo(
-    () => filterExpenses(expenses, searchQuery, filterType, selectedCategoryId, selectedPayerId, selectedPeriodKey, dateRange),
-    [expenses, searchQuery, filterType, selectedCategoryId, selectedPayerId, selectedPeriodKey, dateRange]
+    () => filterExpenses(smartFilteredExpenses, searchQuery, filterType, selectedCategoryId, selectedPayerId, selectedPeriodKey, dateRange),
+    [smartFilteredExpenses, searchQuery, filterType, selectedCategoryId, selectedPayerId, selectedPeriodKey, dateRange]
   )
 
   const groupedExpenses = useMemo(
@@ -320,6 +353,27 @@ export default function ExpensesPage() {
     () => expenses.find(e => e.id === selectedExpenseId) || null,
     [expenses, selectedExpenseId]
   )
+
+  // Compute user's total share and unsettled amount
+  const { myTotalShare, unsettledAmount } = useMemo(() => {
+    if (!myParticipantId) return { myTotalShare: 0, unsettledAmount: 0 }
+
+    let totalShare = 0
+    let unsettled = 0
+
+    filteredExpenses.forEach((expense: any) => {
+      const share = expense.shares?.find((s: any) => s.participantId === myParticipantId)
+      if (share) {
+        totalShare += share.amount
+        // Future: check if expense is settled
+        // if (!expense.isSettled && expense.paidById !== myParticipantId) {
+        //   unsettled += share.amount
+        // }
+      }
+    })
+
+    return { myTotalShare: totalShare, unsettledAmount: unsettled }
+  }, [filteredExpenses, myParticipantId])
 
   // Handlers
   const handleBack = useCallback(() => router.back(), [router])
@@ -429,6 +483,8 @@ export default function ExpensesPage() {
           currency={project?.currency || 'IRR'}
           itemCount={filteredExpenses.length}
           isFiltered={isFiltered}
+          myTotalShare={myTotalShare}
+          unsettledAmount={unsettledAmount}
           onBack={handleBack}
         />
         <SearchBar
@@ -437,6 +493,25 @@ export default function ExpensesPage() {
           hasActiveFilter={hasActiveFilter}
           activeFilterLabel={activeFilterLabel}
           onFilterClick={() => setShowFilters(true)}
+        />
+
+        {/* Smart Filter Chips */}
+        <SmartFilterChips
+          expenses={expenses}
+          categories={project?.categories || []}
+          activeFilter={smartFilter}
+          onFilterChange={(filter) => {
+            setSmartFilter(filter)
+            // Clear other filters when smart filter changes
+            if (filter !== 'all') {
+              setSearchQuery('')
+              setFilterType('all')
+              setSelectedCategoryId(null)
+              setSelectedPayerId(null)
+              setSelectedPeriodKey(null)
+              setDateRange({ startDate: null, endDate: null })
+            }
+          }}
         />
 
         {/* Category Filter Indicator from Summary */}
@@ -495,6 +570,7 @@ export default function ExpensesPage() {
         isFiltered={isFiltered}
         onClearFilters={handleClearFilters}
         showPeriod={supportsPeriod}
+        myParticipantId={myParticipantId}
         onExpenseClick={handleExpenseClick}
       />
 

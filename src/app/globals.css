@@ -47,6 +47,75 @@
 
   --building-border: #e5e7eb;
   --building-border-muted: #f3f4f6;
+
+  /* Travel Template Design Tokens */
+  --travel-primary: #0ea5e9;
+  --travel-primary-hover: #0284c7;
+  --travel-primary-soft: #e0f2fe;
+  --travel-primary-alpha: rgba(14, 165, 233, 0.1);
+
+  --travel-success: #10b981;
+  --travel-success-soft: #d1fae5;
+  --travel-success-alpha: rgba(16, 185, 129, 0.2);
+
+  --travel-warning: #f59e0b;
+  --travel-warning-soft: #fef3c7;
+  --travel-warning-alpha: rgba(245, 158, 11, 0.1);
+
+  --travel-danger: #ef4444;
+  --travel-danger-soft: #fee2e2;
+  --travel-danger-alpha: rgba(239, 68, 68, 0.2);
+
+  --travel-info: #8b5cf6;
+  --travel-info-soft: #ede9fe;
+  --travel-info-alpha: rgba(139, 92, 246, 0.2);
+
+  --travel-surface: #ffffff;
+  --travel-surface-muted: #f8fafc;
+  --travel-surface-elevated: #ffffff;
+
+  --travel-text-primary: #0f172a;
+  --travel-text-secondary: #64748b;
+  --travel-text-muted: #94a3b8;
+
+  --travel-border: #e2e8f0;
+  --travel-border-muted: #f1f5f9;
+
+  /* ─────────────────────────────────────────────────────────── */
+  /* Design System Tokens (Production-ready)                     */
+  /* ─────────────────────────────────────────────────────────── */
+
+  /* Radius - Modern, mobile-friendly */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+
+  /* Shadow - Soft, mobile-friendly */
+  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.06);
+  --shadow-fab: 0 12px 32px rgba(14, 165, 233, 0.35);
+  --shadow-fab-hover: 0 16px 40px rgba(14, 165, 233, 0.45);
+
+  /* Spacing System (aligned with Tailwind) */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+
+  /* Typography - Persian-friendly */
+  --font-base: 'Vazirmatn', 'Tahoma', Arial, sans-serif;
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-md: 16px;
+  --text-lg: 20px;
+  --text-xl: 28px;
+
+  /* Motion Tokens - For smooth interactions */
+  --motion-fast: 150ms;
+  --motion-normal: 250ms;
+  --motion-slow: 350ms;
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Dark mode variables when .dark class is applied */
@@ -91,6 +160,39 @@
 
   --building-border: #374151;
   --building-border-muted: #1f2937;
+
+  /* Travel Template Dark Mode */
+  --travel-primary: #38bdf8;
+  --travel-primary-hover: #0ea5e9;
+  --travel-primary-soft: rgba(56, 189, 248, 0.15);
+  --travel-primary-alpha: rgba(56, 189, 248, 0.15);
+
+  --travel-success: #34d399;
+  --travel-success-soft: rgba(52, 211, 153, 0.15);
+  --travel-success-alpha: rgba(52, 211, 153, 0.2);
+
+  --travel-warning: #fbbf24;
+  --travel-warning-soft: rgba(251, 191, 36, 0.15);
+  --travel-warning-alpha: rgba(251, 191, 36, 0.15);
+
+  --travel-danger: #f87171;
+  --travel-danger-soft: rgba(248, 113, 113, 0.15);
+  --travel-danger-alpha: rgba(248, 113, 113, 0.2);
+
+  --travel-info: #a78bfa;
+  --travel-info-soft: rgba(167, 139, 250, 0.15);
+  --travel-info-alpha: rgba(167, 139, 250, 0.2);
+
+  --travel-surface: #1e293b;
+  --travel-surface-muted: #0f172a;
+  --travel-surface-elevated: #334155;
+
+  --travel-text-primary: #f1f5f9;
+  --travel-text-secondary: #cbd5e1;
+  --travel-text-muted: #94a3b8;
+
+  --travel-border: #334155;
+  --travel-border-muted: #1e293b;
 }
 
 @theme inline {
@@ -176,6 +278,46 @@ input[type="number"] {
   }
 }
 
+@keyframes slideDown {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes backdropFade {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(4px);
+  }
+}
+
+@keyframes sheetSlideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
 @keyframes pulseScale {
   0%, 100% {
     transform: scale(1);
@@ -197,11 +339,27 @@ input[type="number"] {
 }
 
 .animate-slide-up {
-  animation: slideUp 0.3s ease-out;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-slide-down {
+  animation: slideDown 0.25s cubic-bezier(0.7, 0, 0.84, 0);
 }
 
 .animate-fade-in {
   animation: fadeIn 0.2s ease-out;
+}
+
+.animate-fade-out {
+  animation: fadeOut 0.2s ease-in;
+}
+
+.animate-backdrop-fade {
+  animation: backdropFade 0.3s ease-out forwards;
+}
+
+.animate-sheet-slide-up {
+  animation: sheetSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-pulse-scale {

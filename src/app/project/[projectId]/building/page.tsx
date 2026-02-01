@@ -6,6 +6,14 @@ import Link from 'next/link'
 import { Button, Card, BottomSheet } from '@/components/ui'
 import { formatMoney } from '@/lib/utils/money'
 import { ExpenseDetailSheet } from '../expenses/components/ExpenseDetailSheet'
+import {
+  getSeverityColors,
+  calculateUnpaidMonths,
+  sortByDebtPriority,
+  filterUnpaidParticipants,
+  getAlertColors,
+} from '@/lib/utils/building-helpers'
+import { BuildingSkeleton } from './components/BuildingSkeleton'
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -171,8 +179,8 @@ export default function BuildingDashboard() {
 
   const handleEditExpense = () => {
     if (!selectedExpense) return
-    // TODO: Implement edit page for common expenses
-    alert('قابلیت ویرایش هزینه‌های عمومی به زودی اضافه خواهد شد')
+    setShowExpenseDetail(false)
+    router.push(`/project/${projectId}/expense/${selectedExpense.id}`)
   }
 
   const handleDeleteExpense = async () => {
@@ -330,9 +338,9 @@ export default function BuildingDashboard() {
   // ── Loading ─────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="min-h-dvh flex items-center justify-center bg-gray-50 dark:bg-gray-950">
-        <div className="animate-spin w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full" />
-      </div>
+      <main className="min-h-dvh bg-gray-50 dark:bg-gray-950" aria-busy="true" aria-label="در حال بارگذاری داشبورد">
+        <BuildingSkeleton />
+      </main>
     )
   }
 
@@ -389,15 +397,20 @@ export default function BuildingDashboard() {
 
       {/* Tabs - UX Improved: Icons + Better Visual Hierarchy */}
       <div className="px-4 mt-3">
-        <div className="flex rounded-xl p-1 gap-1 overflow-x-auto scrollbar-hide" style={{
-          backgroundColor: 'var(--building-surface-muted)'
-        }}>
+        <div
+          className="flex rounded-xl p-1 gap-1 overflow-x-auto scrollbar-hide"
+          style={{
+            backgroundColor: 'var(--building-surface-muted)'
+          }}
+          role="tablist"
+          aria-label="تب‌های داشبورد"
+        >
           {[
             {
               key: 'overview',
               label: 'داشبورد',
               icon: (
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               )
@@ -406,7 +419,7 @@ export default function BuildingDashboard() {
               key: 'months',
               label: 'ماه‌ها',
               icon: (
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               )
@@ -415,7 +428,7 @@ export default function BuildingDashboard() {
               key: 'units',
               label: 'واحدها',
               icon: (
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
               )
@@ -424,7 +437,7 @@ export default function BuildingDashboard() {
               key: 'payments',
               label: 'شارژ',
               icon: (
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               )
@@ -433,7 +446,7 @@ export default function BuildingDashboard() {
               key: 'common',
               label: 'هزینه‌ها',
               icon: (
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                 </svg>
               )
@@ -453,6 +466,9 @@ export default function BuildingDashboard() {
                 backgroundColor: activeTab === tab.key ? 'var(--building-surface)' : 'transparent',
                 color: activeTab === tab.key ? 'var(--building-primary)' : 'var(--building-text-secondary)'
               }}
+              role="tab"
+              aria-selected={activeTab === tab.key}
+              aria-label={tab.label}
             >
               {tab.icon}
               <span>{tab.label}</span>
@@ -1127,6 +1143,7 @@ export default function BuildingDashboard() {
         }}
         expense={selectedExpense}
         projectId={projectId}
+        template="building"
         onEdit={handleEditExpense}
         onDelete={handleDeleteExpense}
       />
@@ -1193,6 +1210,7 @@ function OverviewTab({
                 color: 'white',
                 padding: '10px 16px'
               }}
+              aria-label="رفتن به صفحه ماه‌ها برای ثبت پرداخت"
             >
               ثبت پرداخت
             </Button>
@@ -1245,39 +1263,10 @@ function OverviewTab({
           </div>
 
           <div className="space-y-2">
-            {stats.participantStats
-              .filter(unit => unit.status !== 'complete' && unit.paidMonths < 12)
-              // ⭐ Smart Prioritization: Sort by highest debt first
-              .sort((a, b) => (12 - a.paidMonths) - (12 - b.paidMonths))
-              .reverse()
+            {sortByDebtPriority(filterUnpaidParticipants(stats.participantStats))
               .slice(0, 4)
               .map(unit => {
-                const unpaidMonths = 12 - unit.paidMonths
-                // 🎨 Visual Priority: Color based on debt severity
-                const getSeverityColors = (months: number) => {
-                  if (months >= 6) {
-                    return {
-                      badgeBg: 'var(--building-danger-alpha)',
-                      badgeColor: 'var(--building-danger)',
-                      buttonBg: 'var(--building-danger)',
-                      buttonColor: 'white'
-                    }
-                  } else if (months >= 3) {
-                    return {
-                      badgeBg: 'var(--building-warning-alpha)',
-                      badgeColor: 'var(--building-warning)',
-                      buttonBg: 'var(--building-warning)',
-                      buttonColor: 'white'
-                    }
-                  } else {
-                    return {
-                      badgeBg: 'var(--building-primary-alpha)',
-                      badgeColor: 'var(--building-primary)',
-                      buttonBg: 'var(--building-primary)',
-                      buttonColor: 'white'
-                    }
-                  }
-                }
+                const unpaidMonths = calculateUnpaidMonths(unit.paidMonths)
                 const colors = getSeverityColors(unpaidMonths)
 
                 return (
@@ -1312,6 +1301,7 @@ function OverviewTab({
                         padding: '6px 12px',
                         fontSize: '0.75rem'
                       }}
+                      aria-label={`ثبت پرداخت برای ${unit.name}`}
                     >
                       ثبت
                     </Button>
@@ -1330,8 +1320,9 @@ function OverviewTab({
                   borderStyle: 'solid',
                   borderColor: 'var(--building-border)'
                 }}
+                aria-label={`مشاهده ${unpaidUnitsCount} واحد بدهکار`}
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
                 مشاهده همه واحدهای بدهکار ({unpaidUnitsCount})
@@ -1774,8 +1765,9 @@ function BuildingHeader({
         <button
           onClick={onBackClick}
           className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors"
+          aria-label="بازگشت به صفحه قبل"
         >
-          <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </button>
@@ -1788,8 +1780,9 @@ function BuildingHeader({
         <button
           onClick={onSettingsClick}
           className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors"
+          aria-label="تنظیمات داشبورد"
         >
-          <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
@@ -1816,7 +1809,14 @@ function BuildingHeader({
           </div>
 
           {/* Dual Progress Bar: Success (received) + Danger (remaining) */}
-          <div className="relative h-2.5 bg-white/10 rounded-full overflow-hidden mb-1.5">
+          <div
+            className="relative h-2.5 bg-white/10 rounded-full overflow-hidden mb-1.5"
+            role="progressbar"
+            aria-valuenow={yearStats.percentage}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`نرخ وصول سال ${chargeYear}: ${yearStats.percentage} درصد`}
+          >
             {/* Received */}
             <div
               className="absolute top-0 left-0 h-full transition-all duration-500"
@@ -1824,6 +1824,7 @@ function BuildingHeader({
                 width: `${yearStats.percentage}%`,
                 backgroundColor: 'var(--building-success)'
               }}
+              aria-hidden="true"
             />
             {/* Remaining (visual only) */}
             <div
@@ -1832,6 +1833,7 @@ function BuildingHeader({
                 width: `${100 - yearStats.percentage}%`,
                 backgroundColor: 'var(--building-danger-soft)'
               }}
+              aria-hidden="true"
             />
           </div>
 

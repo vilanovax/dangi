@@ -28,6 +28,9 @@ const ParticipantProfileSheet = dynamic(() => import('./components/ParticipantPr
 const TransferBalanceSheet = dynamic(() => import('./components/TransferBalanceSheet').then(mod => ({ default: mod.TransferBalanceSheet })), {
   ssr: false,
 })
+const ExpenseDetailSheet = dynamic(() => import('./expenses/components/ExpenseDetailSheet').then(mod => ({ default: mod.ExpenseDetailSheet })), {
+  ssr: false,
+})
 
 // ─────────────────────────────────────────────────────────────
 // Main Component
@@ -51,6 +54,12 @@ export default function ProjectPage() {
   const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null)
   const [showProfileSheet, setShowProfileSheet] = useState(false)
   const [showTransferSheet, setShowTransferSheet] = useState(false)
+
+  // ── Expense Detail Sheet State ─────────────────────────────
+  const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null)
+  const [selectedExpense, setSelectedExpense] = useState<any>(null)
+  const [showExpenseDetail, setShowExpenseDetail] = useState(false)
+  const [loadingExpenseDetail, setLoadingExpenseDetail] = useState(false)
 
   // ── Tab State (for gathering template) ─────────────────────
   const [activeTab, setActiveTab] = useState<'expenses' | 'shopping'>('expenses')
@@ -135,6 +144,60 @@ export default function ProjectPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // ── Expense Handlers ────────────────────────────────────────
+
+  const handleExpenseClick = useCallback(async (expenseId: string) => {
+    setSelectedExpenseId(expenseId)
+    setShowExpenseDetail(true)
+    setLoadingExpenseDetail(true)
+
+    try {
+      const res = await fetch(`/api/projects/${projectId}/expenses/${expenseId}`)
+      if (res.ok) {
+        const data = await res.json()
+        setSelectedExpense(data.expense)
+      }
+    } catch (error) {
+      console.error('Error fetching expense details:', error)
+    } finally {
+      setLoadingExpenseDetail(false)
+    }
+  }, [projectId])
+
+  const handleEditExpense = useCallback(() => {
+    if (!selectedExpenseId) return
+    setShowExpenseDetail(false)
+    router.push(`/project/${projectId}/expense/${selectedExpenseId}`)
+  }, [selectedExpenseId, router, projectId])
+
+  const handleDeleteExpense = useCallback(async () => {
+    if (!selectedExpenseId) return
+
+    if (!confirm('آیا از حذف این هزینه اطمینان دارید؟')) {
+      return
+    }
+
+    try {
+      const res = await fetch(`/api/projects/${projectId}/expenses/${selectedExpenseId}`, {
+        method: 'DELETE',
+      })
+
+      if (res.ok) {
+        setShowExpenseDetail(false)
+        setSelectedExpense(null)
+        setSelectedExpenseId(null)
+        // Refresh data
+        fetchProject()
+        fetchSummary()
+      } else {
+        alert('خطا در حذف هزینه')
+      }
+    } catch (error) {
+      console.error('Error deleting expense:', error)
+      alert('خطا در حذف هزینه')
+    }
+  }, [selectedExpenseId, projectId, fetchProject, fetchSummary])
+
   // Get balance for selected participant
   const getSelectedBalance = useCallback(() => {
     if (!selectedParticipant || !summary) return null
@@ -166,6 +229,11 @@ export default function ProjectPage() {
   const isAllSettled = summary?.participantBalances.every(
     (b) => Math.abs(b.balance) < 1
   ) ?? false
+
+  // Get current user's balance for header micro-summary
+  const myBalance = summary?.participantBalances.find(
+    (b) => b.participantId === myParticipantId
+  )?.balance || 0
 
   // ── Loading State ───────────────────────────────────────────
   // For building template, show emerald loading to prevent flash
@@ -213,6 +281,7 @@ export default function ProjectPage() {
           participantCount={project.participants.length}
           totalExpenses={totalExpenses}
           currency={project.currency}
+          myBalance={myBalance}
         />
       )}
 
@@ -243,6 +312,7 @@ export default function ProjectPage() {
       {/* Participants */}
       <ParticipantsRow
         participants={project.participants}
+        participantBalances={summary?.participantBalances}
         onAddMember={() => setShowAddMember(true)}
         onParticipantClick={handleParticipantClick}
       />
@@ -326,6 +396,9 @@ export default function ProjectPage() {
                 paidBy={expense.paidBy}
                 category={expense.category}
                 expenseDate={expense.expenseDate}
+                shares={expense.shares}
+                myParticipantId={myParticipantId}
+                onClick={() => handleExpenseClick(expense.id)}
               />
             ))}
           </div>
@@ -366,9 +439,13 @@ export default function ProjectPage() {
         </section>
       )}
 
-      {/* Floating Add Button - Primary CTA */}
+      {/* Floating Add Button - Enhanced prominence */}
       {(project.template !== 'gathering' || activeTab === 'expenses') && (
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-10 safe-bottom flex flex-col items-center gap-1.5">
+      <div
+        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-10 safe-bottom flex flex-col items-center gap-2"
+        /* TODO: Add long-press handler for future quick actions menu */
+        data-supports-long-press="true"
+      >
         {/* Hint text - only show when few expenses to encourage first action */}
         {project.expenses.length < 3 && (
           <span className="text-[10px] text-gray-400 dark:text-gray-500 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-sm border border-gray-100 dark:border-gray-800">
@@ -377,7 +454,7 @@ export default function ProjectPage() {
         )}
         <FloatingButton
           onClick={() => router.push(`/project/${projectId}/add-expense`)}
-          className="!static !translate-x-0"
+          className="!static !translate-x-0 !shadow-[0_12px_32px_rgba(14,165,233,0.40)] hover:!shadow-[0_16px_40px_rgba(14,165,233,0.45)] !scale-105"
           icon={
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -411,6 +488,7 @@ export default function ProjectPage() {
         settlementCount={getSettlementCount()}
         projectId={projectId}
         myParticipantId={myParticipantId}
+        template={project.template}
         onEdit={handleEditParticipant}
         onDelete={handleDeleteParticipant}
         onTransferBalance={handleTransferBalance}
@@ -429,6 +507,21 @@ export default function ProjectPage() {
         currency={project.currency}
         projectId={projectId}
         onSuccess={handleRefreshData}
+      />
+
+      {/* Expense Detail Sheet */}
+      <ExpenseDetailSheet
+        isOpen={showExpenseDetail}
+        onClose={() => {
+          setShowExpenseDetail(false)
+          setSelectedExpense(null)
+          setSelectedExpenseId(null)
+        }}
+        expense={selectedExpense}
+        projectId={projectId}
+        template={project.template}
+        onEdit={handleEditExpense}
+        onDelete={handleDeleteExpense}
       />
     </main>
   )

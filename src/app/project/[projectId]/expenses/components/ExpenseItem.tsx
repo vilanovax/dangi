@@ -10,6 +10,7 @@ interface ExpenseItemProps {
   amount: number
   currency: string
   payer: {
+    id: string
     name: string
   }
   category?: {
@@ -20,6 +21,12 @@ interface ExpenseItemProps {
   periodKey?: string | null
   showPeriod?: boolean
   isHighCost?: boolean
+  /** User's share of this expense */
+  myShare?: number
+  /** Whether user has settled their share (future feature) */
+  isSettled?: boolean
+  /** Current user's participant ID */
+  myParticipantId?: string | null
   onClick?: () => void
 }
 
@@ -42,11 +49,13 @@ function isRepairExpense(title: string, categoryName?: string): boolean {
 }
 
 /**
- * Single expense item in the timeline - Final Polish
+ * Single expense item in the timeline - Enhanced with user share
  *
  * UX Intent:
  * - Entire card clearly tappable with better feedback
  * - Title more prominent, amount clearly visible
+ * - Shows "Your share" to personalize the expense
+ * - Status badge shows settlement state (settled/unsettled)
  * - Subtle indicators for high-cost, recurring, and repair expenses
  * - Press feedback using building design tokens
  */
@@ -61,6 +70,9 @@ export function ExpenseItem({
   periodKey,
   showPeriod = false,
   isHighCost = false,
+  myShare,
+  isSettled = true,
+  myParticipantId,
   onClick,
 }: ExpenseItemProps) {
   const isRecurring = isRecurringExpense(title, category?.name)
@@ -147,17 +159,44 @@ export function ExpenseItem({
             )}
           </div>
 
-          {/* Amount - Clear and prominent */}
-          <p
-            className="font-bold text-lg mb-1.5"
-            style={{ color: 'var(--building-text-primary)' }}
-          >
-            {formatMoney(amount, currency)}
-          </p>
+          {/* Amount with Status Badge */}
+          <div className="flex items-center gap-2 mb-1.5">
+            <p
+              className="font-bold text-lg"
+              style={{ color: 'var(--building-text-primary)' }}
+            >
+              {formatMoney(amount, currency)}
+            </p>
+
+            {/* Status Badge - Subtle, non-dominant */}
+            {myParticipantId && payer.id !== myParticipantId && myShare && myShare > 0 && (
+              <span
+                className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium"
+                style={{
+                  backgroundColor: isSettled
+                    ? 'var(--building-success-alpha)'
+                    : 'var(--building-warning-alpha)',
+                  color: isSettled ? 'var(--building-success)' : 'var(--building-warning)',
+                }}
+              >
+                {isSettled ? 'تسویه‌شده' : 'در انتظار'}
+              </span>
+            )}
+          </div>
+
+          {/* User Share - Personalized info */}
+          {myShare && myShare > 0 && (
+            <p
+              className="text-xs font-semibold mb-1"
+              style={{ color: 'var(--building-info)' }}
+            >
+              سهم تو: {formatMoney(myShare, currency)}
+            </p>
+          )}
 
           {/* Metadata - Compact and aligned */}
           <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--building-text-secondary)' }}>
-            <span>{payer.name}</span>
+            <span>{payer.name} پرداخت کرد</span>
             {category && (
               <>
                 <span style={{ color: 'var(--building-text-muted)' }}>•</span>

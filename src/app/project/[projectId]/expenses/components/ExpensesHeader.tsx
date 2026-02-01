@@ -7,15 +7,20 @@ interface ExpensesHeaderProps {
   currency: string
   itemCount: number
   isFiltered: boolean
+  /** User's total share across all expenses (optional) */
+  myTotalShare?: number
+  /** Amount that is unsettled (user owes but hasn't settled) */
+  unsettledAmount?: number
   onBack: () => void
 }
 
 /**
- * Header component for expenses page - uses building design tokens
+ * Header component for expenses page - Enhanced with user insights
  *
  * UX Intent:
  * - Calm, informative gradient using building tokens
  * - Total amount present but not visually dominant
+ * - Secondary line shows personalized info: "Your share" or "Unsettled amount"
  * - Helper text reduces financial pressure
  * - Soft warning tones, not alarming
  */
@@ -24,8 +29,30 @@ export function ExpensesHeader({
   currency,
   itemCount,
   isFiltered,
+  myTotalShare,
+  unsettledAmount,
   onBack,
 }: ExpensesHeaderProps) {
+  // Determine secondary info to show
+  const getSecondaryInfo = () => {
+    if (unsettledAmount && unsettledAmount > 0) {
+      return {
+        label: 'در انتظار تسویه',
+        amount: unsettledAmount,
+        color: 'text-orange-200',
+      }
+    }
+    if (myTotalShare && myTotalShare > 0) {
+      return {
+        label: 'سهم تو تا الان',
+        amount: myTotalShare,
+        color: 'text-white/70',
+      }
+    }
+    return null
+  }
+
+  const secondaryInfo = getSecondaryInfo()
   return (
     <header className="sticky top-0 z-10">
       {/* Calm gradient background using building tokens */}
@@ -58,7 +85,7 @@ export function ExpensesHeader({
           <div className="w-9" />
         </div>
 
-        {/* Total Summary Card - Softer, informative */}
+        {/* Total Summary Card - Enhanced with user share info */}
         <div
           className="rounded-xl p-3.5"
           style={{
@@ -66,8 +93,8 @@ export function ExpensesHeader({
             backdropFilter: 'blur(8px)',
           }}
         >
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex-1">
               <p className="text-white/70 text-xs mb-1">
                 {isFiltered ? 'جمع فیلتر شده' : 'جمع خرج‌ها'}
               </p>
@@ -79,6 +106,20 @@ export function ExpensesHeader({
               <p className="text-white/60 text-[10px]">تا این لحظه</p>
             </div>
           </div>
+
+          {/* Secondary Info - User share or unsettled amount */}
+          {secondaryInfo && (
+            <div className="pt-2 border-t border-white/10">
+              <div className="flex items-center justify-between">
+                <p className={`text-xs ${secondaryInfo.color}`}>
+                  {secondaryInfo.label}
+                </p>
+                <p className={`text-sm font-semibold ${secondaryInfo.color}`}>
+                  {formatMoney(secondaryInfo.amount, currency)}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </header>

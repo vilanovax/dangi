@@ -4,6 +4,15 @@ import { useMemo } from 'react'
 import { ExpenseItem } from './ExpenseItem'
 import { DateSeparator } from './DateSeparator'
 import { EmptyState } from './EmptyState'
+import {
+  calculateHeavyExpenseThreshold,
+  type Expense as AnalyticsExpense,
+} from '@/lib/utils/expense-analytics'
+
+interface ExpenseShare {
+  participantId: string
+  amount: number
+}
 
 interface Expense {
   id: string
@@ -12,13 +21,16 @@ interface Expense {
   expenseDate: string
   periodKey?: string | null
   paidBy: {
+    id: string
     name: string
   }
+  paidById: string
   category?: {
     name: string
     icon: string
     color: string
   } | null
+  shares?: ExpenseShare[]
 }
 
 interface ExpensesListProps {
@@ -29,16 +41,19 @@ interface ExpensesListProps {
   isFiltered: boolean
   onClearFilters: () => void
   showPeriod?: boolean
+  myParticipantId?: string | null
   onExpenseClick?: (expenseId: string) => void
 }
 
 /**
- * Timeline list of expenses grouped by date - Final Polish
+ * Timeline list of expenses grouped by date - Enhanced with user share
  *
  * UX Intent:
  * - Breathable spacing, not dense
  * - Comfortable to scroll and scan
  * - Identify high-cost expenses for visual indicators
+ * - Shows user's share for each expense
+ * - Sticky date headers for better navigation
  */
 export function ExpensesList({
   expenses,
@@ -48,14 +63,12 @@ export function ExpensesList({
   isFiltered,
   onClearFilters,
   showPeriod = false,
+  myParticipantId,
   onExpenseClick,
 }: ExpensesListProps) {
-  // Calculate high-cost threshold (top 25% of expenses)
+  // Calculate high-cost threshold (top 20% of expenses) - using analytics utility
   const highCostThreshold = useMemo(() => {
-    if (expenses.length === 0) return 0
-    const amounts = expenses.map(e => e.amount).sort((a, b) => b - a)
-    const top25Index = Math.floor(amounts.length * 0.25)
-    return amounts[top25Index] || 0
+    return calculateHeavyExpenseThreshold(expenses as AnalyticsExpense[])
   }, [expenses])
 
   if (expenses.length === 0) {
@@ -66,26 +79,36 @@ export function ExpensesList({
     <div className="px-4 pt-5 pb-4 space-y-5">
       {Object.entries(groupedExpenses).map(([date, dateExpenses]) => (
         <div key={date} className="space-y-2.5">
-          <DateSeparator date={date} />
+          {/* Sticky date header for better navigation */}
+          <DateSeparator date={date} sticky />
 
-          {/* Cards with improved spacing and indicators */}
+          {/* Cards with improved spacing, indicators, and user share */}
           <div className="space-y-3">
-            {dateExpenses.map((expense) => (
-              <ExpenseItem
-                key={expense.id}
-                id={expense.id}
-                projectId={projectId}
-                title={expense.title}
-                amount={expense.amount}
-                currency={currency}
-                payer={expense.paidBy}
-                category={expense.category}
-                periodKey={expense.periodKey}
-                showPeriod={showPeriod}
-                isHighCost={expense.amount >= highCostThreshold}
-                onClick={onExpenseClick ? () => onExpenseClick(expense.id) : undefined}
-              />
-            ))}
+            {dateExpenses.map((expense) => {
+              // Find user's share for this expense
+              const myShare = expense.shares?.find((s) => s.participantId === myParticipantId)?.amount || 0
+              const isUserPayer = expense.paidById === myParticipantId
+
+              return (
+                <ExpenseItem
+                  key={expense.id}
+                  id={expense.id}
+                  projectId={projectId}
+                  title={expense.title}
+                  amount={expense.amount}
+                  currency={currency}
+                  payer={expense.paidBy}
+                  category={expense.category}
+                  periodKey={expense.periodKey}
+                  showPeriod={showPeriod}
+                  isHighCost={expense.amount >= highCostThreshold}
+                  myShare={myShare}
+                  isSettled={true} // Future feature: compute settlement status
+                  myParticipantId={myParticipantId}
+                  onClick={onExpenseClick ? () => onExpenseClick(expense.id) : undefined}
+                />
+              )
+            })}
           </div>
         </div>
       ))}

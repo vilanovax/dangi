@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { BottomSheet, Avatar } from '@/components/ui'
 import { formatMoney } from '@/lib/utils/money'
 import { deserializeAvatar } from '@/lib/types/avatar'
+import { ExpenseDetailSheet } from '../expenses/components/ExpenseDetailSheet'
 
 interface Participant {
   id: string
@@ -41,6 +42,8 @@ interface ExpenseItem {
   } | null
 }
 
+type Template = 'building' | 'travel' | 'family' | 'gathering'
+
 interface ParticipantProfileSheetProps {
   isOpen: boolean
   onClose: () => void
@@ -50,6 +53,7 @@ interface ParticipantProfileSheetProps {
   settlementCount: number
   projectId: string
   myParticipantId: string | null
+  template?: Template
   onEdit: () => void
   onDelete: () => void
   onTransferBalance: () => void
@@ -67,6 +71,7 @@ export function ParticipantProfileSheet({
   settlementCount,
   projectId,
   myParticipantId,
+  template = 'building',
   onEdit,
   onDelete,
   onTransferBalance,
@@ -75,6 +80,12 @@ export function ParticipantProfileSheet({
   const [expenses, setExpenses] = useState<ExpenseItem[]>([])
   const [loadingExpenses, setLoadingExpenses] = useState(false)
   const [showAllExpenses, setShowAllExpenses] = useState(false)
+
+  // Expense detail sheet state
+  const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null)
+  const [selectedExpense, setSelectedExpense] = useState<any>(null)
+  const [showExpenseDetail, setShowExpenseDetail] = useState(false)
+  const [loadingExpenseDetail, setLoadingExpenseDetail] = useState(false)
 
   // Fetch participant's expenses when sheet opens
   const fetchExpenses = useCallback(async () => {
@@ -157,11 +168,59 @@ export function ParticipantProfileSheet({
     }
   }
 
-  // Handle expense click - go to expense detail page
-  const handleExpenseClick = (expense: ExpenseItem) => {
-    router.push(`/project/${projectId}/expense/${expense.id}`)
-    onClose()
+  // Handle expense click - open bottom sheet
+  const handleExpenseClick = async (expense: ExpenseItem) => {
+    setSelectedExpenseId(expense.id)
+    setShowExpenseDetail(true)
+    setLoadingExpenseDetail(true)
+
+    try {
+      const res = await fetch(`/api/projects/${projectId}/expenses/${expense.id}`)
+      if (res.ok) {
+        const data = await res.json()
+        setSelectedExpense(data.expense)
+      }
+    } catch (error) {
+      console.error('Error fetching expense details:', error)
+    } finally {
+      setLoadingExpenseDetail(false)
+    }
   }
+
+  // Handle edit - navigate to full page
+  const handleEditExpense = useCallback(() => {
+    if (!selectedExpenseId) return
+    setShowExpenseDetail(false)
+    router.push(`/project/${projectId}/expense/${selectedExpenseId}`)
+  }, [selectedExpenseId, router, projectId])
+
+  // Handle delete expense
+  const handleDeleteExpense = useCallback(async () => {
+    if (!selectedExpenseId) return
+
+    if (!confirm('آیا از حذف این هزینه اطمینان دارید؟')) {
+      return
+    }
+
+    try {
+      const res = await fetch(`/api/projects/${projectId}/expenses/${selectedExpenseId}`, {
+        method: 'DELETE',
+      })
+
+      if (res.ok) {
+        setShowExpenseDetail(false)
+        setSelectedExpense(null)
+        setSelectedExpenseId(null)
+        // Refresh expenses list
+        fetchExpenses()
+      } else {
+        alert('خطا در حذف هزینه')
+      }
+    } catch (error) {
+      console.error('Error deleting expense:', error)
+      alert('خطا در حذف هزینه')
+    }
+  }, [selectedExpenseId, projectId, fetchExpenses])
 
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose}>
@@ -393,6 +452,21 @@ export function ParticipantProfileSheet({
           </p>
         )}
       </div>
+
+      {/* Expense Detail Sheet */}
+      <ExpenseDetailSheet
+        isOpen={showExpenseDetail}
+        onClose={() => {
+          setShowExpenseDetail(false)
+          setSelectedExpense(null)
+          setSelectedExpenseId(null)
+        }}
+        expense={selectedExpense}
+        projectId={projectId}
+        template={template}
+        onEdit={handleEditExpense}
+        onDelete={handleDeleteExpense}
+      />
     </BottomSheet>
   )
 }

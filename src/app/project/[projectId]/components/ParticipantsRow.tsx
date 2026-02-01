@@ -10,23 +10,50 @@ interface Participant {
   avatar?: string | null
 }
 
+interface ParticipantBalance {
+  participantId: string
+  balance: number
+}
+
 interface ParticipantsRowProps {
   participants: Participant[]
+  participantBalances?: ParticipantBalance[]
   onAddMember: () => void
   onParticipantClick?: (participant: Participant) => void
 }
 
 /**
- * Horizontal participants row - travel companions
+ * Horizontal participants row - travel companions with balance status
  *
  * UX Intent:
- * - Focus on people and presence, not numbers
- * - No numeric badges - creates comparison anxiety
- * - Owner has subtle crown, not aggressive
+ * - Color-coded avatars show balance status at a glance
+ * - Positive balance (creditor) → success/green ring
+ * - Negative balance (debtor) → warning/orange ring
+ * - Settled (zero) → neutral (no ring)
+ * - Owner has subtle crown overlay
  * - Friendly group feeling: "هم‌سفرها"
- * - Tapping avatar opens quick profile
+ * - Tapping avatar opens detailed profile
  */
-export function ParticipantsRow({ participants, onAddMember, onParticipantClick }: ParticipantsRowProps) {
+export function ParticipantsRow({
+  participants,
+  participantBalances = [],
+  onAddMember,
+  onParticipantClick
+}: ParticipantsRowProps) {
+  // Get balance status for a participant
+  const getBalanceRingStyle = (participantId: string) => {
+    const balance = participantBalances.find(b => b.participantId === participantId)
+    if (!balance || Math.abs(balance.balance) < 1) {
+      // Settled - no ring
+      return null
+    }
+    if (balance.balance > 0) {
+      // Creditor - green/success ring
+      return 'ring-2 ring-emerald-400/80 dark:ring-emerald-500/80 ring-offset-2 ring-offset-white dark:ring-offset-gray-950'
+    }
+    // Debtor - orange/warning ring
+    return 'ring-2 ring-orange-400/80 dark:ring-orange-500/80 ring-offset-2 ring-offset-white dark:ring-offset-gray-950'
+  }
   return (
     <div className="px-4 mt-6">
       {/* Section header with hint */}
@@ -41,43 +68,41 @@ export function ParticipantsRow({ participants, onAddMember, onParticipantClick 
         </p>
       </div>
 
-      {/* Avatars row - clean, no numbers */}
+      {/* Avatars row - color-coded by balance status */}
       <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
-        {participants.map((p) => (
-          <button
-            key={p.id}
-            onClick={() => onParticipantClick?.(p)}
-            className="flex-shrink-0 w-[68px] text-center group active:scale-95 transition-transform"
-          >
-            <div className="mx-auto mb-1.5 relative">
-              {/* Soft glow for owner */}
-              {p.role === 'OWNER' && (
-                <div className="absolute -inset-0.5 bg-gradient-to-br from-amber-300 to-orange-400 rounded-full opacity-60 blur-[3px]" />
-              )}
-              <div className={`relative rounded-full ${
-                p.role === 'OWNER'
-                  ? 'ring-2 ring-amber-400/80 ring-offset-1 ring-offset-white dark:ring-offset-gray-950'
-                  : ''
-              }`}>
-                <Avatar
-                  avatar={deserializeAvatar(p.avatar || null, p.name)}
-                  name={p.name}
-                  size="lg"
-                  className="shadow-sm group-hover:shadow-md transition-shadow"
-                />
-              </div>
-              {/* Subtle crown for owner - not aggressive */}
-              {p.role === 'OWNER' && (
-                <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-br from-amber-400 to-orange-400 rounded-full flex items-center justify-center shadow-sm ring-1 ring-white dark:ring-gray-950">
-                  <span className="text-[10px]">👑</span>
+        {participants.map((p) => {
+          const balanceRing = getBalanceRingStyle(p.id)
+          const isOwner = p.role === 'OWNER'
+
+          return (
+            <button
+              key={p.id}
+              onClick={() => onParticipantClick?.(p)}
+              className="flex-shrink-0 w-[68px] text-center group active:scale-95 transition-transform"
+            >
+              <div className="mx-auto mb-1.5 relative">
+                {/* Balance status ring or owner glow */}
+                <div className={`relative rounded-full ${balanceRing || ''}`}>
+                  <Avatar
+                    avatar={deserializeAvatar(p.avatar || null, p.name)}
+                    name={p.name}
+                    size="lg"
+                    className="shadow-sm group-hover:shadow-md transition-shadow"
+                  />
                 </div>
-              )}
-            </div>
-            <p className="text-xs truncate font-medium text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200 transition-colors px-0.5">
-              {p.name}
-            </p>
-          </button>
-        ))}
+                {/* Subtle crown for owner - overlays balance ring */}
+                {isOwner && (
+                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-br from-amber-400 to-orange-400 rounded-full flex items-center justify-center shadow-sm ring-1 ring-white dark:ring-gray-950">
+                    <span className="text-[10px]">👑</span>
+                  </div>
+                )}
+              </div>
+              <p className="text-xs truncate font-medium text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200 transition-colors px-0.5">
+                {p.name}
+              </p>
+            </button>
+          )
+        })}
 
         {/* Add Member Button - inviting, not urgent */}
         <button
