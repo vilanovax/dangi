@@ -175,9 +175,25 @@ export function CreateAccessLinkSheet({
                           {template.badge}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
                         {template.descriptionPersian}
                       </p>
+                      {/* Limitation indicator */}
+                      {template.id === 'read-only' && (
+                        <p className="text-xs text-gray-500 dark:text-gray-500">
+                          ✖️ هیچ تغییری باهاش ثبت نمی‌شه
+                        </p>
+                      )}
+                      {template.id === 'guest-contributor' && (
+                        <p className="text-xs text-gray-500 dark:text-gray-500">
+                          ✖️ تسویه حساب و تغییر تنظیمات نداره
+                        </p>
+                      )}
+                      {template.id === 'invite-member' && (
+                        <p className="text-xs text-green-600 dark:text-green-400">
+                          ✓ تبدیل به عضو کامل می‌شه
+                        </p>
+                      )}
                     </div>
 
                     {/* Arrow */}
@@ -232,7 +248,7 @@ export function CreateAccessLinkSheet({
                 className="w-full"
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                برای شناسایی آسان‌تر لینک
+                برای اینکه بعداً بدونی این لینک رو به کی دادی
               </p>
             </div>
 
@@ -244,7 +260,7 @@ export function CreateAccessLinkSheet({
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="یادداشت یا توضیحات برای این لینک"
+                placeholder="مثلاً: فقط برای دیدن خرج‌های سفر"
                 rows={3}
                 className="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600"
               />
@@ -253,10 +269,10 @@ export function CreateAccessLinkSheet({
             {/* Expiration Presets */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                انقضای لینک
+                این لینک تا کی معتبر باشه؟
               </label>
               <div className="grid grid-cols-2 gap-2">
-                {EXPIRATION_PRESETS.map((preset) => (
+                {EXPIRATION_PRESETS.filter((p) => p.id !== 'no-expiration').map((preset) => (
                   <button
                     key={preset.id}
                     onClick={() => setSelectedExpiration(preset.id)}
@@ -269,43 +285,64 @@ export function CreateAccessLinkSheet({
                     {preset.labelPersian}
                   </button>
                 ))}
+                {/* No expiration button - last */}
+                <button
+                  onClick={() => setSelectedExpiration('no-expiration')}
+                  className={`px-4 py-2.5 rounded-xl border text-sm font-medium transition-all ${
+                    selectedExpiration === 'no-expiration'
+                      ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 dark:border-blue-600 text-blue-700 dark:text-blue-300'
+                      : 'bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-600'
+                  }`}
+                >
+                  بدون انقضا
+                </button>
               </div>
+              {selectedExpiration === 'no-expiration' && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  💡 هر وقت خواستی می‌تونی لینک رو غیرفعال کنی
+                </p>
+              )}
             </div>
 
             {/* Max Uses (Optional) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                حداکثر تعداد استفاده (اختیاری)
+                چند بار بشه از این لینک استفاده کرد؟
               </label>
               <Input
                 type="number"
                 value={maxUses}
                 onChange={(e) => setMaxUses(e.target.value)}
-                placeholder="نامحدود"
+                placeholder="مثلاً: 1، 5، 10"
                 min="1"
                 className="w-full"
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                اگر خالی بگذارید، تعداد استفاده نامحدود است
+                اگر خالی بذاری، محدودیتی نداره
               </p>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-3 pt-2">
-              <Button
-                onClick={() => setStep('template')}
-                variant="secondary"
-                className="flex-1"
-              >
-                بازگشت
-              </Button>
-              <Button
-                onClick={handleCreate}
-                disabled={isCreating}
-                className="flex-1"
-              >
-                {isCreating ? 'در حال ایجاد...' : 'ایجاد لینک'}
-              </Button>
+            <div className="pt-2">
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => setStep('template')}
+                  variant="secondary"
+                  className="flex-1"
+                >
+                  بازگشت
+                </Button>
+                <Button
+                  onClick={handleCreate}
+                  disabled={isCreating}
+                  className="flex-1"
+                >
+                  {isCreating ? 'در حال ایجاد...' : 'ایجاد لینک'}
+                </Button>
+              </div>
+              <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-3">
+                💡 می‌تونی هر وقت خواستی این لینک رو غیرفعال کنی
+              </p>
             </div>
           </div>
         )}
@@ -377,14 +414,13 @@ export function CreateAccessLinkSheet({
             {/* Share Instructions */}
             <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl">
               <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
-                راهنمای اشتراک‌گذاری
+                چطوری share کنم؟
               </h4>
-              <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
-                <li>• لینک را برای دیگران ارسال کنید یا QR code را نمایش دهید</li>
-                <li>• دسترسی بدون نیاز به ثبت‌نام فعال می‌شود</li>
+              <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1.5">
+                <li>• لینک رو واسه دیگران بفرست یا QR code رو نشونشون بده</li>
+                <li>• بدون ثبت‌نام، دسترسیشون فعال میشه</li>
                 <li>
-                  • می‌توانید لینک را از بخش{' '}
-                  <span className="font-medium">لینک‌های اشتراک</span> مدیریت کنید
+                  • از بخش <span className="font-medium">لینک‌های اشتراک</span> می‌تونی لینک رو ویرایش یا غیرفعال کنی
                 </li>
               </ul>
             </div>
