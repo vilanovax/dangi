@@ -1281,10 +1281,9 @@ function OverviewTab({
                 const colors = getSeverityColors(unpaidMonths)
 
                 return (
-                  <button
+                  <div
                     key={unit.id}
-                    className="w-full flex items-center justify-between p-2.5 rounded-lg transition-all active:scale-[0.98]"
-                    onClick={() => setActiveTab('months')}
+                    className="w-full flex items-center justify-between p-2.5 rounded-lg transition-all"
                     style={{
                       backgroundColor: 'var(--building-surface-muted)',
                       borderWidth: '1px',
@@ -1305,10 +1304,7 @@ function OverviewTab({
                     </div>
                     <Button
                       size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setActiveTab('months')
-                      }}
+                      onClick={() => setActiveTab('months')}
                       className="flex-shrink-0 font-semibold"
                       style={{
                         backgroundColor: colors.buttonBg,
@@ -1319,7 +1315,7 @@ function OverviewTab({
                     >
                       ثبت
                     </Button>
-                  </button>
+                  </div>
                 )
               })
             }
