@@ -172,3 +172,77 @@ export async function validateParticipantAccess(
     },
   }
 }
+
+/**
+ * Attach project to user account via access link
+ *
+ * Security Rules:
+ * - Role is strictly derived from access link (never upgraded)
+ * - No approval needed - links grant access
+ * - If user already has access, return existing participant
+ *
+ * @param userId - The authenticated user's ID
+ * @param projectId - The project to attach
+ * @param linkRole - Role from the access link ('viewer' | 'contributor' | 'admin')
+ * @param userName - User's display name
+ * @returns The participant record
+ */
+export async function attachProjectToUser(
+  userId: string,
+  projectId: string,
+  linkRole: string,
+  userName: string
+) {
+  // Check if user already has a participant in this project
+  const existingParticipant = await prisma.participant.findFirst({
+    where: {
+      userId,
+      projectId,
+    },
+  })
+
+  // If already exists, return it (no upgrade, no downgrade)
+  if (existingParticipant) {
+    return existingParticipant
+  }
+
+  // Map access link role to participant role
+  // Security: Role is strictly what the link grants - never more
+  const participantRole = mapLinkRoleToParticipantRole(linkRole)
+
+  // Create new participant linked to user account
+  const participant = await prisma.participant.create({
+    data: {
+      name: userName,
+      userId,
+      projectId,
+      role: participantRole,
+      weight: 1,
+      avatar: null, // Will use user's avatar from User model
+    },
+  })
+
+  return participant
+}
+
+/**
+ * Map access link role to participant role
+ *
+ * Access Link Roles → Participant Roles:
+ * - 'viewer' → 'MEMBER' (read-only member)
+ * - 'contributor' → 'MEMBER' (can add expenses)
+ * - 'admin' → 'OWNER' (full access)
+ * - anything else → 'MEMBER' (safe default)
+ */
+function mapLinkRoleToParticipantRole(linkRole: string): string {
+  switch (linkRole) {
+    case 'viewer':
+      return 'MEMBER' // Read-only member
+    case 'contributor':
+      return 'MEMBER' // Regular member (can add expenses)
+    case 'admin':
+      return 'OWNER' // Project owner/admin
+    default:
+      return 'MEMBER' // Safe default
+  }
+}

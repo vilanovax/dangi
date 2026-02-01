@@ -353,20 +353,22 @@ export default function GuestHomeLayout({ scopes }: GuestHomeLayoutProps) {
       </div>
 
       {/* ╔═══════════════════════════════════════════╗ */}
-      {/* ║  Footer — درخواست عضویت (Soft CTA)        ║ */}
+      {/* ║  Footer — ثبت‌نام و ذخیره (Conversion CTA) ║ */}
       {/* ╚═══════════════════════════════════════════╝ */}
       <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 p-4 shadow-lg">
         <div className="max-w-2xl mx-auto">
           <div className="text-center">
             <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
-              می‌خوای تو خرج‌ها شریک باشی؟
+              ثبت‌نام کن و این پروژه رو ذخیره کن
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-              برای ثبت خرج یا تسویه، باید عضو پروژه باشید
+              بعداً هم می‌تونی بهش دسترسی داشته باشی
             </p>
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-              درخواست عضویت
-            </Button>
+            <Link href={`/auth?returnTo=/project/${projectId}&mode=signup`}>
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                ثبت‌نام و ذخیره این پروژه
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

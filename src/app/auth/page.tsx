@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button, Input, Card, AvatarPicker, Avatar as AvatarDisplay } from '@/components/ui'
 import type { Avatar } from '@/lib/types/avatar'
 import { serializeAvatar, generateAutoAvatar } from '@/lib/types/avatar'
@@ -17,6 +17,7 @@ function toEnglishDigits(str: string): string {
 
 export default function AuthPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [mode, setMode] = useState<AuthMode>('login')
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
@@ -24,10 +25,24 @@ export default function AuthPage() {
   const [avatar, setAvatar] = useState<Avatar | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
+
+  // Check if coming from guest access link
+  const returnTo = searchParams.get('returnTo')
+  const isFromGuestLink = !!returnTo && returnTo.includes('/project/')
+
+  // Set mode based on query param
+  useEffect(() => {
+    const modeParam = searchParams.get('mode')
+    if (modeParam === 'signup') {
+      setMode('register')
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setSuccessMessage('')
     setLoading(true)
 
     try {
@@ -53,8 +68,30 @@ export default function AuthPage() {
         throw new Error(data.error || 'خطایی رخ داد')
       }
 
-      // Success - redirect to home
-      router.push('/')
+      // Check if user is coming from a guest access link
+      // If so, attach the project to their account
+      if (isFromGuestLink) {
+        try {
+          const attachRes = await fetch('/api/auth/attach-project', {
+            method: 'POST',
+          })
+
+          if (attachRes.ok) {
+            const attachData = await attachRes.json()
+            setSuccessMessage(attachData.message || 'این پروژه به حساب شما اضافه شد 🎉')
+
+            // Wait a moment to show success message
+            await new Promise(resolve => setTimeout(resolve, 1500))
+          }
+          // If attach fails, continue anyway - user is authenticated
+        } catch {
+          // Silently fail - user is authenticated, attachment is optional
+        }
+      }
+
+      // Success - redirect
+      const redirectUrl = returnTo || '/'
+      router.push(redirectUrl)
       router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطایی رخ داد')
@@ -155,13 +192,22 @@ export default function AuthPage() {
             </p>
           )}
 
+          {successMessage && (
+            <p className="text-green-600 dark:text-green-400 text-sm text-center bg-green-50 dark:bg-green-900/20 p-2 rounded-lg">
+              {successMessage}
+            </p>
+          )}
+
           <Button
             type="submit"
             loading={loading}
             className="w-full"
             size="lg"
           >
-            {mode === 'login' ? 'ورود' : 'ثبت‌نام'}
+            {isFromGuestLink
+              ? (mode === 'login' ? 'ورود و ذخیره پروژه' : 'ثبت‌نام و ذخیره پروژه')
+              : (mode === 'login' ? 'ورود' : 'ثبت‌نام')
+            }
           </Button>
         </form>
 
