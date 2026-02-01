@@ -350,31 +350,11 @@ export default function AddExpensePage() {
     setCustomAmounts((prev) => ({ ...prev, [participantId]: value }))
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-dvh flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full" />
-      </div>
-    )
-  }
-
-  if (!project || !template) {
-    return (
-      <div className="min-h-dvh flex flex-col items-center justify-center p-4 text-center">
-        <p className="text-gray-500">{error || 'پروژه یافت نشد'}</p>
-      </div>
-    )
-  }
-
-  const labels = template.labels
-  const sharePreview = getSharePreview()
-  const isHangout = template.id === 'gathering'
-  const parsedAmount = parseMoney(amount)
-
   // UX: Sort categories by usage frequency (most used first)
+  // IMPORTANT: Must be before early returns to maintain hook order
   const sortedCategories = useMemo(() => {
-    if (!project.categories.length || !expenses.length) {
-      return project.categories
+    if (!project || !project.categories.length || !expenses.length) {
+      return project?.categories || []
     }
 
     // Count usage for each category
@@ -398,7 +378,28 @@ export default function AddExpensePage() {
       // If same usage count, sort alphabetically
       return a.name.localeCompare(b.name, 'fa')
     })
-  }, [project.categories, expenses])
+  }, [project, expenses])
+
+  if (loading) {
+    return (
+      <div className="min-h-dvh flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full" />
+      </div>
+    )
+  }
+
+  if (!project || !template) {
+    return (
+      <div className="min-h-dvh flex flex-col items-center justify-center p-4 text-center">
+        <p className="text-gray-500">{error || 'پروژه یافت نشد'}</p>
+      </div>
+    )
+  }
+
+  const labels = template.labels
+  const sharePreview = getSharePreview()
+  const isHangout = template.id === 'gathering'
+  const parsedAmount = parseMoney(amount)
 
   // UX: Dynamic CTA label with amount
   const getSubmitButtonLabel = () => {
