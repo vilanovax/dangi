@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
-import { PERSIAN_MONTHS, getCurrentPersianYear } from '@/lib/utils/persian-date'
+import { PERSIAN_MONTHS, getCurrentPersianYear, formatPersianDate } from '@/lib/utils/persian-date'
 import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
@@ -100,7 +100,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       amount: e.amount,
       paidBy: e.paidBy.name,
       periodKey: e.periodKey,
-      date: e.expenseDate.toISOString().split('T')[0],
+      date: formatPersianDate(e.expenseDate, 'D MMMM YYYY'),
     }))
 
     // Recent common expenses (last 10)
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       title: e.title,
       amount: e.amount,
       paidBy: e.paidBy.name,
-      date: e.expenseDate.toISOString().split('T')[0],
+      date: formatPersianDate(e.expenseDate, 'D MMMM YYYY'),
     }))
 
     // Monthly trend data for chart
