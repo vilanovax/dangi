@@ -120,16 +120,18 @@ export default function ProjectPage() {
   }, [])
 
   const handleEditParticipant = useCallback(() => {
+    if (!selectedParticipant) return
     setShowProfileSheet(false)
-    // Navigate to participants page for editing
-    router.push(`/project/${projectId}/participants`)
-  }, [router, projectId])
+    // UX: Navigate to participants page with edit query parameter to auto-open edit modal
+    router.push(`/project/${projectId}/participants?edit=${selectedParticipant.id}`)
+  }, [router, projectId, selectedParticipant])
 
   const handleDeleteParticipant = useCallback(() => {
+    if (!selectedParticipant) return
     setShowProfileSheet(false)
-    // Navigate to participants page for deletion
-    router.push(`/project/${projectId}/participants`)
-  }, [router, projectId])
+    // UX: Navigate to participants page with delete query parameter to auto-open delete confirmation
+    router.push(`/project/${projectId}/participants?delete=${selectedParticipant.id}`)
+  }, [router, projectId, selectedParticipant])
 
   const handleTransferBalance = useCallback(() => {
     setShowProfileSheet(false)

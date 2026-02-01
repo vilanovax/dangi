@@ -67,6 +67,33 @@ export default function ParticipantsPage() {
     fetchProject()
   }, [projectId])
 
+  // UX: Auto-open edit/delete modal if participantId is in URL
+  useEffect(() => {
+    if (project && typeof window !== 'undefined') {
+      const url = new URL(window.location.href)
+      const editId = url.searchParams.get('edit')
+      const deleteId = url.searchParams.get('delete')
+
+      if (editId) {
+        const participant = project.participants.find(p => p.id === editId)
+        if (participant) {
+          openEditModal(participant)
+          // Clean up URL
+          url.searchParams.delete('edit')
+          window.history.replaceState({}, '', url.pathname)
+        }
+      } else if (deleteId) {
+        const participant = project.participants.find(p => p.id === deleteId)
+        if (participant) {
+          setDeletingParticipant(participant)
+          // Clean up URL
+          url.searchParams.delete('delete')
+          window.history.replaceState({}, '', url.pathname)
+        }
+      }
+    }
+  }, [project])
+
   const fetchProject = async () => {
     try {
       const res = await fetch(`/api/projects/${projectId}`)
@@ -267,7 +294,8 @@ export default function ParticipantsPage() {
           </button>
           <div>
             <h1 className="text-xl font-bold" style={{ color: 'var(--building-text-primary)' }}>
-              مدیریت واحدها
+              {/* UX: Template-aware title instead of hardcoded "واحدها" */}
+              مدیریت {templateDef?.labels.participantTerm === 'واحد' ? 'واحدها' : templateDef?.labels.participantTerm === 'عضو خانواده' ? 'اعضای خانواده' : 'همسفرها'}
             </h1>
             <p className="text-xs" style={{ color: 'var(--building-text-secondary)' }}>
               {project.participants.length} {templateDef?.labels.participantTerm || 'نفر'}
