@@ -1,8 +1,11 @@
 'use client'
 
+import { useState } from 'react'
 import { Avatar } from '@/components/ui'
 import { formatMoney } from '@/lib/utils/money'
+import { getAggregationCountText } from '@/lib/utils/settlement-aggregation'
 import type { Avatar as AvatarData } from '@/lib/types/avatar'
+import type { Settlement } from '@/lib/utils/settlement-aggregation'
 
 interface SettlementSuggestionCardProps {
   fromName: string
@@ -12,11 +15,17 @@ interface SettlementSuggestionCardProps {
   amount: number
   currency: string
   onSettle: () => void
+  // UX: Aggregation support
+  isAggregated?: boolean
+  originalCount?: number
+  originalSettlements?: Settlement[]
 }
 
 /**
  * Settlement suggestion card with quick settle button
- * Shows from → to transfer with amount
+ * Supports both single and aggregated settlements
+ *
+ * UX: Aggregation reduces cognitive load while maintaining transparency
  */
 export function SettlementSuggestionCard({
   fromName,
@@ -26,7 +35,12 @@ export function SettlementSuggestionCard({
   amount,
   currency,
   onSettle,
+  isAggregated = false,
+  originalCount = 1,
+  originalSettlements = [],
 }: SettlementSuggestionCardProps) {
+  const [showDetails, setShowDetails] = useState(false)
+
   return (
     <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm">
       <div className="flex items-center gap-3">
@@ -79,6 +93,12 @@ export function SettlementSuggestionCard({
           <p className="font-bold text-lg text-gray-900 dark:text-white">
             {formatMoney(amount, currency)}
           </p>
+          {/* UX: Show aggregation badge for transparency */}
+          {isAggregated && (
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+              {getAggregationCountText(originalCount)}
+            </p>
+          )}
         </div>
 
         {/* Settle Button */}
@@ -89,6 +109,39 @@ export function SettlementSuggestionCard({
           تسویه
         </button>
       </div>
+
+      {/* UX: Expandable details for aggregated settlements (transparency = trust) */}
+      {isAggregated && originalSettlements.length > 0 && (
+        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+          <button
+            onClick={() => setShowDetails(!showDetails)}
+            className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+          >
+            {showDetails ? '▼' : '◀'} دیدن جزئیات
+          </button>
+
+          {showDetails && (
+            <div className="mt-3 space-y-2">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                این تسویه‌ها از خرج‌های زیر تشکیل شده:
+              </p>
+              {originalSettlements.map((s, idx) => (
+                <div
+                  key={idx}
+                  className="text-xs bg-gray-50 dark:bg-gray-800 rounded-lg p-2 flex justify-between items-center"
+                >
+                  <span className="text-gray-600 dark:text-gray-400">
+                    {s.fromName} → {s.toName}
+                  </span>
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {formatMoney(s.amount, currency)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

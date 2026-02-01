@@ -7,8 +7,10 @@ import { Button, Card, BottomSheet, Avatar } from '@/components/ui'
 import { UnifiedHeader, HeaderCard } from '@/components/layout'
 import { formatMoney } from '@/lib/utils/money'
 import { deserializeAvatar, type Avatar as AvatarData } from '@/lib/types/avatar'
+import { aggregateSettlements, type AggregatedSettlement } from '@/lib/utils/settlement-aggregation'
 import type { CategoryBreakdown, ParticipantExpenseBreakdown } from '@/types'
 import { CategoryBreakdownCard, ParticipantExpenseBreakdownCard } from './components'
+import { SettlementConfirmDialog } from './components/SettlementConfirmDialog'
 import { useProject, useProjectSummary, useCreateSettlement } from '@/hooks/useProjects'
 
 // ─────────────────────────────────────────────────────────────
@@ -89,7 +91,7 @@ export default function SummaryPage() {
   // ── UI State ────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<TabType>('balance')
   const [showQuickSettle, setShowQuickSettle] = useState(false)
-  const [selectedSettlement, setSelectedSettlement] = useState<Settlement | null>(null)
+  const [selectedSettlement, setSelectedSettlement] = useState<AggregatedSettlement | null>(null)
 
   // ── Extract Data from Query Results ─────────────────────────
   const project = useMemo(() => projectData?.project || null, [projectData])
@@ -103,13 +105,20 @@ export default function SummaryPage() {
 
   const loading = projectLoading || summaryLoading
 
+  // ── Aggregated Settlements (UX: Reduce cognitive load) ─────
+  const aggregatedSettlements = useMemo(() => {
+    if (!summary?.settlements) return []
+    // Apply smart aggregation to reduce number of settlement rows
+    return aggregateSettlements(summary.settlements)
+  }, [summary])
+
   // ── Handlers ────────────────────────────────────────────────
 
   const handleBack = useCallback(() => {
     router.back()
   }, [router])
 
-  const handleQuickSettle = useCallback((settlement: Settlement) => {
+  const handleQuickSettle = useCallback((settlement: AggregatedSettlement) => {
     setSelectedSettlement(settlement)
     setShowQuickSettle(true)
   }, [])
@@ -123,11 +132,17 @@ export default function SummaryPage() {
     if (!selectedSettlement) return
 
     try {
+      // UX: For aggregated settlements, create one settlement with total amount
+      // The backend will handle this as a single transaction
+      const note = selectedSettlement.isAggregated
+        ? `تسویه ${selectedSettlement.originalCount} خرج (تجمیع‌شده)`
+        : 'تسویه سریع از صفحه خلاصه'
+
       await createSettlementMutation.mutateAsync({
         fromId: selectedSettlement.fromId,
         toId: selectedSettlement.toId,
-        amount: selectedSettlement.amount,
-        note: 'تسویه سریع از صفحه خلاصه',
+        amount: selectedSettlement.totalAmount,
+        note,
       })
       handleCloseQuickSettle()
     } catch (error) {
@@ -340,16 +355,21 @@ export default function SummaryPage() {
                   </p>
                 </div>
                 <div className="space-y-2">
-                  {summary.settlements.map((s: Settlement, index: number) => (
+                  {/* UX: Render aggregated settlements to reduce cognitive load */}
+                  {aggregatedSettlements.map((s, index) => (
                     <SettlementSuggestionCard
                       key={index}
                       fromName={s.fromName}
                       fromAvatar={getParticipantAvatar(s.fromId)}
                       toName={s.toName}
                       toAvatar={getParticipantAvatar(s.toId)}
-                      amount={s.amount}
+                      amount={s.totalAmount}
                       currency={summary.currency}
                       onSettle={() => handleQuickSettle(s)}
+                      // UX: Pass aggregation metadata for transparency
+                      isAggregated={s.isAggregated}
+                      originalCount={s.originalCount}
+                      originalSettlements={s.settlements}
                     />
                   ))}
                 </div>
@@ -549,70 +569,21 @@ export default function SummaryPage() {
         )}
       </div>
 
-      {/* Quick Settlement Confirmation Sheet */}
-      <BottomSheet
-        isOpen={showQuickSettle}
-        onClose={handleCloseQuickSettle}
-        title="تأیید تسویه"
-      >
-        {selectedSettlement && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-center gap-4 py-4">
-              <div className="text-center">
-                {getParticipantAvatar(selectedSettlement.fromId) ? (
-                  <Avatar
-                    avatar={getParticipantAvatar(selectedSettlement.fromId)!}
-                    name={selectedSettlement.fromName}
-                    size="lg"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto">
-                    <span className="font-bold text-red-600">{selectedSettlement.fromName.charAt(0)}</span>
-                  </div>
-                )}
-                <p className="text-sm font-medium mt-2">{selectedSettlement.fromName}</p>
-              </div>
-
-              <div className="flex flex-col items-center">
-                <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-                <p className="text-lg font-bold text-blue-600 mt-1">
-                  {formatMoney(selectedSettlement.amount, summary.currency)}
-                </p>
-              </div>
-
-              <div className="text-center">
-                {getParticipantAvatar(selectedSettlement.toId) ? (
-                  <Avatar
-                    avatar={getParticipantAvatar(selectedSettlement.toId)!}
-                    name={selectedSettlement.toName}
-                    size="lg"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto">
-                    <span className="font-bold text-green-600">{selectedSettlement.toName.charAt(0)}</span>
-                  </div>
-                )}
-                <p className="text-sm font-medium mt-2">{selectedSettlement.toName}</p>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <Button variant="secondary" onClick={handleCloseQuickSettle} className="flex-1">
-                انصراف
-              </Button>
-              <Button
-                onClick={confirmQuickSettle}
-                loading={createSettlementMutation.isPending}
-                className="flex-1"
-              >
-                تأیید تسویه
-              </Button>
-            </div>
-          </div>
-        )}
-      </BottomSheet>
+      {/* UX: Settlement Confirmation with Aggregation Support */}
+      {selectedSettlement && summary && (
+        <SettlementConfirmDialog
+          isOpen={showQuickSettle}
+          onClose={handleCloseQuickSettle}
+          onConfirm={confirmQuickSettle}
+          fromName={selectedSettlement.fromName}
+          toName={selectedSettlement.toName}
+          amount={selectedSettlement.totalAmount}
+          currency={summary.currency}
+          isAggregated={selectedSettlement.isAggregated}
+          settlementCount={selectedSettlement.originalCount}
+          loading={createSettlementMutation.isPending}
+        />
+      )}
     </main>
   )
 }
