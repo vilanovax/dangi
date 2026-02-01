@@ -7,6 +7,7 @@ import { getTemplate } from '@/lib/domain/templates'
 import { getRecentPeriods, formatPeriodKey } from '@/lib/utils/persian-date'
 import {
   calculateHeavyExpenseThreshold,
+  getHeavyExpenses,
   type Expense as AnalyticsExpense,
 } from '@/lib/utils/expense-analytics'
 import {
@@ -513,6 +514,38 @@ export default function ExpensesPage() {
             }
           }}
         />
+
+        {/* Heavy Expenses Helper Text - Friendly & Informative */}
+        {smartFilter === 'heavy' && filteredExpenses.length > 0 && (() => {
+          const heavyResult = getHeavyExpenses(expenses as AnalyticsExpense[])
+          const { meta } = heavyResult
+
+          // Generate friendly helper text
+          const getHelperText = () => {
+            if (meta.count === 1) {
+              return 'بیشترین خرج سفر مربوط به این مورده'
+            }
+            return `این ${meta.count} خرج، ${meta.percentageOfTotalSpend}٪ کل هزینه‌های سفر رو ساخته`
+          }
+
+          return (
+            <div className="px-4 pt-3 pb-2" style={{ backgroundColor: 'var(--building-surface)' }}>
+              <div
+                className="px-3 py-2 rounded-lg"
+                style={{
+                  backgroundColor: 'var(--building-warning-alpha)',
+                  borderWidth: '1px',
+                  borderStyle: 'solid',
+                  borderColor: 'var(--building-warning-soft)',
+                }}
+              >
+                <p className="text-xs" style={{ color: 'var(--building-text-secondary)' }}>
+                  {getHelperText()}
+                </p>
+              </div>
+            </div>
+          )
+        })()}
 
         {/* Category Filter Indicator from Summary */}
         {categoryFilterName && filterType === 'category' && (

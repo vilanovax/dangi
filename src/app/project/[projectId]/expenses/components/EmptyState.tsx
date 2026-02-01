@@ -6,9 +6,13 @@ interface EmptyStateProps {
 }
 
 /**
- * Empty state for expenses list - Final Polish
- * Friendly and encouraging, not discouraging
- * Uses building design tokens
+ * Empty state for expenses list - Friendly and Casual Tone
+ *
+ * Microcopy Philosophy:
+ * - Encouraging, not discouraging
+ * - Uses informal "تو" instead of formal "شما"
+ * - Avoids analytics terminology
+ * - Creates positive emotional response
  */
 export function EmptyState({ isFiltered, onClearFilters }: EmptyStateProps) {
   return (
@@ -20,10 +24,10 @@ export function EmptyState({ isFiltered, onClearFilters }: EmptyStateProps) {
         <span className="text-4xl">{isFiltered ? '🔍' : '✨'}</span>
       </div>
       <p className="font-medium" style={{ color: 'var(--building-text-primary)' }}>
-        {isFiltered ? 'خرجی پیدا نشد' : 'هنوز خرجی ثبت نشده'}
+        {isFiltered ? 'خرج سنگینی پیدا نشد' : 'هنوز خرجی ثبت نشده'}
       </p>
       <p className="text-sm mt-1" style={{ color: 'var(--building-text-secondary)' }}>
-        {isFiltered ? 'فیلتر دیگه‌ای امتحان کنید' : 'اولین خرج رو ثبت کنید'}
+        {isFiltered ? 'فیلتر دیگه‌ای امتحان کن' : 'اولین خرج سفر رو ثبت کن'}
       </p>
       {isFiltered && (
         <button

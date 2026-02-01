@@ -33,18 +33,18 @@ export function ExpensesHeader({
   unsettledAmount,
   onBack,
 }: ExpensesHeaderProps) {
-  // Determine secondary info to show
+  // Determine secondary info to show - Friendly Microcopy
   const getSecondaryInfo = () => {
     if (unsettledAmount && unsettledAmount > 0) {
       return {
-        label: 'در انتظار تسویه',
+        label: 'هنوز تسویه نکردی',
         amount: unsettledAmount,
         color: 'text-orange-200',
       }
     }
     if (myTotalShare && myTotalShare > 0) {
       return {
-        label: 'سهم تو تا الان',
+        label: 'سهم شما تا اینجا',
         amount: myTotalShare,
         color: 'text-white/70',
       }

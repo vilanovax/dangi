@@ -168,7 +168,7 @@ export function ExpenseItem({
               {formatMoney(amount, currency)}
             </p>
 
-            {/* Status Badge - Subtle, non-dominant */}
+            {/* Status Badge - Friendly Tone */}
             {myParticipantId && payer.id !== myParticipantId && myShare && myShare > 0 && (
               <span
                 className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium"
@@ -178,19 +178,20 @@ export function ExpenseItem({
                     : 'var(--building-warning-alpha)',
                   color: isSettled ? 'var(--building-success)' : 'var(--building-warning)',
                 }}
+                title={isSettled ? 'حسابش صافه' : 'هنوز تسویه نشده'}
               >
-                {isSettled ? 'تسویه‌شده' : 'در انتظار'}
+                {isSettled ? 'تسویه شده' : 'تسویه نشده'}
               </span>
             )}
           </div>
 
-          {/* User Share - Personalized info */}
-          {myShare && myShare > 0 && (
+          {/* User Share - Friendly, Conversational */}
+          {myShare !== undefined && (
             <p
               className="text-xs font-semibold mb-1"
-              style={{ color: 'var(--building-info)' }}
+              style={{ color: myShare > 0 ? 'var(--building-info)' : 'var(--building-text-muted)' }}
             >
-              سهم تو: {formatMoney(myShare, currency)}
+              {myShare > 0 ? `سهم شما: ${formatMoney(myShare, currency)}` : 'سهمی نداری'}
             </p>
           )}
 

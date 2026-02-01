@@ -247,7 +247,7 @@ export function ExpenseDetailSheet({
         {expense.shares && expense.shares.length > 0 && (
           <div>
             <h3 className="text-xs font-medium mb-3" style={{ color: t('text-secondary') }}>
-              تقسیم هزینه بین {expense.shares.length} نفر
+              تقسیم بین هم‌سفرها
             </h3>
             <div className="space-y-2">
               {expense.shares.map((share) => {
@@ -330,7 +330,7 @@ export function ExpenseDetailSheet({
           {/* Delete Button - Destructive action */}
           <button
             onClick={onDelete}
-            className="px-5 py-3.5 rounded-xl font-medium transition-all active:scale-[0.98] flex items-center justify-center"
+            className="px-5 py-3.5 rounded-xl font-medium transition-all active:scale-[0.98] flex items-center justify-center gap-2"
             style={{
               backgroundColor: t('danger-alpha'),
               color: t('danger'),
@@ -342,6 +342,7 @@ export function ExpenseDetailSheet({
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
+            حذف خرج
           </button>
         </div>
       </div>
