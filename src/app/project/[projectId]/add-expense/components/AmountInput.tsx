@@ -11,6 +11,7 @@ interface AmountInputProps {
   sharePerPerson: number | null
   participantCount: number
   participantTerm: string
+  autoFocus?: boolean
 }
 
 /**
@@ -31,6 +32,7 @@ export function AmountInput({
   sharePerPerson,
   participantCount,
   participantTerm,
+  autoFocus,
 }: AmountInputProps) {
   return (
     <div className="bg-gradient-to-br from-blue-50/80 to-indigo-50/50 dark:from-blue-950/30 dark:to-indigo-950/20 rounded-3xl p-6 text-center border border-blue-100/50 dark:border-blue-900/30">
@@ -47,6 +49,7 @@ export function AmountInput({
           placeholder="۰"
           value={value}
           onChange={(e) => onChange(formatInputAmount(e.target.value))}
+          autoFocus={autoFocus}
           className="text-5xl font-bold text-center w-full bg-transparent border-none outline-none text-gray-800 dark:text-gray-100 placeholder:text-gray-300 dark:placeholder:text-gray-700"
         />
         <span className="text-lg text-gray-400 dark:text-gray-500 font-medium flex-shrink-0">

@@ -81,7 +81,7 @@ export function SettlementConfirmDialog({
         {/* Action Buttons */}
         <div className="flex gap-3">
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={onClose}
             className="flex-1"
             disabled={loading}

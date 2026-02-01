@@ -5,7 +5,7 @@
  * in React components with proper memoization.
  */
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import {
   getHeavyExpenses,
   calculateHeavyExpenseThreshold,
@@ -111,7 +111,7 @@ export function ExpenseItemWithHighlight({
 type FilterMode = 'all' | 'heavy'
 
 export function ExpenseListWithTabs({ expenses }: ExpenseListProps) {
-  const [filter, setFilter] = React.useState<FilterMode>('all')
+  const [filter, setFilter] = useState<FilterMode>('all')
 
   // Pre-calculate heavy expenses (memoized)
   const { heavyExpenses, meta } = useMemo(() => getHeavyExpenses(expenses), [expenses])

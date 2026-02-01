@@ -789,6 +789,9 @@ function SettlementSuggestionCard({
   amount,
   currency,
   onSettle,
+  isAggregated,
+  originalCount,
+  originalSettlements,
 }: {
   fromName: string
   fromAvatar: AvatarData | null
@@ -797,6 +800,9 @@ function SettlementSuggestionCard({
   amount: number
   currency: string
   onSettle: () => void
+  isAggregated?: boolean
+  originalCount?: number
+  originalSettlements?: any[]
 }) {
   return (
     <Card className="p-4">

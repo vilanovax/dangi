@@ -398,7 +398,6 @@ export default function ProjectPage() {
                 paidBy={expense.paidBy}
                 category={expense.category}
                 expenseDate={expense.expenseDate}
-                shares={expense.shares}
                 myParticipantId={myParticipantId}
                 onClick={() => handleExpenseClick(expense.id)}
               />
@@ -490,7 +489,7 @@ export default function ProjectPage() {
         settlementCount={getSettlementCount()}
         projectId={projectId}
         myParticipantId={myParticipantId}
-        template={project.template}
+        template={project.template as 'building' | 'travel' | 'family' | 'gathering'}
         onEdit={handleEditParticipant}
         onDelete={handleDeleteParticipant}
         onTransferBalance={handleTransferBalance}
@@ -521,7 +520,7 @@ export default function ProjectPage() {
         }}
         expense={selectedExpense}
         projectId={projectId}
-        template={project.template}
+        template={project.template as 'building' | 'travel' | 'family' | 'gathering'}
         onEdit={handleEditExpense}
         onDelete={handleDeleteExpense}
       />

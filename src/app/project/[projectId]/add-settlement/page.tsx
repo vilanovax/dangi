@@ -105,12 +105,12 @@ export default function AddSettlementPage() {
     }
 
     // Find largest debtor (most negative balance)
-    const largestDebtor = balances.reduce((max, p) =>
+    const largestDebtor = balances.reduce((max: ParticipantBalance, p: ParticipantBalance) =>
       p.balance < max.balance ? p : max
     )
 
     // Find largest creditor (most positive balance)
-    const largestCreditor = balances.reduce((max, p) =>
+    const largestCreditor = balances.reduce((max: ParticipantBalance, p: ParticipantBalance) =>
       p.balance > max.balance ? p : max
     )
 
@@ -202,8 +202,8 @@ export default function AddSettlementPage() {
 
     // Balance validation
     if (summary) {
-      const fromBalance = summary.participantBalances.find(b => b.participantId === fromId)
-      const toBalance = summary.participantBalances.find(b => b.participantId === toId)
+      const fromBalance = summary.participantBalances.find((b: ParticipantBalance) => b.participantId === fromId)
+      const toBalance = summary.participantBalances.find((b: ParticipantBalance) => b.participantId === toId)
 
       if (fromBalance && toBalance) {
         // Calculate the actual outstanding balance between these two participants
@@ -257,8 +257,8 @@ export default function AddSettlementPage() {
 
   // ── Computed Values ─────────────────────────────────────────
 
-  const fromParticipant = project?.participants.find((p) => p.id === fromId) || null
-  const toParticipant = project?.participants.find((p) => p.id === toId) || null
+  const fromParticipant = project?.participants.find((p: Participant) => p.id === fromId) || null
+  const toParticipant = project?.participants.find((p: Participant) => p.id === toId) || null
   const parsedAmount = parseMoney(amount)
 
   // Validation state
@@ -268,8 +268,8 @@ export default function AddSettlementPage() {
   let balanceError = ''
 
   if (summary && fromId && toId && parsedAmount) {
-    const fromBalance = summary.participantBalances.find(b => b.participantId === fromId)
-    const toBalance = summary.participantBalances.find(b => b.participantId === toId)
+    const fromBalance = summary.participantBalances.find((b: ParticipantBalance) => b.participantId === fromId)
+    const toBalance = summary.participantBalances.find((b: ParticipantBalance) => b.participantId === toId)
 
     if (fromBalance && toBalance) {
       const outstandingBalance = Math.abs(fromBalance.balance - toBalance.balance)

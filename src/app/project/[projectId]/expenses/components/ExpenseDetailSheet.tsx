@@ -254,7 +254,7 @@ export function ExpenseDetailSheet({
                       {isMe && (
                         <div
                           className="absolute inset-0 rounded-full ring-2"
-                          style={{ ringColor: t('success') }}
+                          style={{ '--tw-ring-color': t('success') } as React.CSSProperties}
                         />
                       )}
                     </div>
