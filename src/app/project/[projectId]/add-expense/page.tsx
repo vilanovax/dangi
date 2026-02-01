@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Button, Input, BottomSheet, ImageUpload } from '@/components/ui'
 import { UnifiedHeader, FormLayout, FormSection, FormError } from '@/components/layout'
@@ -53,6 +53,8 @@ export default function AddExpensePage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [expenses, setExpenses] = useState<Array<{ categoryId?: string | null }>>([])
+
 
   // Form state
   const [title, setTitle] = useState('')
@@ -113,20 +115,31 @@ export default function AddExpensePage() {
 
   const fetchProject = async () => {
     try {
-      const res = await fetch(`/api/projects/${projectId}`)
-      if (!res.ok) throw new Error('پروژه یافت نشد')
+      // Fetch project and expenses in parallel
+      const [projectRes, expensesRes] = await Promise.all([
+        fetch(`/api/projects/${projectId}`),
+        fetch(`/api/projects/${projectId}/expenses?limit=100`),
+      ])
 
-      const data = await res.json()
-      setProject(data.project)
+      if (!projectRes.ok) throw new Error('پروژه یافت نشد')
+
+      const projectData = await projectRes.json()
+      setProject(projectData.project)
+
+      // Load expenses for category usage sorting
+      if (expensesRes.ok) {
+        const expensesData = await expensesRes.json()
+        setExpenses(expensesData.expenses || [])
+      }
 
       // Load template
-      const projectTemplate = getTemplate(data.project.template)
+      const projectTemplate = getTemplate(projectData.project.template)
       setTemplate(projectTemplate)
 
       // UX: Smart Defaults - Set defaults to minimize form interactions
-      if (data.project.participants.length > 0) {
-        setPaidById(data.project.participants[0].id) // Default: current user
-        setIncludedParticipantIds(data.project.participants.map((p: Participant) => p.id)) // Default: all participants
+      if (projectData.project.participants.length > 0) {
+        setPaidById(projectData.project.participants[0].id) // Default: current user
+        setIncludedParticipantIds(projectData.project.participants.map((p: Participant) => p.id)) // Default: all participants
       }
     } catch {
       setError('خطا در بارگذاری پروژه')
@@ -311,6 +324,35 @@ export default function AddExpensePage() {
   const isHangout = template.id === 'gathering'
   const parsedAmount = parseMoney(amount)
 
+  // UX: Sort categories by usage frequency (most used first)
+  const sortedCategories = useMemo(() => {
+    if (!project.categories.length || !expenses.length) {
+      return project.categories
+    }
+
+    // Count usage for each category
+    const usageCount = new Map<string, number>()
+    expenses.forEach((expense) => {
+      if (expense.categoryId) {
+        usageCount.set(expense.categoryId, (usageCount.get(expense.categoryId) || 0) + 1)
+      }
+    })
+
+    // Sort categories: most used first, then alphabetically for unused ones
+    return [...project.categories].sort((a, b) => {
+      const aCount = usageCount.get(a.id) || 0
+      const bCount = usageCount.get(b.id) || 0
+
+      // If usage counts differ, sort by count (descending)
+      if (aCount !== bCount) {
+        return bCount - aCount
+      }
+
+      // If same usage count, sort alphabetically
+      return a.name.localeCompare(b.name, 'fa')
+    })
+  }, [project.categories, expenses])
+
   // UX: Dynamic CTA label with amount
   const getSubmitButtonLabel = () => {
     if (submitting) return labels.submittingButton
@@ -388,9 +430,9 @@ export default function AddExpensePage() {
           helper="یه عنوان کوتاه که بعداً راحت پیداش کنی"
         />
 
-        {/* UX: Category - Optional, lightweight selection */}
+        {/* UX: Category - Optional, sorted by usage frequency */}
         <CategorySelector
-          categories={project.categories}
+          categories={sortedCategories}
           selectedId={categoryId}
           onSelect={setCategoryId}
           onAddNew={() => setShowAddCategory(true)}
