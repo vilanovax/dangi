@@ -180,6 +180,28 @@ export function ExpenseDetailSheet({
     }
   }
 
+  // Computed values (must be before any conditional returns)
+  const selectedPayer = participants.find(p => p.id === paidById)
+
+  // Use project categories if available, otherwise fallback to static ones
+  const availableCategories = categories.length > 0 ? categories : COMMON_EXPENSE_TYPES.map(c => ({
+    id: c.id,
+    name: c.name,
+    icon: c.icon,
+    color: c.color,
+  }))
+
+  const selectedCategory = availableCategories.find(c => c.id === selectedCategoryId)
+
+  // Period display for edit mode
+  const periodDisplay = useMemo(() => {
+    if (!periodKey) return null
+    const [year, month] = periodKey.split('-')
+    const monthInfo = PERSIAN_MONTHS.find(m => m.key === month)
+    return `${monthInfo?.name} ${year}`
+  }, [periodKey])
+
+  // Early return after all hooks
   if (!expense) return null
 
   const formattedDate = new Date(expense.expenseDate).toLocaleDateString('fa-IR', {
@@ -286,26 +308,6 @@ export function ExpenseDetailSheet({
       setSaving(false)
     }
   }
-
-  const selectedPayer = participants.find(p => p.id === paidById)
-
-  // Use project categories if available, otherwise fallback to static ones
-  const availableCategories = categories.length > 0 ? categories : COMMON_EXPENSE_TYPES.map(c => ({
-    id: c.id,
-    name: c.name,
-    icon: c.icon,
-    color: c.color,
-  }))
-
-  const selectedCategory = availableCategories.find(c => c.id === selectedCategoryId)
-
-  // Period display for edit mode
-  const periodDisplay = useMemo(() => {
-    if (!periodKey) return null
-    const [year, month] = periodKey.split('-')
-    const monthInfo = PERSIAN_MONTHS.find(m => m.key === month)
-    return `${monthInfo?.name} ${year}`
-  }, [periodKey])
 
   // If in edit mode, render edit form
   if (editMode) {
