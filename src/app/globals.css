@@ -282,6 +282,36 @@
   --danger-text: #f87171;
 }
 
+/* ─────────────────────────────────────────────────────────── */
+/* Travel Checklist Tokens                                     */
+/* ─────────────────────────────────────────────────────────── */
+/* Principle: Lightweight, supportive, minimal                 */
+/* ─────────────────────────────────────────────────────────── */
+
+:root {
+  /* Surface */
+  --checklist-bg: var(--travel-surface-muted);
+  --checklist-item-bg: var(--travel-surface);
+  --checklist-radius: 16px;
+  --checklist-gap: 8px;
+
+  /* Text */
+  --checklist-text-primary: var(--travel-text-primary);
+  --checklist-text-muted: var(--travel-text-muted);
+
+  /* Status */
+  --checklist-active: var(--travel-primary);
+  --checklist-done: #9ca3af;
+
+  /* Motion (subtle) */
+  --checklist-motion-fast: 150ms;
+  --checklist-motion-ease: ease-out;
+
+  /* Checkbox */
+  --checklist-checkbox-bg: var(--travel-surface);
+  --checklist-checkbox-checked: var(--travel-success);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

@@ -40,6 +40,7 @@ model Project {
   participants          Participant[]
   settlements           Settlement[]
   shoppingItems         ShoppingItem[]          // چک‌لیست خرید (برای template gathering)
+  travelChecklistItems  TravelChecklistItem[]   // چک‌لیست سفر (برای template travel)
   incomes               Income[]                // درآمدها (برای template family)
   incomeCategories      IncomeCategory[]        // دسته‌بندی درآمد (برای template family)
   budgets               Budget[]                // بودجه‌های ماهانه (برای template family)
@@ -57,15 +58,16 @@ model Participant {
   projectId             String
   userId                String?                 // اتصال به کاربر (اختیاری - برای مهمان‌ها null)
   createdAt             DateTime                @default(now())
-  expensesPaid          Expense[]               @relation("PaidBy")
-  expenseShares         ExpenseShare[]
-  settlementsFrom       Settlement[]            @relation("SettlementFrom")
-  settlementsTo         Settlement[]            @relation("SettlementTo")
-  shoppingItemsAdded    ShoppingItem[]          // آیتم‌های لیست خریدی که اضافه کرده
-  incomesReceived       Income[]                @relation("IncomeReceivedBy") // درآمدهای دریافت شده (برای template family)
-  recurringTransactions RecurringTransaction[]  // تراکنش‌های تکراری این شخص
-  project               Project                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user                  User?                   @relation(fields: [userId], references: [id])
+  expensesPaid            Expense[]               @relation("PaidBy")
+  expenseShares           ExpenseShare[]
+  settlementsFrom         Settlement[]            @relation("SettlementFrom")
+  settlementsTo           Settlement[]            @relation("SettlementTo")
+  shoppingItemsAdded      ShoppingItem[]          // آیتم‌های لیست خریدی که اضافه کرده
+  travelChecklistItems    TravelChecklistItem[]   @relation("TravelChecklistCreator") // کارهای سفر که اضافه کرده
+  incomesReceived         Income[]                @relation("IncomeReceivedBy") // درآمدهای دریافت شده (برای template family)
+  recurringTransactions   RecurringTransaction[]  // تراکنش‌های تکراری این شخص
+  project                 Project                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user                    User?                   @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([projectId])
@@ -183,6 +185,23 @@ model ShoppingItem {
 
   @@index([projectId])
   @@index([projectId, createdAt])
+}
+
+// چک‌لیست سفر - کارهای مورد نیاز برای سفر (فقط برای template travel)
+model TravelChecklistItem {
+  id          String       @id @default(cuid())
+  text        String       // متن کار (مثلاً "خرید آب")
+  status      String       @default("active") // "active" | "done"
+  createdById String       // کی اضافه کرده
+  completedAt DateTime?    // زمان انجام شدن
+  projectId   String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy   Participant  @relation("TravelChecklistCreator", fields: [createdById], references: [id])
+
+  @@index([projectId, status])
+  @@index([status, completedAt]) // For auto-cleanup query
 }
 
 // ═══════════════════════════════════════════════════════════════

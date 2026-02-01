@@ -261,3 +261,115 @@ export const checklistService = {
   reorderItems,
   getChecklistStats,
 }
+
+// ═══════════════════════════════════════════════════════════════
+// TRAVEL CHECKLIST (Project-specific)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Get all travel checklist items for a project
+ */
+export async function getTravelChecklist(projectId: string) {
+  const items = await prisma.travelChecklistItem.findMany({
+    where: { projectId },
+    include: {
+      createdBy: {
+        select: {
+          name: true,
+        },
+      },
+    },
+    orderBy: [
+      { status: 'asc' }, // Active first
+      { createdAt: 'desc' },
+    ],
+  })
+
+  return items.map((item) => ({
+    id: item.id,
+    text: item.text,
+    status: item.status as 'active' | 'done',
+    createdById: item.createdById,
+    createdByName: item.createdBy.name,
+    completedAt: item.completedAt?.toISOString() || null,
+    projectId: item.projectId,
+    createdAt: item.createdAt.toISOString(),
+    updatedAt: item.updatedAt.toISOString(),
+  }))
+}
+
+/**
+ * Create a new travel checklist item
+ */
+export async function createTravelChecklistItem(
+  projectId: string,
+  createdById: string,
+  text: string
+) {
+  return prisma.travelChecklistItem.create({
+    data: {
+      projectId,
+      createdById,
+      text: text.trim(),
+      status: 'active',
+    },
+    include: {
+      createdBy: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  })
+}
+
+/**
+ * Toggle travel checklist item status (active ↔ done)
+ */
+export async function toggleTravelChecklistItem(
+  itemId: string,
+  status: 'active' | 'done'
+) {
+  return prisma.travelChecklistItem.update({
+    where: { id: itemId },
+    data: {
+      status,
+      completedAt: status === 'done' ? new Date() : null,
+    },
+    include: {
+      createdBy: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  })
+}
+
+/**
+ * Delete a travel checklist item
+ */
+export async function deleteTravelChecklistItem(itemId: string) {
+  return prisma.travelChecklistItem.delete({
+    where: { id: itemId },
+  })
+}
+
+/**
+ * Auto-cleanup: Delete completed items older than 24 hours
+ * Run this as a cron job
+ */
+export async function cleanupCompletedTravelChecklistItems() {
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+
+  const result = await prisma.travelChecklistItem.deleteMany({
+    where: {
+      status: 'done',
+      completedAt: {
+        lt: twentyFourHoursAgo,
+      },
+    },
+  })
+
+  return result.count
+}

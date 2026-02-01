@@ -10,6 +10,10 @@ export type {
   CreateShoppingItemInput,
   UpdateShoppingItemInput,
 } from './shopping'
+export type {
+  TravelChecklistItem,
+  TravelChecklistStats,
+} from './checklist'
 export type { CategoryBreakdown, ParticipantExpenseBreakdown } from './category-breakdown'
 
 // Family Finance Template Types

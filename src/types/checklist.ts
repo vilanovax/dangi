@@ -111,3 +111,31 @@ export interface ChecklistShare {
   expiresAt?: string | null
   createdAt: string
 }
+
+// ═══════════════════════════════════════════════════════════════
+// Travel Checklist Types (Project-specific)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Travel checklist item
+ * Lightweight checklist for travel tasks
+ */
+export interface TravelChecklistItem {
+  id: string
+  text: string
+  status: 'active' | 'done'
+  createdById: string
+  createdByName?: string
+  completedAt?: string | null
+  projectId: string
+  createdAt: string
+  updatedAt: string
+}
+
+/**
+ * Travel checklist stats
+ */
+export interface TravelChecklistStats {
+  totalActive: number
+  totalDone: number
+}

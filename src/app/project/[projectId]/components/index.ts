@@ -14,6 +14,9 @@ export { ShoppingChecklistTab } from './ShoppingChecklistTab'
 export { ShoppingItemCard } from './ShoppingItemCard'
 export { ShoppingItemInput } from './ShoppingItemInput'
 
+// Travel checklist components (travel template)
+export { ChecklistCard } from './ChecklistCard'
+
 // Personal finance components (personal template)
 export { PersonalSplitDashboard } from './PersonalSplitDashboard'
 export { PersonalTrackingDashboard } from './PersonalTrackingDashboard'

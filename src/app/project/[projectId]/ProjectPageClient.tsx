@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { Button, FloatingButton } from '@/components/ui'
 import Link from 'next/link'
-import type { Participant, Project, Settlement, Summary } from '@/types'
+import type { Participant, Project, Settlement, Summary, TravelChecklistItem } from '@/types'
 import {
   DashboardHeader,
   HangoutHeader,
@@ -16,6 +16,7 @@ import {
   ShoppingChecklistTab,
   PersonalSplitDashboard,
   PersonalTrackingDashboard,
+  ChecklistCard,
 } from './components'
 
 // Lazy load heavy bottom sheets (only when opened)
@@ -46,6 +47,7 @@ export default function ProjectPage() {
   const [settlements, setSettlements] = useState<Settlement[]>([])
   const [summary, setSummary] = useState<Summary | null>(null)
   const [myParticipantId, setMyParticipantId] = useState<string | null>(null)
+  const [checklistItems, setChecklistItems] = useState<TravelChecklistItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -105,10 +107,23 @@ export default function ProjectPage() {
     }
   }, [projectId])
 
+  const fetchChecklist = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}/travel-checklist`)
+      if (res.ok) {
+        const data = await res.json()
+        setChecklistItems(data.items)
+      }
+    } catch {
+      // Silently fail for checklist
+    }
+  }, [projectId])
+
   useEffect(() => {
     fetchProject()
     fetchSettlements()
     fetchSummary()
+    fetchChecklist()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId])
 
@@ -142,6 +157,7 @@ export default function ProjectPage() {
     fetchProject()
     fetchSettlements()
     fetchSummary()
+    fetchChecklist()
     setSelectedParticipant(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -309,6 +325,17 @@ export default function ProjectPage() {
         )
       ) : (
         <QuickActions projectId={projectId} template={project.template} isSettled={isAllSettled} />
+      )}
+
+      {/* Travel Checklist */}
+      {project.template === 'travel' && (
+        <div className="px-4 mb-4">
+          <ChecklistCard
+            projectId={projectId}
+            items={checklistItems}
+            onUpdate={handleRefreshData}
+          />
+        </div>
       )}
 
       {/* Participants */}
