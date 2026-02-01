@@ -4,7 +4,7 @@ import { getProjectSettlements } from '@/lib/services/settlement.service'
 import { calculateProjectSummary } from '@/lib/domain/summaryCalculator'
 import { PERSIAN_MONTHS, getCurrentPersianYear, getCurrentPersianMonth } from '@/lib/utils/persian-date'
 import type { CategoryBreakdown, ParticipantExpenseBreakdown } from '@/types'
-import { requireProjectAccess } from '@/lib/utils/auth'
+import { requireProjectAccessWithLink } from '@/lib/utils/auth'
 import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
@@ -87,8 +87,8 @@ export async function GET(
   try {
     const { projectId } = await context.params
 
-    // Authorization check: user must be a participant
-    const authResult = await requireProjectAccess(projectId)
+    // Authorization check: user must be a participant OR have link access with summary:read scope
+    const authResult = await requireProjectAccessWithLink(projectId, ['summary:read'])
     if (!authResult.authorized) {
       return authResult.response
     }

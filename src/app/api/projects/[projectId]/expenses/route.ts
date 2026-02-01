@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createExpense, getProjectExpenses } from '@/lib/services/expense.service'
 import { getProjectById } from '@/lib/services/project.service'
-import { requireProjectAccess } from '@/lib/utils/auth'
+import { requireProjectAccessWithLink } from '@/lib/utils/auth'
 import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
@@ -15,8 +15,8 @@ export async function GET(
   try {
     const { projectId } = await context.params
 
-    // Authorization check: user must be a participant
-    const authResult = await requireProjectAccess(projectId)
+    // Authorization check: user must be a participant OR have link access with expenses:read scope
+    const authResult = await requireProjectAccessWithLink(projectId, ['expenses:read'])
     if (!authResult.authorized) {
       return authResult.response
     }
@@ -53,8 +53,8 @@ export async function POST(
   try {
     const { projectId } = await context.params
 
-    // Authorization check: user must be a participant
-    const authResult = await requireProjectAccess(projectId)
+    // Authorization check: user must be a participant OR have link access with expenses:create scope
+    const authResult = await requireProjectAccessWithLink(projectId, ['expenses:create'])
     if (!authResult.authorized) {
       return authResult.response
     }
