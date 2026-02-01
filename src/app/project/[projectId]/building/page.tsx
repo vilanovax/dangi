@@ -438,7 +438,9 @@ export default function BuildingDashboard() {
                 </svg>
               )
             },
-          ].map((tab) => (
+          ]
+            .filter((tab) => tab.key !== 'payments') // Hide charge tab for now
+            .map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as TabType)}
@@ -1153,233 +1155,229 @@ function OverviewTab({
   const hasNoPayments = currentMonth?.paidCount === 0
   const isLowCollection = (stats.yearStats?.percentage || 0) < 30
   const isFullySettled = stats.yearStats?.remaining === 0
+  const unpaidUnitsCount = stats.participantStats.filter(u => u.status !== 'complete').length
 
   return (
-    <div className="space-y-4">
-      {/* Smart Hint - Decision Guidance */}
-      {isFullySettled ? (
-        <Card className="p-4" style={{
-          background: `linear-gradient(to right, var(--building-success-soft), var(--building-success-alpha))`,
-          borderColor: 'var(--building-success)'
+    <div className="space-y-3">
+      {/* 1️⃣ Consolidated Alert - Single, Actionable, No Redundancy */}
+      {!isFullySettled && isLowCollection && unpaidUnitsCount > 0 && (
+        <Card className="p-3" style={{
+          backgroundColor: 'var(--building-warning-alpha)',
+          borderColor: 'var(--building-warning)',
+          borderWidth: '1.5px'
         }}>
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{
-              backgroundColor: 'var(--building-success-alpha)'
-            }}>
-              <span className="text-2xl">🎉</span>
-            </div>
-            <div className="flex-1">
-              <h3 className="font-bold" style={{ color: 'var(--building-text-primary)' }}>همه واحدها تسویه شدند!</h3>
-              <p className="text-sm" style={{ color: 'var(--building-text-secondary)' }}>وضعیت مالی کاملاً سالم است</p>
-            </div>
-          </div>
-        </Card>
-      ) : isLowCollection ? (
-        <Card className="p-4" style={{
-          background: `linear-gradient(to right, var(--building-warning-soft), var(--building-danger-soft))`,
-          borderColor: 'var(--building-warning)'
-        }}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{
-                backgroundColor: 'var(--building-warning-alpha)'
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 flex-1 min-w-0">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{
+                backgroundColor: 'var(--building-warning)'
               }}>
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{
-                  color: 'var(--building-warning)'
-                }}>
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
               </div>
-              <div className="flex-1">
-                <h3 className="font-bold" style={{ color: 'var(--building-text-primary)' }}>نرخ وصول پایین است</h3>
-                <p className="text-sm" style={{ color: 'var(--building-text-secondary)' }}>
-                  {stats.participantStats.filter(u => u.status !== 'complete').length} واحد بدهکار دارید
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-sm" style={{ color: 'var(--building-text-primary)' }}>
+                  {unpaidUnitsCount} واحد شارژ نپرداخته
+                </p>
+                <p className="text-xs" style={{ color: 'var(--building-text-secondary)' }}>
+                  نرخ وصول: {stats.yearStats.percentage}%
                 </p>
               </div>
             </div>
             <Button
               size="sm"
-              onClick={() => setActiveTab('units')}
-              className="whitespace-nowrap"
+              onClick={() => setActiveTab('months')}
+              className="whitespace-nowrap flex-shrink-0 font-semibold"
               style={{
                 backgroundColor: 'var(--building-warning)',
-                color: 'white'
+                color: 'white',
+                padding: '10px 16px'
               }}
             >
-              مشاهده بدهکاران
+              ثبت پرداخت
             </Button>
+          </div>
+        </Card>
+      )}
+
+      {isFullySettled && (
+        <Card className="p-3" style={{
+          backgroundColor: 'var(--building-success-alpha)',
+          borderColor: 'var(--building-success)',
+          borderWidth: '1.5px'
+        }}>
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{
+              backgroundColor: 'var(--building-success)'
+            }}>
+              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-sm" style={{ color: 'var(--building-text-primary)' }}>
+                تسویه کامل!
+              </p>
+              <p className="text-xs" style={{ color: 'var(--building-text-secondary)' }}>
+                همه واحدها پرداخت کرده‌اند
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* 2️⃣ Unpaid Units - PRIORITY Section with Smart Prioritization */}
+      {currentMonth && currentMonth.unpaidCount > 0 && !isFullySettled ? (
+        <Card className="p-3.5" style={{
+          borderColor: 'var(--building-danger)',
+          borderWidth: '2px',
+          backgroundColor: 'var(--building-surface)'
+        }}>
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h3 className="font-extrabold text-base" style={{ color: 'var(--building-text-primary)' }}>
+                واحدهای بدهکار
+              </h3>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--building-text-secondary)' }}>
+                {currentMonth.unpaidCount} واحد بدون پرداخت
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            {stats.participantStats
+              .filter(unit => unit.status !== 'complete' && unit.paidMonths < 12)
+              // ⭐ Smart Prioritization: Sort by highest debt first
+              .sort((a, b) => (12 - a.paidMonths) - (12 - b.paidMonths))
+              .reverse()
+              .slice(0, 4)
+              .map(unit => {
+                const unpaidMonths = 12 - unit.paidMonths
+                // 🎨 Visual Priority: Color based on debt severity
+                const getSeverityColors = (months: number) => {
+                  if (months >= 6) {
+                    return {
+                      badgeBg: 'var(--building-danger-alpha)',
+                      badgeColor: 'var(--building-danger)',
+                      buttonBg: 'var(--building-danger)',
+                      buttonColor: 'white'
+                    }
+                  } else if (months >= 3) {
+                    return {
+                      badgeBg: 'var(--building-warning-alpha)',
+                      badgeColor: 'var(--building-warning)',
+                      buttonBg: 'var(--building-warning)',
+                      buttonColor: 'white'
+                    }
+                  } else {
+                    return {
+                      badgeBg: 'var(--building-primary-alpha)',
+                      badgeColor: 'var(--building-primary)',
+                      buttonBg: 'var(--building-primary)',
+                      buttonColor: 'white'
+                    }
+                  }
+                }
+                const colors = getSeverityColors(unpaidMonths)
+
+                return (
+                  <button
+                    key={unit.id}
+                    className="w-full flex items-center justify-between p-2.5 rounded-lg transition-all active:scale-[0.98]"
+                    onClick={() => setActiveTab('months')}
+                    style={{
+                      backgroundColor: 'var(--building-surface-muted)',
+                      borderWidth: '1px',
+                      borderStyle: 'solid',
+                      borderColor: 'var(--building-border)'
+                    }}
+                  >
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <p className="font-bold text-sm truncate" style={{ color: 'var(--building-text-primary)' }}>
+                        {unit.name}
+                      </p>
+                      <span className="text-xs px-1.5 py-0.5 rounded font-medium" style={{
+                        backgroundColor: colors.badgeBg,
+                        color: colors.badgeColor
+                      }}>
+                        {unpaidMonths} ماه
+                      </span>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setActiveTab('months')
+                      }}
+                      className="flex-shrink-0 font-semibold"
+                      style={{
+                        backgroundColor: colors.buttonBg,
+                        color: colors.buttonColor,
+                        padding: '6px 12px',
+                        fontSize: '0.75rem'
+                      }}
+                    >
+                      ثبت
+                    </Button>
+                  </button>
+                )
+              })
+            }
+            {unpaidUnitsCount > 4 && (
+              <button
+                onClick={() => setActiveTab('units')}
+                className="w-full py-2.5 px-3 text-sm font-bold rounded-lg transition-all active:scale-95 flex items-center justify-center gap-2"
+                style={{
+                  backgroundColor: 'var(--building-surface-muted)',
+                  color: 'var(--building-text-primary)',
+                  borderWidth: '1px',
+                  borderStyle: 'solid',
+                  borderColor: 'var(--building-border)'
+                }}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+                مشاهده همه واحدهای بدهکار ({unpaidUnitsCount})
+              </button>
+            )}
+          </div>
+        </Card>
+      ) : currentMonth && currentMonth.unpaidCount === 0 ? (
+        <Card className="p-3" style={{
+          backgroundColor: 'var(--building-success-alpha)',
+          borderColor: 'var(--building-success)',
+          borderWidth: '1.5px'
+        }}>
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{
+              backgroundColor: 'var(--building-success)'
+            }}>
+              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div>
+              <p className="font-bold text-sm" style={{ color: 'var(--building-text-primary)' }}>
+                ماه {currentMonth.monthName} تسویه شد
+              </p>
+              <p className="text-xs" style={{ color: 'var(--building-text-secondary)' }}>
+                همه واحدها پرداخت کردند
+              </p>
+            </div>
           </div>
         </Card>
       ) : null}
 
-      {/* Current Month Status - Enhanced CTA */}
-      {currentMonth && (
-        <Card className="p-4" style={{
-          backgroundColor: hasNoPayments ? 'var(--building-warning-soft)' : 'var(--building-surface)',
-          borderColor: hasNoPayments ? 'var(--building-warning)' : 'var(--building-border)'
+      {/* 3️⃣ Smart Hint - Lightweight Guidance */}
+      {currentMonth && currentMonth.unpaidCount > 0 && currentMonth.unpaidCount <= 3 && (
+        <div className="px-3 py-2 rounded-lg text-xs" style={{
+          backgroundColor: 'var(--building-info-alpha)',
+          color: 'var(--building-text-secondary)'
         }}>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-bold" style={{ color: 'var(--building-text-primary)' }}>
-              ماه جاری ({currentMonth.monthName})
-            </h3>
-            {!hasNoPayments && (
-              <button
-                onClick={() => setActiveTab('months')}
-                className="text-sm font-medium hover:underline"
-                style={{ color: 'var(--building-primary)' }}
-              >
-                ثبت پرداخت
-              </button>
-            )}
-          </div>
-
-          {hasNoPayments ? (
-            <div className="text-center py-6">
-              <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3" style={{
-                backgroundColor: 'var(--building-warning-alpha)'
-              }}>
-                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{
-                  color: 'var(--building-warning)'
-                }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <p className="font-medium mb-1" style={{ color: 'var(--building-text-primary)' }}>
-                هنوز پرداختی ثبت نشده
-              </p>
-              <p className="text-sm mb-4" style={{ color: 'var(--building-text-secondary)' }}>
-                اولین پرداخت ماه را ثبت کنید
-              </p>
-              <Button
-                onClick={() => setActiveTab('months')}
-                style={{
-                  backgroundColor: 'var(--building-primary)',
-                  color: 'white'
-                }}
-              >
-                ثبت اولین پرداخت
-              </Button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div className="p-3 rounded-xl" style={{
-                backgroundColor: currentMonth.paidCount > 0 ? 'var(--building-success-soft)' : 'var(--building-surface-muted)'
-              }}>
-                <p className="text-2xl font-bold" style={{
-                  color: currentMonth.paidCount > 0 ? 'var(--building-success)' : 'var(--building-text-muted)'
-                }}>
-                  {currentMonth.paidCount}
-                </p>
-                <p className="text-xs" style={{ color: 'var(--building-text-secondary)' }}>پرداخت شده</p>
-              </div>
-              <div className="p-3 rounded-xl" style={{
-                backgroundColor: currentMonth.unpaidCount > 0 ? 'var(--building-danger-soft)' : 'var(--building-surface-muted)'
-              }}>
-                <p className="text-2xl font-bold" style={{
-                  color: currentMonth.unpaidCount > 0 ? 'var(--building-danger)' : 'var(--building-text-muted)'
-                }}>
-                  {currentMonth.unpaidCount}
-                </p>
-                <p className="text-xs" style={{ color: 'var(--building-text-secondary)' }}>پرداخت نشده</p>
-              </div>
-              <div className="p-3 rounded-xl" style={{
-                backgroundColor: 'var(--building-info-soft)'
-              }}>
-                <p className="text-2xl font-bold" style={{ color: 'var(--building-info)' }}>
-                  {currentMonth.percentage}%
-                </p>
-                <p className="text-xs" style={{ color: 'var(--building-text-secondary)' }}>وصولی</p>
-              </div>
-            </div>
-          )}
-        </Card>
+          💡 با ثبت {currentMonth.unpaidCount} پرداخت، ماه {currentMonth.monthName} تسویه می‌شود
+        </div>
       )}
-
-      {/* Mini Chart - Monthly Trend (with empty state support) */}
-      <Card className="p-4">
-        <h3 className="font-bold mb-3" style={{ color: 'var(--building-text-primary)' }}>
-          روند وصول ماهیانه
-        </h3>
-        {stats.monthlyStats.every(m => m.totalPaid === 0) ? (
-          <div className="text-center py-6">
-            {/* Empty Chart Illustration */}
-            <div className="flex items-end gap-1 h-20 mb-4 opacity-15">
-              {stats.monthlyStats.slice(0, 6).map((month, i) => (
-                <div key={month.month} className="flex-1 flex flex-col items-center">
-                  <div className="w-full rounded-t" style={{
-                    height: `${25 + (i % 3) * 20}%`,
-                    backgroundColor: 'var(--building-text-muted)'
-                  }} />
-                </div>
-              ))}
-            </div>
-
-            {/* Empty State Message */}
-            {stats.chargePerUnit === 0 ? (
-              <>
-                <p className="text-sm font-medium mb-1.5" style={{ color: 'var(--building-text-primary)' }}>
-                  برای مشاهده روند، ابتدا شارژ ماهیانه را تنظیم کنید
-                </p>
-                <p className="text-xs mb-4" style={{ color: 'var(--building-text-secondary)' }}>
-                  با تنظیم شارژ، می‌توانید پرداخت‌های ماهیانه واحدها را پیگیری کنید
-                </p>
-                <Link href={`/project/${projectId}/charge-rules`}>
-                  <button
-                    className="px-4 py-2 rounded-lg text-sm font-medium text-white transition-all active:scale-95"
-                    style={{ backgroundColor: 'var(--building-primary)' }}
-                  >
-                    تنظیم شارژ ماهیانه
-                  </button>
-                </Link>
-              </>
-            ) : (
-              <>
-                <p className="text-sm font-medium mb-1.5" style={{ color: 'var(--building-text-primary)' }}>
-                  هنوز پرداختی ثبت نشده است
-                </p>
-                <p className="text-xs mb-4" style={{ color: 'var(--building-text-secondary)' }}>
-                  با ثبت پرداخت‌های ماهیانه، روند وصول نمایش داده می‌شود
-                </p>
-                <button
-                  onClick={() => setActiveTab('months')}
-                  className="px-4 py-2 rounded-lg text-sm font-medium text-white transition-all active:scale-95"
-                  style={{ backgroundColor: 'var(--building-primary)' }}
-                >
-                  ثبت پرداخت ماهیانه
-                </button>
-              </>
-            )}
-          </div>
-        ) : (
-          <div className="flex items-end gap-1 h-24">
-            {stats.monthlyStats.map((month, index) => {
-              const isCurrentMonth = month.month === currentMonth?.month
-              return (
-                <div key={month.month} className="flex-1 flex flex-col items-center group cursor-pointer">
-                  <div
-                    className="w-full rounded-t transition-all"
-                    style={{
-                      height: `${Math.max(month.percentage, 5)}%`,
-                      opacity: month.percentage > 0 || isCurrentMonth ? 1 : 0.3,
-                      backgroundColor: isCurrentMonth
-                        ? 'var(--building-primary-hover)'
-                        : month.percentage > 0
-                        ? 'var(--building-primary)'
-                        : 'var(--building-border)'
-                    }}
-                  />
-                  <span className="text-[8px] mt-1 truncate w-full text-center transition-colors" style={{
-                    color: isCurrentMonth ? 'var(--building-primary)' : 'var(--building-text-secondary)',
-                    fontWeight: isCurrentMonth ? 'bold' : 'normal'
-                  }}>
-                    {month.monthName.slice(0, 3)}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </Card>
 
       {/* Quick Stats - UX Improved: Clickable + Better hierarchy */}
       <div className="grid grid-cols-2 gap-3">
@@ -1772,14 +1770,14 @@ function BuildingHeader({
   onSettingsClick: () => void
 }) {
   return (
-    <div className="px-4 pt-4 pb-6" style={{
+    <div className="px-4 pt-3 pb-4" style={{
       background: 'linear-gradient(135deg, var(--building-primary) 0%, var(--building-primary-hover) 100%)'
     }}>
       {/* Top Bar */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <button
           onClick={onBackClick}
-          className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors"
+          className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors"
         >
           <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -1787,13 +1785,13 @@ function BuildingHeader({
         </button>
 
         <div className="text-center flex-1">
-          <h1 className="text-xl font-bold text-white">{projectName}</h1>
-          <p className="text-white/80 text-xs">داشبورد مدیریت ساختمان</p>
+          <h1 className="text-lg font-bold text-white">{projectName}</h1>
+          <p className="text-white/80 text-[11px]">داشبورد مدیریت ساختمان</p>
         </div>
 
         <button
           onClick={onSettingsClick}
-          className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors"
+          className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors"
         >
           <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -1802,27 +1800,27 @@ function BuildingHeader({
         </button>
       </div>
 
-      {/* Year Stats - UX Improved: Emphasize received vs remaining */}
+      {/* Year Stats - Compact: reduced by ~18% */}
       {yearStats && (
-        <div className="bg-white/15 backdrop-blur-sm rounded-2xl p-4 mt-2">
+        <div className="bg-white/15 backdrop-blur-sm rounded-2xl p-3 mt-1.5">
           {/* Header */}
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-white/90 text-sm font-medium">گزارش سال {chargeYear}</span>
-            <span className="text-xs bg-white/20 px-2.5 py-1 rounded-lg font-medium text-white">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-white/90 text-[13px] font-medium">گزارش سال {chargeYear}</span>
+            <span className="text-[11px] bg-white/20 px-2 py-0.5 rounded-lg font-medium text-white">
               {participantsCount} واحد
             </span>
           </div>
 
-          {/* Primary Metric: Received Amount (Large & Bold) */}
-          <div className="mb-4">
-            <p className="text-white/80 text-xs mb-1">دریافت شده</p>
-            <p className="text-3xl font-extrabold text-white tracking-tight">
+          {/* Primary Metric: Received Amount (Reduced from 3xl to 2xl) */}
+          <div className="mb-2.5">
+            <p className="text-white/80 text-[11px] mb-0.5">دریافت شده</p>
+            <p className="text-2xl font-extrabold text-white tracking-tight">
               {formatMoney(yearStats.totalPaid, 'IRR')}
             </p>
           </div>
 
           {/* Dual Progress Bar: Success (received) + Danger (remaining) */}
-          <div className="relative h-3 bg-white/10 rounded-full overflow-hidden mb-2">
+          <div className="relative h-2.5 bg-white/10 rounded-full overflow-hidden mb-1.5">
             {/* Received */}
             <div
               className="absolute top-0 left-0 h-full transition-all duration-500"
@@ -1845,7 +1843,7 @@ function BuildingHeader({
           <div className="flex items-center justify-between text-sm">
             {/* Percentage Badge */}
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded-md text-xs font-bold text-white" style={{
+              <span className="px-2 py-0.5 rounded-md text-[11px] font-bold text-white" style={{
                 backgroundColor: 'var(--building-success-alpha)'
               }}>
                 {yearStats.percentage}% وصول شده
@@ -1854,8 +1852,8 @@ function BuildingHeader({
 
             {/* Remaining Amount (Attention-catching) */}
             <div className="text-left">
-              <p className="text-white/70 text-xs">باقی‌مانده</p>
-              <p className="font-bold text-sm" style={{ color: 'var(--building-warning-soft)' }}>
+              <p className="text-white/70 text-[11px]">باقی‌مانده</p>
+              <p className="font-bold text-[13px]" style={{ color: 'var(--building-warning-soft)' }}>
                 {formatMoney(yearStats.remaining, 'IRR')}
               </p>
             </div>
