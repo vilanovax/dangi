@@ -144,10 +144,13 @@ export function SettlementHistorySheet({
         {/* Filter Options with improved active state */}
         <div className="space-y-2">
           <div className="flex gap-2 overflow-x-auto pb-2 -mx-6 px-6 scrollbar-hide">
-            {/* UX: Improved active state with shadow and bold text */}
+            {/* UX: Filter chips using history design tokens */}
             <button
               onClick={() => setFilter('all')}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+              style={{
+                transition: `all var(--history-motion-fast, 120ms) var(--history-motion-ease, ease-out)`
+              }}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
                 filter === 'all'
                   ? 'bg-blue-500 text-white shadow-md shadow-blue-500/30'
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
@@ -157,7 +160,10 @@ export function SettlementHistorySheet({
             </button>
             <button
               onClick={() => setFilter('last20')}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+              style={{
+                transition: `all var(--history-motion-fast, 120ms) var(--history-motion-ease, ease-out)`
+              }}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
                 filter === 'last20'
                   ? 'bg-blue-500 text-white shadow-md shadow-blue-500/30'
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
@@ -167,7 +173,10 @@ export function SettlementHistorySheet({
             </button>
             <button
               onClick={() => setFilter('lastWeek')}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+              style={{
+                transition: `all var(--history-motion-fast, 120ms) var(--history-motion-ease, ease-out)`
+              }}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
                 filter === 'lastWeek'
                   ? 'bg-blue-500 text-white shadow-md shadow-blue-500/30'
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
@@ -273,8 +282,12 @@ export function SettlementHistorySheet({
                   <span className="text-xs text-gray-500 dark:text-gray-400">
                     {formatDate(settlement.settledAt)}
                   </span>
-                  {/* Amount emphasized with success color (green = completed) */}
-                  <span className="text-xl font-bold text-green-600 dark:text-green-400 tabular-nums">
+                  {/* Amount emphasized with calm success color (history token) */}
+                  {/* Note: Using --history-amount-success (calm green #16a34a) not bright alert green */}
+                  <span
+                    className="text-xl font-bold tabular-nums"
+                    style={{ color: 'var(--history-amount-success, #16a34a)' }}
+                  >
                     {formatMoney(settlement.amount, currency)}
                   </span>
                 </div>

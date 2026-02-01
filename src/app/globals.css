@@ -195,6 +195,56 @@
   --travel-border-muted: #1e293b;
 }
 
+/* ─────────────────────────────────────────────────────────── */
+/* History / Log Screen Tokens                                 */
+/* ─────────────────────────────────────────────────────────── */
+/* Read-only screens: تاریخچه، لاگ، گزارش‌ها                   */
+/* Principle: Trust + Auditability, not Action or Excitement   */
+/* ─────────────────────────────────────────────────────────── */
+
+:root {
+  /* Surface & Layout */
+  --history-bg: var(--travel-surface);
+  --history-card-bg: var(--travel-surface-muted);
+  --history-radius: 16px;
+  --history-card-gap: 12px;
+  --history-padding: 16px;
+
+  /* Text Hierarchy (critical for logs) */
+  --history-text-primary: var(--travel-text-primary);
+  --history-text-secondary: var(--travel-text-secondary);
+  --history-text-muted: var(--travel-text-muted);
+  --history-label-size: 12px;
+  --history-body-size: 14px;
+
+  /* Amount (Completed Settlement) */
+  /* Note: History ≠ Alert → calm green, not bright green */
+  --history-amount-success: #16a34a;
+  --history-amount-size: 16px;
+  --history-amount-weight: 600;
+
+  /* Chips & Filters */
+  --history-chip-bg: var(--travel-surface-muted);
+  --history-chip-active-bg: var(--travel-primary);
+  --history-chip-text: var(--travel-text-secondary);
+  --history-chip-active-text: #ffffff;
+
+  /* CSV / Secondary Actions */
+  --history-action-bg: transparent;
+  --history-action-text: var(--travel-text-secondary);
+  --history-action-hover: var(--travel-surface-hover);
+
+  /* Motion (very minimal) */
+  /* Rule: Hover subtle, tap feedback short, no slide/scale */
+  --history-motion-fast: 120ms;
+  --history-motion-ease: ease-out;
+}
+
+:root.dark {
+  /* Amount in dark mode - slightly softer */
+  --history-amount-success: #22c55e;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
