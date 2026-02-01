@@ -10,6 +10,7 @@ export { PersianDatePicker } from './PersianDatePicker'
 export { Toast } from './Toast'
 export { UndoToast } from './UndoToast'
 export { ReverseSettlementDialog } from './ReverseSettlementDialog'
+export { AccessBadge } from './AccessBadge'
 // TravelHeader deprecated - use UnifiedHeader from '@/components/layout' instead
 export {
   Skeleton,

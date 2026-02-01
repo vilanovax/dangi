@@ -6,6 +6,10 @@ import { Button, Input, Card, BottomSheet } from '@/components/ui'
 import { getCurrencyLabel } from '@/lib/utils/money'
 import { getTemplate } from '@/lib/domain/templates'
 import { getCurrentPersianYear } from '@/lib/utils/persian-date'
+import { AccessLinkCard } from '../components/AccessLinkCard'
+import { CreateAccessLinkSheet } from '../components/CreateAccessLinkSheet'
+import { EditAccessLinkSheet } from '../components/EditAccessLinkSheet'
+import type { ProjectAccessLink } from '@/types/access-link'
 
 interface Participant {
   id: string
@@ -135,11 +139,18 @@ export default function SettingsPage() {
   const [newCategoryIcon, setNewCategoryIcon] = useState('📝')
   const [savingCategory, setSavingCategory] = useState(false)
 
+  // Access links state
+  const [accessLinks, setAccessLinks] = useState<ProjectAccessLink[]>([])
+  const [loadingAccessLinks, setLoadingAccessLinks] = useState(false)
+  const [showCreateAccessLink, setShowCreateAccessLink] = useState(false)
+  const [editingAccessLink, setEditingAccessLink] = useState<ProjectAccessLink | null>(null)
+
   // Common emoji icons for categories
   const categoryIcons = ['🍕', '🚗', '🏨', '🎢', '🛍️', '💊', '🎬', '☕', '🎁', '📱', '✂️', '📝', '🔧', '🎉', '💡', '🏠']
 
   useEffect(() => {
     fetchProject()
+    fetchAccessLinks()
   }, [projectId])
 
   const fetchProject = async () => {
@@ -161,6 +172,22 @@ export default function SettingsPage() {
       setError('خطا در بارگذاری پروژه')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchAccessLinks = async () => {
+    setLoadingAccessLinks(true)
+    try {
+      const res = await fetch(`/api/projects/${projectId}/access-links`)
+      if (!res.ok) throw new Error('خطا در بارگذاری لینک‌های دسترسی')
+
+      const data = await res.json()
+      setAccessLinks(data.links || [])
+    } catch (error) {
+      console.error('Failed to fetch access links:', error)
+      // Don't show error to user, just fail silently
+    } finally {
+      setLoadingAccessLinks(false)
     }
   }
 
@@ -343,6 +370,63 @@ export default function SettingsPage() {
     } catch {
       setError('خطا در حذف دسته‌بندی')
     }
+  }
+
+  // Access link handlers
+  const handleCopyAccessLink = async (link: ProjectAccessLink) => {
+    const linkUrl = `${window.location.origin}/access/${link.token}`
+    try {
+      await navigator.clipboard.writeText(linkUrl)
+      setSuccess('✅ لینک دسترسی کپی شد!')
+      setTimeout(() => setSuccess(''), 3000)
+    } catch (error) {
+      console.error('Failed to copy link:', error)
+      setError('خطا در کپی لینک')
+    }
+  }
+
+  const handleEditAccessLink = (link: ProjectAccessLink) => {
+    setEditingAccessLink(link)
+  }
+
+  const handleToggleAccessLink = async (link: ProjectAccessLink) => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}/access-links/${link.id}/toggle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: !link.isActive }),
+      })
+
+      if (!res.ok) throw new Error('خطا در تغییر وضعیت لینک')
+
+      await fetchAccessLinks()
+      setSuccess(link.isActive ? '✅ لینک غیرفعال شد' : '✅ لینک فعال شد')
+      setTimeout(() => setSuccess(''), 3000)
+    } catch (error) {
+      console.error('Failed to toggle link:', error)
+      setError('خطا در تغییر وضعیت لینک')
+    }
+  }
+
+  const handleDeleteAccessLink = async (link: ProjectAccessLink) => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}/access-links/${link.id}`, {
+        method: 'DELETE',
+      })
+
+      if (!res.ok) throw new Error('خطا در حذف لینک')
+
+      await fetchAccessLinks()
+      setSuccess('✅ لینک حذف شد')
+      setTimeout(() => setSuccess(''), 3000)
+    } catch (error) {
+      console.error('Failed to delete link:', error)
+      setError('خطا در حذف لینک')
+    }
+  }
+
+  const handleAccessLinkSuccess = () => {
+    fetchAccessLinks()
   }
 
   if (loading) {
@@ -574,7 +658,61 @@ export default function SettingsPage() {
           </div>
         </CollapsibleSection>
 
-        {/* D. دسته‌بندی‌ها */}
+        {/* D. لینک‌های اشتراک */}
+        {/* UX: Share links for granular permissions */}
+        <CollapsibleSection title="لینک‌های اشتراک" defaultOpen={false}>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                ایجاد لینک برای دسترسی بدون ثبت‌نام
+              </p>
+              <button
+                onClick={() => setShowCreateAccessLink(true)}
+                className="text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+              >
+                + ایجاد لینک جدید
+              </button>
+            </div>
+
+            {loadingAccessLinks ? (
+              <Card>
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full" />
+                </div>
+              </Card>
+            ) : accessLinks.length === 0 ? (
+              <Card>
+                <div className="text-center py-8">
+                  <span className="text-4xl mb-2 block">🔗</span>
+                  <p className="text-gray-400 dark:text-gray-500 text-sm mb-3">
+                    هنوز لینک دسترسی‌ای ایجاد نشده
+                  </p>
+                  <button
+                    onClick={() => setShowCreateAccessLink(true)}
+                    className="text-sm text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+                  >
+                    ایجاد اولین لینک
+                  </button>
+                </div>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {accessLinks.map((link) => (
+                  <AccessLinkCard
+                    key={link.id}
+                    link={link}
+                    onCopy={handleCopyAccessLink}
+                    onEdit={handleEditAccessLink}
+                    onToggle={handleToggleAccessLink}
+                    onDelete={handleDeleteAccessLink}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </CollapsibleSection>
+
+        {/* E. دسته‌بندی‌ها */}
         {/* UX: Advanced feature, collapsed by default */}
         <CollapsibleSection title="دسته‌بندی‌ها" defaultOpen={false}>
           <div className="space-y-3">
@@ -619,7 +757,7 @@ export default function SettingsPage() {
           </div>
         </CollapsibleSection>
 
-        {/* E. خروجی و پشتیبان‌گیری */}
+        {/* F. خروجی و پشتیبان‌گیری */}
         {/* UX: Secondary actions, collapsed by default */}
         <CollapsibleSection title="خروجی و پشتیبان‌گیری" defaultOpen={false}>
           <Card className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -652,7 +790,7 @@ export default function SettingsPage() {
           </Card>
         </CollapsibleSection>
 
-        {/* F. وضعیت پروژه */}
+        {/* G. وضعیت پروژه */}
         {/* UX: Less frequently used, collapsed by default */}
         <CollapsibleSection title="وضعیت پروژه" defaultOpen={false}>
           <Card className={project.isArchived ? 'border-2 border-amber-200 dark:border-amber-900 bg-amber-50/30 dark:bg-amber-900/10' : 'bg-white dark:bg-gray-900'}>
@@ -689,7 +827,7 @@ export default function SettingsPage() {
           </Card>
         </CollapsibleSection>
 
-        {/* G. منطقه خطر (Danger Zone) */}
+        {/* H. منطقه خطر (Danger Zone) */}
         {/* UX: Visually distinct danger zone, collapsed by default */}
         <CollapsibleSection title="منطقه خطر ⚠️" defaultOpen={false} isDanger>
           <Card className="border-2 border-red-200 dark:border-red-900 bg-red-50/30 dark:bg-red-900/10">
@@ -1111,6 +1249,23 @@ export default function SettingsPage() {
           </div>
         )}
       </BottomSheet>
+
+      {/* Create Access Link Sheet */}
+      <CreateAccessLinkSheet
+        isOpen={showCreateAccessLink}
+        onClose={() => setShowCreateAccessLink(false)}
+        projectId={projectId}
+        onSuccess={handleAccessLinkSuccess}
+      />
+
+      {/* Edit Access Link Sheet */}
+      <EditAccessLinkSheet
+        isOpen={!!editingAccessLink}
+        onClose={() => setEditingAccessLink(null)}
+        link={editingAccessLink}
+        projectId={projectId}
+        onSuccess={handleAccessLinkSuccess}
+      />
     </main>
   )
 }
