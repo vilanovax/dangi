@@ -312,6 +312,81 @@
   --checklist-checkbox-checked: var(--travel-success);
 }
 
+/* ─────────────────────────────────────────────────────────── */
+/* Guest Mode Design Tokens                                    */
+/* ─────────────────────────────────────────────────────────── */
+/* For: Users accessing via access links (limited permissions) */
+/* Principle: Clear limitations + Soft conversion + Trust      */
+/* Design Philosophy:                                          */
+/*   - Muted, read-only aesthetic (not dark/depressing)        */
+/*   - "You can see, if you want more → become a member"       */
+/*   - Visual identity distinct from full member experience    */
+/* ─────────────────────────────────────────────────────────── */
+
+:root {
+  /* Surface & Background */
+  /* Guest should feel "secondary" but not excluded */
+  --guest-bg: linear-gradient(180deg, #0b1220 0%, #0f172a 100%);
+  --guest-surface: rgba(255, 255, 255, 0.04);
+  --guest-surface-muted: rgba(255, 255, 255, 0.02);
+  --guest-border: rgba(148, 163, 184, 0.2);
+
+  /* Text Colors - Lower contrast than member, but still readable */
+  --guest-text-primary: #e5e7eb;
+  --guest-text-secondary: #cbd5e1;
+  --guest-text-muted: #94a3b8;
+
+  /* Access Badge - PRIMARY identity indicator */
+  /* Must ALWAYS be visible to remind user of their role */
+  --guest-badge-bg: rgba(59, 130, 246, 0.15);
+  --guest-badge-text: #93c5fd;
+  --guest-badge-border: rgba(59, 130, 246, 0.4);
+
+  /* Disabled / Restricted State */
+  /* For buttons/sections guest cannot access */
+  /* Rule: Visible but not usable (not dead gray) */
+  --guest-disabled-bg: rgba(255, 255, 255, 0.03);
+  --guest-disabled-text: #64748b;
+  --guest-disabled-border: rgba(148, 163, 184, 0.15);
+
+  /* Expense Cards - Read-only aesthetic */
+  --guest-expense-bg: rgba(15, 23, 42, 0.6);
+  --guest-expense-border: rgba(148, 163, 184, 0.18);
+
+  /* Companion Preview - No debt/credit status */
+  --guest-avatar-ring: rgba(148, 163, 184, 0.25);
+
+  /* Info / Hint Boxes */
+  /* For explaining limitations and access scope */
+  --guest-info-bg: rgba(59, 130, 246, 0.12);
+  --guest-info-border: rgba(59, 130, 246, 0.3);
+  --guest-info-text: #bfdbfe;
+
+  /* Conversion CTA - Request membership */
+  /* Should be visible but not screaming */
+  --guest-cta-bg: rgba(251, 146, 60, 0.12);
+  --guest-cta-border: rgba(251, 146, 60, 0.4);
+  --guest-cta-text: #fdba74;
+
+  /* Motion - Subtle and calm */
+  /* Guest = calm experience, no excitement */
+  --guest-motion-fast: 120ms;
+  --guest-motion-ease: ease-out;
+
+  /* Radius & Elevation */
+  --guest-radius-lg: 20px;
+  --guest-radius-md: 14px;
+  --guest-shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+/* Dark mode adjustments for Guest Mode */
+:root.dark {
+  /* Guest mode already dark by nature - minimal adjustments */
+  --guest-text-primary: #f1f5f9;
+  --guest-badge-text: #bfdbfe;
+  --guest-cta-text: #fbbf24;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
