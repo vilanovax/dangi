@@ -4,6 +4,8 @@ import { getProjectById } from '@/lib/services/project.service'
 import { getCurrentUser, requireProjectAccess } from '@/lib/utils/auth'
 import { validateAccessLink } from '@/lib/services/access-link.service'
 import ProjectPageClient from './ProjectPageClient'
+import GuestHomeLayout from './GuestHomeLayout'
+import type { AccessScope } from '@/types/access-link'
 
 interface PageProps {
   params: Promise<{ projectId: string }>
@@ -14,6 +16,8 @@ export default async function ProjectPage({ params }: PageProps) {
 
   // Check authentication - support both user auth and access link auth
   const currentUser = await getCurrentUser()
+  let isGuestAccess = false
+  let guestScopes: AccessScope[] = []
 
   if (!currentUser) {
     // If no user, check for access_token cookie (link-based access)
@@ -29,7 +33,9 @@ export default async function ProjectPage({ params }: PageProps) {
         redirect('/auth')
       }
 
-      // Valid access link - allow access (no further checks needed)
+      // Valid access link - this is guest access
+      isGuestAccess = true
+      guestScopes = validation.scopes || []
     } else {
       // No user and no access token - require authentication
       redirect('/auth')
@@ -57,6 +63,12 @@ export default async function ProjectPage({ params }: PageProps) {
     redirect(`/project/${projectId}/family`)
   }
 
-  // Otherwise, render the client component
-  return <ProjectPageClient />
+  // Render appropriate layout based on access mode
+  if (isGuestAccess) {
+    // Guest access via link - show limited layout
+    return <GuestHomeLayout scopes={guestScopes} />
+  } else {
+    // Full member access - show complete layout
+    return <ProjectPageClient />
+  }
 }
