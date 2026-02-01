@@ -245,6 +245,43 @@
   --history-amount-success: #22c55e;
 }
 
+/* ─────────────────────────────────────────────────────────── */
+/* Settings / Admin Screen Tokens                              */
+/* ─────────────────────────────────────────────────────────── */
+/* For: تنظیمات، مدیریت، پیکربندی                             */
+/* Principle: Clear Hierarchy + Confidence + Safety            */
+/* ─────────────────────────────────────────────────────────── */
+
+:root {
+  /* Base surfaces */
+  --settings-bg: var(--travel-surface);
+  --settings-section-bg: var(--travel-surface-muted);
+
+  --settings-radius: 16px;
+  --settings-gap: 20px;
+
+  /* Text hierarchy */
+  --settings-title: var(--travel-text-primary);
+  --settings-subtitle: var(--travel-text-secondary);
+  --settings-label: var(--travel-text-muted);
+
+  /* Save state */
+  --settings-save-bg: var(--travel-primary);
+  --settings-save-disabled: #c7d2fe;
+
+  /* Danger Zone - CRITICAL for user safety */
+  --danger-bg: rgba(239, 68, 68, 0.08);
+  --danger-border: rgba(239, 68, 68, 0.35);
+  --danger-text: #dc2626;
+}
+
+:root.dark {
+  /* Danger Zone in dark mode */
+  --danger-bg: rgba(239, 68, 68, 0.12);
+  --danger-border: rgba(239, 68, 68, 0.4);
+  --danger-text: #f87171;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

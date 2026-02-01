@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Button, Input, Card, BottomSheet } from '@/components/ui'
 import { getCurrencyLabel } from '@/lib/utils/money'
@@ -50,6 +50,53 @@ const SPLIT_TYPES = [
   { code: 'WEIGHTED', label: 'وزنی', description: 'بر اساس وزن هر نفر (مثلاً متراژ)' },
   { code: 'PERCENTAGE', label: 'درصدی', description: 'بر اساس درصد مشخص شده' },
 ]
+
+/**
+ * Collapsible Section Component
+ * UX: Reduces visual clutter by hiding less frequently used settings
+ */
+function CollapsibleSection({
+  title,
+  children,
+  defaultOpen = true,
+  isDanger = false,
+}: {
+  title: string
+  children: React.ReactNode
+  defaultOpen?: boolean
+  isDanger?: boolean
+}) {
+  const [isOpen, setIsOpen] = useState(defaultOpen)
+
+  return (
+    <section>
+      {/* UX: Section header with clear hierarchy */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between mb-3 group"
+      >
+        <h2 className={`text-base font-bold ${isDanger ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}>
+          {title}
+        </h2>
+        <svg
+          className={`w-5 h-5 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {/* UX: Smooth height transition for better perceived performance */}
+      {isOpen && (
+        <div className="animate-fade-in">
+          {children}
+        </div>
+      )}
+    </section>
+  )
+}
 
 export default function SettingsPage() {
   const params = useParams()
@@ -117,6 +164,20 @@ export default function SettingsPage() {
     }
   }
 
+  // UX: Detect changes to enable/disable save button
+  const hasChanges = useMemo(() => {
+    if (!project) return false
+
+    return (
+      name.trim() !== project.name ||
+      (description.trim() || null) !== (project.description || null) ||
+      currency !== project.currency ||
+      splitType !== project.splitType ||
+      (project.template === 'personal' && trackingOnly !== (project.trackingOnly || false)) ||
+      (getTemplate(project.template).supportsChargeRules && chargeYear !== (project.chargeYear || getCurrentPersianYear()))
+    )
+  }, [project, name, description, currency, splitType, trackingOnly, chargeYear])
+
   const handleSave = async () => {
     if (!name.trim()) {
       setError('نام پروژه الزامی است')
@@ -143,7 +204,9 @@ export default function SettingsPage() {
 
       if (!res.ok) throw new Error('خطا در ذخیره تنظیمات')
 
-      setSuccess('تنظیمات با موفقیت ذخیره شد')
+      const data = await res.json()
+      setProject(data.project)
+      setSuccess('✅ تنظیمات با موفقیت ذخیره شد')
       setTimeout(() => setSuccess(''), 3000)
     } catch {
       setError('خطا در ذخیره تنظیمات')
@@ -176,7 +239,7 @@ export default function SettingsPage() {
   const copyShareLink = () => {
     if (!project) return
     navigator.clipboard.writeText(`${window.location.origin}/join/${project.shareCode}`)
-    setSuccess('لینک دعوت کپی شد!')
+    setSuccess('✅ لینک دعوت کپی شد!')
     setTimeout(() => setSuccess(''), 3000)
   }
 
@@ -211,7 +274,7 @@ export default function SettingsPage() {
       const data = await res.json()
       setProject(data.project)
       setShowArchiveConfirm(false)
-      setSuccess(data.project.isArchived ? 'پروژه آرشیو شد' : 'پروژه از آرشیو خارج شد')
+      setSuccess(data.project.isArchived ? '📦 پروژه آرشیو شد' : '✅ پروژه از آرشیو خارج شد')
       setTimeout(() => setSuccess(''), 3000)
     } catch {
       setError('خطا در آرشیو پروژه')
@@ -249,7 +312,7 @@ export default function SettingsPage() {
       setNewCategoryName('')
       setNewCategoryIcon('📝')
       setShowAddCategory(false)
-      setSuccess('دسته‌بندی با موفقیت افزوده شد')
+      setSuccess('✅ دسته‌بندی با موفقیت افزوده شد')
       setTimeout(() => setSuccess(''), 3000)
     } catch {
       setError('خطا در افزودن دسته‌بندی')
@@ -275,7 +338,7 @@ export default function SettingsPage() {
       }
 
       setShowEditCategory(null)
-      setSuccess('دسته‌بندی حذف شد')
+      setSuccess('✅ دسته‌بندی حذف شد')
       setTimeout(() => setSuccess(''), 3000)
     } catch {
       setError('خطا در حذف دسته‌بندی')
@@ -299,64 +362,76 @@ export default function SettingsPage() {
   }
 
   return (
-    <main className="min-h-dvh pb-8">
+    <main className="min-h-dvh pb-32 bg-gray-50 dark:bg-gray-950">
       {/* Header */}
-      <div className="bg-gray-50 dark:bg-gray-900 px-4 py-4 border-b border-gray-200 dark:border-gray-800">
+      <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 px-4 py-4 border-b border-gray-200 dark:border-gray-800 shadow-sm">
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.back()}
-            className="p-2 -mr-2 text-gray-500 hover:text-gray-700"
+            className="p-2 -mr-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
-          <h1 className="text-xl font-bold">تنظیمات پروژه</h1>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">تنظیمات پروژه</h1>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{project.name}</p>
+          </div>
         </div>
       </div>
 
       <div className="p-4 space-y-6">
         {/* Messages */}
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-xl text-sm">
-            {error}
+          <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-xl text-sm border border-red-200 dark:border-red-800">
+            <div className="flex items-start gap-2">
+              <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>{error}</span>
+            </div>
           </div>
         )}
         {success && (
-          <div className="bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 p-3 rounded-xl text-sm">
+          <div className="bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 p-4 rounded-xl text-sm border border-green-200 dark:border-green-800">
             {success}
           </div>
         )}
 
-        {/* Basic Info */}
-        <section>
-          <h2 className="text-sm font-semibold text-gray-500 mb-3">اطلاعات پروژه</h2>
-          <Card className="space-y-4">
+        {/* A. اطلاعات پروژه */}
+        {/* UX: Most frequently edited settings at the top */}
+        <CollapsibleSection title="اطلاعات پروژه" defaultOpen={true}>
+          <Card className="space-y-4 p-4">
             <Input
               label="نام پروژه"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              placeholder="مثلاً: سفر شمال تابستان ۱۴۰۳"
             />
             <Input
               label="توضیحات (اختیاری)"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="توضیح کوتاه درباره پروژه"
+              placeholder="یک توضیح کوتاه که به یادآوری اطلاعات کمک کنه"
             />
           </Card>
-        </section>
+        </CollapsibleSection>
 
-        {/* Currency & Split */}
-        <section>
-          <h2 className="text-sm font-semibold text-gray-500 mb-3">تنظیمات مالی</h2>
+        {/* B. تنظیمات مالی */}
+        {/* UX: Financial settings grouped together */}
+        <CollapsibleSection title="تنظیمات مالی" defaultOpen={true}>
           <Card className="divide-y divide-gray-100 dark:divide-gray-800">
             <button
               onClick={() => setShowCurrencySheet(true)}
-              className="w-full flex items-center justify-between py-3 first:pt-0 last:pb-0"
+              className="w-full flex items-center justify-between py-4 first:pt-0 last:pb-0 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors rounded-lg px-3 -mx-3"
             >
-              <span className="text-gray-700 dark:text-gray-300">واحد پول</span>
+              <div className="text-right">
+                <p className="font-medium text-gray-900 dark:text-white">واحد پول</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">برای نمایش قیمت‌ها</p>
+              </div>
               <div className="flex items-center gap-2">
-                <span className="text-gray-500">{getCurrencyLabel(currency)}</span>
+                <span className="text-sm text-gray-600 dark:text-gray-300">{getCurrencyLabel(currency)}</span>
                 <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
@@ -365,11 +440,14 @@ export default function SettingsPage() {
 
             <button
               onClick={() => setShowSplitTypeSheet(true)}
-              className="w-full flex items-center justify-between py-3 first:pt-0 last:pb-0"
+              className="w-full flex items-center justify-between py-4 first:pt-0 last:pb-0 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors rounded-lg px-3 -mx-3"
             >
-              <span className="text-gray-700 dark:text-gray-300">نوع تقسیم</span>
+              <div className="text-right">
+                <p className="font-medium text-gray-900 dark:text-white">نوع تقسیم</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">چطور هزینه‌ها تقسیم بشن</p>
+              </div>
               <div className="flex items-center gap-2">
-                <span className="text-gray-500">
+                <span className="text-sm text-gray-600 dark:text-gray-300">
                   {SPLIT_TYPES.find((s) => s.code === splitType)?.label}
                 </span>
                 <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -378,51 +456,56 @@ export default function SettingsPage() {
               </div>
             </button>
           </Card>
-        </section>
+        </CollapsibleSection>
 
         {/* Mode Selection - Only for personal template */}
+        {/* UX: Contextual settings only shown when relevant */}
         {project.template === 'personal' && (
-          <section>
-            <h2 className="text-sm font-semibold text-gray-500 mb-3">حالت پروژه</h2>
+          <CollapsibleSection title="حالت پروژه" defaultOpen={true}>
             <Card>
               <button
                 onClick={() => setShowModeSheet(true)}
-                className="w-full flex items-center justify-between"
+                className="w-full hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors rounded-lg px-3 py-3 -mx-3"
               >
-                <div>
-                  <p className="font-medium">
-                    {trackingOnly ? '👨‍👩‍👧 خانواده (فقط ردیابی)' : '🏠 هم‌خونه (تقسیم خرج)'}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {trackingOnly
-                      ? 'فقط مشخص میشه هر نفر چقدر خرج کرده، بدون تسویه'
-                      : 'خرج‌ها بین اعضا تقسیم میشه و تسویه حساب انجام میشه'
-                    }
-                  </p>
+                <div className="flex items-center justify-between">
+                  <div className="text-right flex-1">
+                    <p className="font-medium text-gray-900 dark:text-white flex items-center gap-2">
+                      <span className="text-xl">{trackingOnly ? '👨‍👩‍👧' : '🏠'}</span>
+                      {trackingOnly ? 'فقط ردیابی (خانواده)' : 'تقسیم خرج (هم‌خونه)'}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {trackingOnly
+                        ? 'فقط ثبت می‌شه هر نفر چقدر خرج کرده'
+                        : 'خرج‌ها تقسیم میشن و تسویه حساب انجام میشه'
+                      }
+                    </p>
+                  </div>
+                  <svg className="w-5 h-5 text-gray-400 flex-shrink-0 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
                 </div>
-                <svg className="w-5 h-5 text-gray-400 flex-shrink-0 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
               </button>
             </Card>
-            <p className="text-xs text-gray-400 mt-2">
-              تغییر این تنظیم روی خرج‌های قبلی تأثیر می‌گذارد
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 pr-1">
+              💡 تغییر این تنظیم روی خرج‌های قبلی هم اثر می‌گذارد
             </p>
-          </section>
+          </CollapsibleSection>
         )}
 
         {/* Charge Rules - Only for templates that support it */}
         {getTemplate(project.template).supportsChargeRules && (
-          <section>
-            <h2 className="text-sm font-semibold text-gray-500 mb-3">قواعد شارژ</h2>
+          <CollapsibleSection title="قواعد شارژ" defaultOpen={false}>
             <Card className="divide-y divide-gray-100 dark:divide-gray-800">
               <button
                 onClick={() => setShowYearSheet(true)}
-                className="w-full flex items-center justify-between py-3 first:pt-0 last:pb-0"
+                className="w-full flex items-center justify-between py-4 first:pt-0 last:pb-0 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors rounded-lg px-3 -mx-3"
               >
-                <span className="text-gray-700 dark:text-gray-300">سال شمسی</span>
+                <div className="text-right">
+                  <p className="font-medium text-gray-900 dark:text-white">سال شمسی</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">برای محاسبه شارژ ماهانه</p>
+                </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-gray-500">{chargeYear}</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-300">{chargeYear}</span>
                   <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
@@ -431,11 +514,11 @@ export default function SettingsPage() {
 
               <button
                 onClick={() => router.push(`/project/${projectId}/charge-rules`)}
-                className="w-full flex items-center justify-between py-3 first:pt-0 last:pb-0"
+                className="w-full flex items-center justify-between py-4 first:pt-0 last:pb-0 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors rounded-lg px-3 -mx-3"
               >
-                <div>
-                  <p className="font-medium">مدیریت قواعد شارژ</p>
-                  <p className="text-xs text-gray-500 mt-1">
+                <div className="text-right">
+                  <p className="font-medium text-gray-900 dark:text-white">مدیریت قواعد شارژ</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     تعریف پرداخت‌های دوره‌ای مورد انتظار
                   </p>
                 </div>
@@ -444,97 +527,107 @@ export default function SettingsPage() {
                 </svg>
               </button>
             </Card>
-          </section>
+          </CollapsibleSection>
         )}
 
-        {/* Participants Management */}
-        <section>
-          <h2 className="text-sm font-semibold text-gray-500 mb-3">اعضا</h2>
-          <Card>
-            <button
-              onClick={() => router.push(`/project/${projectId}/participants`)}
-              className="w-full flex items-center justify-between"
-            >
-              <div>
-                <p className="font-medium">مدیریت اعضا</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  افزودن، ویرایش یا حذف اعضای پروژه
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-400">{project.participants.length} نفر</span>
-                <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </div>
-            </button>
-          </Card>
-        </section>
-
-        {/* Categories */}
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-gray-500">دسته‌بندی‌ها</h2>
-            <button
-              onClick={() => setShowAddCategory(true)}
-              className="text-sm text-blue-500 hover:text-blue-600"
-            >
-              + افزودن
-            </button>
-          </div>
-          <Card className="divide-y divide-gray-100 dark:divide-gray-800">
-            {project.categories.length === 0 ? (
-              <p className="text-gray-400 text-sm py-2 text-center">دسته‌بندی‌ای وجود ندارد</p>
-            ) : (
-              project.categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => setShowEditCategory(cat)}
-                  className="w-full flex items-center justify-between py-3 first:pt-0 last:pb-0"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">{cat.icon}</span>
-                    <span>{cat.name}</span>
+        {/* C. اعضا */}
+        {/* UX: Member management and sharing grouped together */}
+        <CollapsibleSection title="اعضا" defaultOpen={false}>
+          <div className="space-y-3">
+            <Card>
+              <button
+                onClick={() => router.push(`/project/${projectId}/participants`)}
+                className="w-full hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors rounded-lg px-3 py-3 -mx-3"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="text-right">
+                    <p className="font-medium text-gray-900 dark:text-white">مدیریت اعضا</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      افزودن، ویرایش یا حذف اعضا
+                    </p>
                   </div>
-                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-              ))
-            )}
-          </Card>
-          <p className="text-xs text-gray-400 mt-2">
-            دسته‌بندی‌های اختصاصی این پروژه. تغییرات روی قالب اصلی تأثیر نمی‌گذارد.
-          </p>
-        </section>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full">
+                      {project.participants.length} نفر
+                    </span>
+                    <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </div>
+                </div>
+              </button>
+            </Card>
 
-        {/* Share */}
-        <section>
-          <h2 className="text-sm font-semibold text-gray-500 mb-3">اشتراک‌گذاری</h2>
-          <Card>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">لینک دعوت</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  با این لینک دیگران می‌توانند به پروژه بپیوندند
-                </p>
+            <Card>
+              <div className="flex items-center justify-between">
+                <div className="text-right flex-1">
+                  <p className="font-medium text-gray-900 dark:text-white">لینک دعوت</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    با این لینک دیگران می‌تونن به پروژه بپیوندن
+                  </p>
+                </div>
+                <Button variant="secondary" size="sm" onClick={copyShareLink}>
+                  کپی لینک
+                </Button>
               </div>
-              <Button variant="secondary" size="sm" onClick={copyShareLink}>
-                کپی لینک
-              </Button>
-            </div>
-          </Card>
-        </section>
+            </Card>
+          </div>
+        </CollapsibleSection>
 
-        {/* Export */}
-        <section>
-          <h2 className="text-sm font-semibold text-gray-500 mb-3">خروجی‌گیری</h2>
+        {/* D. دسته‌بندی‌ها */}
+        {/* UX: Advanced feature, collapsed by default */}
+        <CollapsibleSection title="دسته‌بندی‌ها" defaultOpen={false}>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                دسته‌بندی‌های اختصاصی این پروژه
+              </p>
+              <button
+                onClick={() => setShowAddCategory(true)}
+                className="text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+              >
+                + افزودن
+              </button>
+            </div>
+
+            <Card className="divide-y divide-gray-100 dark:divide-gray-800">
+              {project.categories.length === 0 ? (
+                <div className="text-center py-8">
+                  <span className="text-4xl mb-2 block">📋</span>
+                  <p className="text-gray-400 dark:text-gray-500 text-sm">
+                    هنوز دسته‌بندی‌ای اضافه نشده
+                  </p>
+                </div>
+              ) : (
+                project.categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setShowEditCategory(cat)}
+                    className="w-full flex items-center justify-between py-4 first:pt-0 last:pb-0 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors rounded-lg px-3 -mx-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{cat.icon}</span>
+                      <span className="font-medium text-gray-900 dark:text-white">{cat.name}</span>
+                    </div>
+                    <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                ))
+              )}
+            </Card>
+          </div>
+        </CollapsibleSection>
+
+        {/* E. خروجی و پشتیبان‌گیری */}
+        {/* UX: Secondary actions, collapsed by default */}
+        <CollapsibleSection title="خروجی و پشتیبان‌گیری" defaultOpen={false}>
           <Card className="divide-y divide-gray-100 dark:divide-gray-800">
-            <div className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-              <div>
-                <p className="font-medium">خروجی Excel (CSV)</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  لیست هزینه‌ها برای Excel
+            <div className="flex items-center justify-between py-4 first:pt-0 last:pb-0">
+              <div className="text-right flex-1">
+                <p className="font-medium text-gray-900 dark:text-white">خروجی Excel (CSV)</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  لیست هزینه‌ها برای استفاده در Excel
                 </p>
               </div>
               <Button
@@ -545,11 +638,11 @@ export default function SettingsPage() {
                 دانلود
               </Button>
             </div>
-            <div className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-              <div>
-                <p className="font-medium">پشتیبان کامل (JSON)</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  تمام اطلاعات پروژه
+            <div className="flex items-center justify-between py-4 first:pt-0 last:pb-0">
+              <div className="text-right flex-1">
+                <p className="font-medium text-gray-900 dark:text-white">پشتیبان کامل (JSON)</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  تمام اطلاعات پروژه برای ذخیره‌سازی
                 </p>
               </div>
               <Button variant="secondary" size="sm" onClick={handleExportData}>
@@ -557,36 +650,31 @@ export default function SettingsPage() {
               </Button>
             </div>
           </Card>
-        </section>
+        </CollapsibleSection>
 
-        {/* Save Button */}
-        <Button onClick={handleSave} loading={saving} className="w-full">
-          ذخیره تغییرات
-        </Button>
-
-        {/* Archive Section */}
-        <section>
-          <h2 className="text-sm font-semibold text-gray-500 mb-3">وضعیت پروژه</h2>
-          <Card className={project.isArchived ? 'border-amber-200 dark:border-amber-900 bg-amber-50/50 dark:bg-amber-900/10' : ''}>
+        {/* F. وضعیت پروژه */}
+        {/* UX: Less frequently used, collapsed by default */}
+        <CollapsibleSection title="وضعیت پروژه" defaultOpen={false}>
+          <Card className={project.isArchived ? 'border-2 border-amber-200 dark:border-amber-900 bg-amber-50/30 dark:bg-amber-900/10' : 'bg-white dark:bg-gray-900'}>
             <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium flex items-center gap-2">
+              <div className="text-right flex-1">
+                <p className="font-medium text-gray-900 dark:text-white flex items-center gap-2">
                   {project.isArchived ? (
                     <>
-                      <span className="text-amber-600">📦</span>
-                      <span className="text-amber-700 dark:text-amber-400">پروژه آرشیو شده</span>
+                      <span className="text-xl">📦</span>
+                      <span className="text-amber-700 dark:text-amber-400">آرشیو شده</span>
                     </>
                   ) : (
                     <>
-                      <span>✅</span>
-                      <span>پروژه فعال</span>
+                      <span className="text-xl">✅</span>
+                      <span>فعال</span>
                     </>
                   )}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   {project.isArchived
-                    ? 'پروژه بسته شده و فقط قابل مشاهده است'
-                    : 'پروژه فعال است و می‌توان هزینه ثبت کرد'}
+                    ? 'پروژه بسته شده، فقط قابل مشاهده است'
+                    : 'می‌تونید هزینه جدید ثبت کنید'}
                 </p>
               </div>
               <Button
@@ -599,30 +687,60 @@ export default function SettingsPage() {
               </Button>
             </div>
           </Card>
-        </section>
+        </CollapsibleSection>
 
-        {/* Danger Zone */}
-        <section>
-          <h2 className="text-sm font-semibold text-red-500 mb-3">منطقه خطر</h2>
-          <Card className="border-red-200 dark:border-red-900">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-red-600 dark:text-red-400">حذف پروژه</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  این عمل قابل بازگشت نیست
+        {/* G. منطقه خطر (Danger Zone) */}
+        {/* UX: Visually distinct danger zone, collapsed by default */}
+        <CollapsibleSection title="منطقه خطر ⚠️" defaultOpen={false} isDanger>
+          <Card className="border-2 border-red-200 dark:border-red-900 bg-red-50/30 dark:bg-red-900/10">
+            <div className="space-y-4">
+              {/* UX: Warning message for transparency */}
+              <div className="flex items-start gap-3 p-3 bg-red-100/50 dark:bg-red-900/20 rounded-lg">
+                <svg className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <p className="text-xs text-red-700 dark:text-red-300">
+                  این عملیات قابل بازگشت نیست. بعد از حذف، تمام اطلاعات پروژه برای همیشه پاک می‌شود.
                 </p>
               </div>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setShowDeleteConfirm(true)}
-                className="!text-red-600 !border-red-200 hover:!bg-red-50"
-              >
-                حذف
-              </Button>
+
+              <div className="flex items-center justify-between pt-2">
+                <div className="text-right flex-1">
+                  <p className="font-bold text-red-600 dark:text-red-400">حذف کامل پروژه</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                    تمام هزینه‌ها، اعضا و تسویه‌ها حذف می‌شن
+                  </p>
+                </div>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="!text-red-600 !border-red-300 dark:!border-red-800 hover:!bg-red-100 dark:hover:!bg-red-900/30"
+                >
+                  حذف پروژه
+                </Button>
+              </div>
             </div>
           </Card>
-        </section>
+        </CollapsibleSection>
+      </div>
+
+      {/* Fixed Bottom Save Button */}
+      {/* UX: Always visible, shows change status */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 shadow-lg">
+        <Button
+          onClick={handleSave}
+          loading={saving}
+          disabled={!hasChanges}
+          className="w-full"
+        >
+          {hasChanges ? 'ذخیره تغییرات' : 'تغییری برای ذخیره وجود ندارد'}
+        </Button>
+        {hasChanges && (
+          <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-2">
+            💡 تغییرات شما ذخیره نشده‌اند
+          </p>
+        )}
       </div>
 
       {/* Currency Bottom Sheet */}
@@ -639,15 +757,15 @@ export default function SettingsPage() {
                 setCurrency(curr.code)
                 setShowCurrencySheet(false)
               }}
-              className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${
+              className={`w-full flex items-center justify-between p-4 rounded-xl transition-all ${
                 currency === curr.code
                   ? 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500'
-                  : 'bg-gray-50 dark:bg-gray-800 border-2 border-transparent'
+                  : 'bg-gray-50 dark:bg-gray-800 border-2 border-transparent hover:border-gray-300 dark:hover:border-gray-700'
               }`}
             >
               <div className="flex items-center gap-3">
-                <span className="text-xl w-8">{curr.symbol}</span>
-                <span>{curr.label}</span>
+                <span className="text-2xl w-8">{curr.symbol}</span>
+                <span className="font-medium">{curr.label}</span>
               </div>
               {currency === curr.code && (
                 <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
@@ -673,16 +791,16 @@ export default function SettingsPage() {
                 setSplitType(type.code)
                 setShowSplitTypeSheet(false)
               }}
-              className={`w-full text-right p-3 rounded-xl transition-all ${
+              className={`w-full text-right p-4 rounded-xl transition-all ${
                 splitType === type.code
                   ? 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500'
-                  : 'bg-gray-50 dark:bg-gray-800 border-2 border-transparent'
+                  : 'bg-gray-50 dark:bg-gray-800 border-2 border-transparent hover:border-gray-300 dark:hover:border-gray-700'
               }`}
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium">{type.label}</p>
-                  <p className="text-xs text-gray-500 mt-1">{type.description}</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">{type.label}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{type.description}</p>
                 </div>
                 {splitType === type.code && (
                   <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
@@ -710,13 +828,13 @@ export default function SettingsPage() {
             className={`w-full text-right p-4 rounded-xl transition-all ${
               trackingOnly
                 ? 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500'
-                : 'bg-gray-50 dark:bg-gray-800 border-2 border-transparent'
+                : 'bg-gray-50 dark:bg-gray-800 border-2 border-transparent hover:border-gray-300 dark:hover:border-gray-700'
             }`}
           >
             <div className="flex items-start gap-3">
               <span className="text-2xl flex-shrink-0">👨‍👩‍👧</span>
               <div className="flex-1">
-                <p className="font-semibold text-gray-900 dark:text-gray-100">خانواده (فقط ردیابی)</p>
+                <p className="font-semibold text-gray-900 dark:text-gray-100">فقط ردیابی (خانواده)</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   فقط مشخص میشه هر نفر چقدر خرج کرده، بدون تسویه حساب
                 </p>
@@ -742,13 +860,13 @@ export default function SettingsPage() {
             className={`w-full text-right p-4 rounded-xl transition-all ${
               !trackingOnly
                 ? 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500'
-                : 'bg-gray-50 dark:bg-gray-800 border-2 border-transparent'
+                : 'bg-gray-50 dark:bg-gray-800 border-2 border-transparent hover:border-gray-300 dark:hover:border-gray-700'
             }`}
           >
             <div className="flex items-start gap-3">
               <span className="text-2xl flex-shrink-0">🏠</span>
               <div className="flex-1">
-                <p className="font-semibold text-gray-900 dark:text-gray-100">هم‌خونه (تقسیم خرج)</p>
+                <p className="font-semibold text-gray-900 dark:text-gray-100">تقسیم خرج (هم‌خونه)</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   خرج‌ها بین اعضا تقسیم میشه و تسویه حساب انجام میشه
                 </p>
@@ -795,10 +913,10 @@ export default function SettingsPage() {
                   setChargeYear(year)
                   setShowYearSheet(false)
                 }}
-                className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${
+                className={`w-full flex items-center justify-between p-4 rounded-xl transition-all ${
                   chargeYear === year
                     ? 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500'
-                    : 'bg-gray-50 dark:bg-gray-800 border-2 border-transparent'
+                    : 'bg-gray-50 dark:bg-gray-800 border-2 border-transparent hover:border-gray-300 dark:hover:border-gray-700'
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -819,7 +937,7 @@ export default function SettingsPage() {
             )
           })}
         </div>
-        <p className="text-xs text-gray-400 mt-4 text-center">
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-4 text-center">
           سال شمسی برای محاسبه شارژ ماهانه استفاده می‌شود
         </p>
       </BottomSheet>
@@ -833,18 +951,18 @@ export default function SettingsPage() {
         <div className="space-y-4">
           {project.isArchived ? (
             <>
-              <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl">
+              <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
                 <span className="text-2xl">✅</span>
-                <p className="text-green-700 dark:text-green-400">
+                <p className="text-green-700 dark:text-green-400 text-sm">
                   با فعال‌سازی، می‌توانید مجدداً هزینه ثبت کنید
                 </p>
               </div>
             </>
           ) : (
             <>
-              <div className="flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl">
+              <div className="flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
                 <span className="text-2xl">📦</span>
-                <p className="text-amber-700 dark:text-amber-400">
+                <p className="text-amber-700 dark:text-amber-400 text-sm">
                   پروژه بسته می‌شود ولی اطلاعات حفظ می‌شود
                 </p>
               </div>
@@ -881,10 +999,19 @@ export default function SettingsPage() {
         title="حذف پروژه"
       >
         <div className="space-y-4">
-          <p className="text-gray-600 dark:text-gray-400">
-            آیا مطمئن هستید که می‌خواهید پروژه «{project.name}» را حذف کنید؟
-            تمام هزینه‌ها و اطلاعات مربوط به این پروژه پاک خواهد شد.
-          </p>
+          <div className="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
+            <svg className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div>
+              <p className="font-semibold text-red-900 dark:text-red-200 mb-1">
+                این عملیات قابل بازگشت نیست!
+              </p>
+              <p className="text-sm text-red-700 dark:text-red-300">
+                تمام هزینه‌ها، اعضا، تسویه‌ها و اطلاعات مربوط به پروژه «{project.name}» برای همیشه پاک می‌شود.
+              </p>
+            </div>
+          </div>
           <div className="flex gap-3">
             <Button
               variant="secondary"
@@ -930,7 +1057,7 @@ export default function SettingsPage() {
                   className={`w-10 h-10 rounded-xl text-xl flex items-center justify-center transition-all ${
                     newCategoryIcon === icon
                       ? 'bg-blue-100 dark:bg-blue-900/30 ring-2 ring-blue-500'
-                      : 'bg-gray-100 dark:bg-gray-800'
+                      : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'
                   }`}
                 >
                   {icon}
@@ -958,12 +1085,12 @@ export default function SettingsPage() {
       >
         {showEditCategory && (
           <div className="space-y-4">
-            <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
-              <span className="text-2xl">{showEditCategory.icon}</span>
-              <span className="font-medium">{showEditCategory.name}</span>
+            <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+              <span className="text-3xl">{showEditCategory.icon}</span>
+              <span className="font-semibold text-lg">{showEditCategory.name}</span>
             </div>
 
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               این دسته‌بندی مختص این پروژه است. حذف آن روی قالب اصلی تأثیری ندارد.
             </p>
 
