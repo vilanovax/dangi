@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { Button, Input, BottomSheet, ImageUpload } from '@/components/ui'
 import { UnifiedHeader, FormLayout, FormSection, FormError } from '@/components/layout'
 import { parseMoney, formatMoney, formatNumber } from '@/lib/utils/money'
+import { detectCategoryFromTitle } from '@/lib/utils/category-detection'
 import { getTemplate } from '@/lib/domain/templates'
 import type { TemplateDefinition } from '@/lib/types/domain'
 import {
@@ -68,6 +69,10 @@ export default function AddExpensePage() {
   const [customAmounts, setCustomAmounts] = useState<Record<string, string>>({})
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null)
 
+  // UX: Auto-detection state
+  const [autoDetectedCategory, setAutoDetectedCategory] = useState<string | null>(null)
+  const [hasManuallySelectedCategory, setHasManuallySelectedCategory] = useState(false)
+
   // UX: Progressive Disclosure - Advanced options section
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false)
   const advancedSectionRef = useRef<HTMLDivElement>(null)
@@ -112,6 +117,37 @@ export default function AddExpensePage() {
       }, 300)
     }
   }, [splitMode])
+
+  // UX: Auto-detect category from title (only if user hasn't manually selected)
+  useEffect(() => {
+    // Skip if: no project, user manually selected, or title is empty
+    if (!project || hasManuallySelectedCategory || !title.trim()) {
+      // Clear auto-detection if title becomes empty
+      if (!title.trim() && autoDetectedCategory) {
+        setAutoDetectedCategory(null)
+        // Also clear category if it was auto-detected
+        if (categoryId === autoDetectedCategory) {
+          setCategoryId(null)
+        }
+      }
+      return
+    }
+
+    // Run detection
+    const detectedCategoryId = detectCategoryFromTitle(title, project.categories)
+
+    if (detectedCategoryId) {
+      // Auto-suggest category
+      setAutoDetectedCategory(detectedCategoryId)
+      setCategoryId(detectedCategoryId)
+    } else {
+      // No match found, clear auto-detection
+      if (autoDetectedCategory && categoryId === autoDetectedCategory) {
+        setAutoDetectedCategory(null)
+        setCategoryId(null)
+      }
+    }
+  }, [title, project, hasManuallySelectedCategory])
 
   const fetchProject = async () => {
     try {
@@ -233,6 +269,16 @@ export default function AddExpensePage() {
     }
   }
 
+  // UX: Handle manual category selection (override auto-detection)
+  const handleCategorySelect = (selectedCategoryId: string | null) => {
+    setCategoryId(selectedCategoryId)
+
+    // Mark as manually selected to prevent further auto-detection
+    if (selectedCategoryId !== autoDetectedCategory) {
+      setHasManuallySelectedCategory(true)
+    }
+  }
+
   const handleAddCategory = async () => {
     if (!newCategoryName.trim() || !template) return
 
@@ -256,7 +302,8 @@ export default function AddExpensePage() {
           ...project,
           categories: [...project.categories, data.category],
         })
-        setCategoryId(data.category.id)
+        // Use handleCategorySelect to mark as manually selected
+        handleCategorySelect(data.category.id)
       }
 
       setNewCategoryName('')
@@ -430,15 +477,32 @@ export default function AddExpensePage() {
           helper="یه عنوان کوتاه که بعداً راحت پیداش کنی"
         />
 
-        {/* UX: Category - Optional, sorted by usage frequency */}
-        <CategorySelector
-          categories={sortedCategories}
-          selectedId={categoryId}
-          onSelect={setCategoryId}
-          onAddNew={() => setShowAddCategory(true)}
-          label="دسته‌بندی"
-          helper="اختیاری - می‌تونی بعداً هم اضافه کنی"
-        />
+        {/* UX: Category - Optional, sorted by usage frequency, with auto-detection */}
+        <div className="space-y-2">
+          <CategorySelector
+            categories={sortedCategories}
+            selectedId={categoryId}
+            onSelect={handleCategorySelect}
+            onAddNew={() => setShowAddCategory(true)}
+            label="دسته‌بندی"
+            helper="اختیاری - می‌تونی بعداً هم اضافه کنی"
+          />
+
+          {/* Auto-detection helper text */}
+          {autoDetectedCategory && categoryId === autoDetectedCategory && !hasManuallySelectedCategory && (
+            <p className="text-xs px-1" style={{ color: 'var(--building-info)' }}>
+              💡 حدس زدیم این خرج مربوط به «
+              {sortedCategories.find((c) => c.id === autoDetectedCategory)?.name || 'نامشخص'}» باشه
+            </p>
+          )}
+
+          {/* Manual selection confirmation */}
+          {hasManuallySelectedCategory && categoryId && (
+            <p className="text-xs px-1" style={{ color: 'var(--building-success)' }}>
+              ✓ دسته‌بندی به انتخاب شما ثبت شد
+            </p>
+          )}
+        </div>
 
         {/* =================================== */}
         {/* ADVANCED OPTIONS - Collapsible */}
