@@ -258,7 +258,7 @@ export default function GuestHomeLayout({ scopes }: GuestHomeLayoutProps) {
         {/* ╔═══════════════════════════════════════════╗ */}
         {/* ║  Card 4 — خلاصه حساب ساده (Optional)       ║ */}
         {/* ╚═══════════════════════════════════════════╝ */}
-        {summary && summary.participantBalances.length > 0 && (
+        {summary?.participantBalances && summary.participantBalances.length > 0 && (
           <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
             <div className="p-4 border-b border-gray-100 dark:border-gray-800">
               <h2 className="font-semibold text-gray-900 dark:text-white">
