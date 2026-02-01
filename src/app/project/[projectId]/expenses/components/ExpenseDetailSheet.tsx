@@ -1,7 +1,8 @@
 'use client'
 
-import { BottomSheet } from '@/components/ui'
+import { BottomSheet, Avatar } from '@/components/ui'
 import { formatMoney } from '@/lib/utils/money'
+import { deserializeAvatar } from '@/lib/types/avatar'
 
 interface Participant {
   id: string
@@ -242,15 +243,20 @@ export function ExpenseDetailSheet({
                       borderColor: isMe ? t('success') : t('border'),
                     }}
                   >
-                    {/* Avatar Placeholder (circular initials) */}
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm"
-                      style={{
-                        backgroundColor: isMe ? t('success') : t('border'),
-                        color: '#ffffff',
-                      }}
-                    >
-                      {share.participant.name.charAt(0).toUpperCase()}
+                    {/* UX: Proper Avatar with highlight for current user */}
+                    <div className="relative">
+                      <Avatar
+                        avatar={deserializeAvatar(share.participant.avatar || null, share.participant.name)}
+                        name={share.participant.name}
+                        size="md"
+                      />
+                      {/* Highlight ring for current user */}
+                      {isMe && (
+                        <div
+                          className="absolute inset-0 rounded-full ring-2"
+                          style={{ ringColor: t('success') }}
+                        />
+                      )}
                     </div>
 
                     {/* Name + Role Label */}
