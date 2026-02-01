@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Button, Input, Toast } from '@/components/ui'
+import { Button, Input, Toast, UndoToast } from '@/components/ui'
 import { UnifiedHeader, FormLayout, FormSection, FormError } from '@/components/layout'
 import { parseMoney } from '@/lib/utils/money'
 import { useProject, useProjectSummary, useCreateSettlement } from '@/hooks/useProjects'
@@ -77,6 +77,8 @@ export default function AddSettlementPage() {
   const [error, setError] = useState('')
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+  const [showUndoToast, setShowUndoToast] = useState(false)
+  const [createdSettlementId, setCreatedSettlementId] = useState<string | null>(null)
 
   // ── Form State ──────────────────────────────────────────────
   const [fromId, setFromId] = useState('')
@@ -234,7 +236,7 @@ export default function AddSettlementPage() {
     if (!parsedAmount) return
 
     try {
-      await createSettlementMutation.mutateAsync({
+      const result = await createSettlementMutation.mutateAsync({
         fromId,
         toId,
         amount: parsedAmount,
@@ -242,18 +244,59 @@ export default function AddSettlementPage() {
         receiptUrl: receiptUrl || undefined,
       })
 
-      // Success feedback
-      setToast({ message: 'تسویه با موفقیت ثبت شد ✓', type: 'success' })
-
-      // Navigate back after brief delay to show toast
-      setTimeout(() => {
-        router.push(`/project/${projectId}`)
-      }, 1000)
+      // Store settlement ID and show undo toast
+      setCreatedSettlementId(result.settlement.id)
+      setShowUndoToast(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطا در ثبت تسویه')
       setToast({ message: 'خطا در ثبت تسویه', type: 'error' })
     }
-  }, [fromId, toId, amount, note, receiptUrl, createSettlementMutation, router, projectId])
+  }, [fromId, toId, amount, note, receiptUrl, createSettlementMutation])
+
+  const handleUndo = useCallback(async () => {
+    if (!createdSettlementId) return
+
+    try {
+      const res = await fetch(`/api/projects/${projectId}/settlements/${createdSettlementId}/undo`, {
+        method: 'POST',
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'خطا در بازگشت تسویه')
+      }
+
+      // Success - settlement undone
+      setToast({ message: 'تسویه بازگردانی شد', type: 'success' })
+
+      // Navigate back after brief delay
+      setTimeout(() => {
+        router.push(`/project/${projectId}`)
+      }, 1000)
+    } catch (err) {
+      setToast({ message: err instanceof Error ? err.message : 'خطا در بازگشت تسویه', type: 'error' })
+    }
+  }, [createdSettlementId, projectId, router])
+
+  const handleAutoConfirm = useCallback(async () => {
+    if (!createdSettlementId) return
+
+    try {
+      const res = await fetch(`/api/projects/${projectId}/settlements/${createdSettlementId}/confirm`, {
+        method: 'POST',
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'خطا در تأیید تسویه')
+      }
+
+      // Success - settlement confirmed, navigate to project
+      router.push(`/project/${projectId}`)
+    } catch (err) {
+      setToast({ message: err instanceof Error ? err.message : 'خطا در تأیید تسویه', type: 'error' })
+    }
+  }, [createdSettlementId, projectId, router])
 
   // ── Computed Values ─────────────────────────────────────────
 
@@ -417,6 +460,16 @@ export default function AddSettlementPage() {
         message={toast?.message || ''}
         type={toast?.type || 'info'}
         duration={3000}
+      />
+
+      {/* Undo Toast */}
+      <UndoToast
+        isOpen={showUndoToast}
+        onUndo={handleUndo}
+        onDismiss={() => setShowUndoToast(false)}
+        onAutoConfirm={handleAutoConfirm}
+        message="تسویه با موفقیت ثبت شد ✓"
+        duration={30000}
       />
     </FormLayout>
   )

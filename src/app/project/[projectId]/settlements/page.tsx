@@ -20,6 +20,9 @@ interface Settlement {
   settledAt: string
   from: Participant
   to: Participant
+  status: string
+  type: string
+  reversed: boolean
 }
 
 interface Project {
@@ -216,7 +219,23 @@ export default function SettlementsPage() {
                       href={`/project/${projectId}/settlement/${settlement.id}`}
                       className="block"
                     >
-                      <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow">
+                      <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow relative">
+                        {/* Status Badges */}
+                        {(settlement.reversed || settlement.type === 'reverse') && (
+                          <div className="absolute top-3 left-3 flex gap-1.5">
+                            {settlement.reversed && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full">
+                                بازگردانی‌شده
+                              </span>
+                            )}
+                            {settlement.type === 'reverse' && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full">
+                                تسویه معکوس
+                              </span>
+                            )}
+                          </div>
+                        )}
+
                         {/* Force LTR for payment direction (From → To) to match arrow */}
                         <div className="flex items-center gap-3" dir="ltr">
                           {/* From Avatar */}
@@ -262,7 +281,7 @@ export default function SettlementsPage() {
 
                           {/* Amount */}
                           <div className="text-left flex-shrink-0">
-                            <p className="font-bold text-green-600">
+                            <p className={`font-bold ${settlement.reversed ? 'text-gray-400 line-through' : 'text-green-600'}`}>
                               {formatMoney(settlement.amount, project?.currency || 'IRR')}
                             </p>
                           </div>

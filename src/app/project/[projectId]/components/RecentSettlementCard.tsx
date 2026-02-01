@@ -19,6 +19,8 @@ interface RecentSettlementCardProps {
   amount: number
   currency: string
   settledAt: string
+  reversed?: boolean
+  type?: string
 }
 
 /**
@@ -33,10 +35,23 @@ export function RecentSettlementCard({
   amount,
   currency,
   settledAt,
+  reversed = false,
+  type = 'normal',
 }: RecentSettlementCardProps) {
   return (
     <Link href={`/project/${projectId}/settlement/${id}`}>
-      <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow relative">
+        {/* Status Badges */}
+        {(reversed || type === 'reverse') && (
+          <div className="absolute top-2 left-2 flex gap-1">
+            {type === 'reverse' && (
+              <span className="text-[9px] font-bold px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full">
+                معکوس
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Force LTR for payment direction (From → To) to match arrow */}
         <div className="flex items-center gap-3" dir="ltr">
           {/* From Avatar */}
@@ -86,7 +101,7 @@ export function RecentSettlementCard({
           </div>
 
           {/* Amount */}
-          <p className="font-bold text-sm text-green-600 dark:text-green-400 flex-shrink-0">
+          <p className={`font-bold text-sm flex-shrink-0 ${reversed ? 'text-gray-400 line-through' : 'text-green-600 dark:text-green-400'}`}>
             {formatMoney(amount, currency)}
           </p>
         </div>

@@ -127,22 +127,30 @@ model ExpenseShare {
 
 // تسویه حساب - پرداخت بین اعضا
 model Settlement {
-  id          String      @id @default(cuid())
-  amount      Float       // مبلغ پرداخت شده
-  fromId      String      // کسی که پول داده
-  toId        String      // کسی که پول گرفته
-  projectId   String
-  note        String?     // توضیحات
-  receiptUrl  String?     // تصویر رسید (اختیاری)
-  settledAt   DateTime    @default(now()) // تاریخ تسویه
-  createdAt   DateTime    @default(now())
-  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  from        Participant @relation("SettlementFrom", fields: [fromId], references: [id])
-  to          Participant @relation("SettlementTo", fields: [toId], references: [id])
+  id                    String        @id @default(cuid())
+  amount                Float         // مبلغ پرداخت شده
+  fromId                String        // کسی که پول داده
+  toId                  String        // کسی که پول گرفته
+  projectId             String
+  note                  String?       // توضیحات
+  receiptUrl            String?       // تصویر رسید (اختیاری)
+  status                String        @default("confirmed") // وضعیت: "pending" | "confirmed"
+  type                  String        @default("normal") // نوع: "normal" | "reverse"
+  reversed              Boolean       @default(false) // آیا بازگردانی شده؟
+  referenceSettlementId String?       // لینک به تسویه اصلی (برای reverse)
+  settledAt             DateTime      @default(now()) // تاریخ تسویه
+  createdAt             DateTime      @default(now())
+  project               Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  from                  Participant   @relation("SettlementFrom", fields: [fromId], references: [id])
+  to                    Participant   @relation("SettlementTo", fields: [toId], references: [id])
+  referenceSettlement   Settlement?   @relation("SettlementReverse", fields: [referenceSettlementId], references: [id])
+  reversedBy            Settlement[]  @relation("SettlementReverse")
 
   @@index([projectId, settledAt(sort: Desc)])
   @@index([fromId])
   @@index([toId])
+  @@index([status])
+  @@index([referenceSettlementId])
 }
 
 // قاعده شارژ - تعریف پرداخت‌های دوره‌ای مورد انتظار (برای template ساختمان)

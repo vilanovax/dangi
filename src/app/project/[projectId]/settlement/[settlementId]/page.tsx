@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Button, Input, BottomSheet, Avatar } from '@/components/ui'
+import { Button, Input, BottomSheet, Avatar, ReverseSettlementDialog } from '@/components/ui'
 import { parseMoney, formatMoney } from '@/lib/utils/money'
 import { deserializeAvatar } from '@/lib/types/avatar'
 
@@ -21,6 +21,9 @@ interface Settlement {
   from: Participant
   to: Participant
   projectId: string
+  status: string
+  type: string
+  reversed: boolean
 }
 
 interface Project {
@@ -58,6 +61,10 @@ export default function SettlementDetailPage() {
   // Delete confirmation
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
+
+  // Reverse confirmation
+  const [showReverseDialog, setShowReverseDialog] = useState(false)
+  const [reversing, setReversing] = useState(false)
 
   useEffect(() => {
     fetchData()
@@ -207,6 +214,31 @@ export default function SettlementDetailPage() {
     }
   }
 
+  const handleReverse = async (note?: string) => {
+    setReversing(true)
+    setError('')
+
+    try {
+      const res = await fetch(`/api/projects/${projectId}/settlements/${settlementId}/reverse`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ note }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'خطا در بازگردانی تسویه')
+      }
+
+      // Navigate back to project or refresh
+      router.push(`/project/${projectId}/settlements`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'خطا در بازگردانی تسویه')
+      setReversing(false)
+      setShowReverseDialog(false)
+    }
+  }
+
   const cancelEdit = () => {
     if (settlement) {
       setEditFromId(settlement.from.id)
@@ -274,6 +306,18 @@ export default function SettlementDetailPage() {
 
           {!isEditing && (
             <div className="flex items-center gap-2">
+              {/* Only show reverse button if settlement is confirmed, not already reversed, and not a reverse type */}
+              {settlement.status === 'confirmed' && !settlement.reversed && settlement.type !== 'reverse' && (
+                <button
+                  onClick={() => setShowReverseDialog(true)}
+                  className="p-2 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30 rounded-lg"
+                  title="بازگردانی تسویه"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                  </svg>
+                </button>
+              )}
               <button
                 onClick={() => setIsEditing(true)}
                 className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg"
@@ -609,6 +653,24 @@ export default function SettlementDetailPage() {
           </div>
         </div>
       </BottomSheet>
+
+      {/* Reverse Confirmation */}
+      <ReverseSettlementDialog
+        isOpen={showReverseDialog}
+        onClose={() => setShowReverseDialog(false)}
+        onConfirm={handleReverse}
+        from={{
+          name: settlement.from.name,
+          avatar: deserializeAvatar(settlement.from.avatar || null, settlement.from.name),
+        }}
+        to={{
+          name: settlement.to.name,
+          avatar: deserializeAvatar(settlement.to.avatar || null, settlement.to.name),
+        }}
+        amount={settlement.amount}
+        currency={project.currency}
+        submitting={reversing}
+      />
     </main>
   )
 }
