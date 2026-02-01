@@ -11,7 +11,8 @@ import { aggregateSettlements, type AggregatedSettlement } from '@/lib/utils/set
 import type { CategoryBreakdown, ParticipantExpenseBreakdown } from '@/types'
 import { CategoryBreakdownCard, ParticipantExpenseBreakdownCard } from './components'
 import { SettlementConfirmDialog } from './components/SettlementConfirmDialog'
-import { useProject, useProjectSummary, useCreateSettlement } from '@/hooks/useProjects'
+import { SettlementHistorySheet } from './components/SettlementHistorySheet'
+import { useProject, useProjectSummary, useCreateSettlement, useProjectSettlements } from '@/hooks/useProjects'
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -86,12 +87,14 @@ export default function SummaryPage() {
   // ── React Query Hooks ───────────────────────────────────────
   const { data: projectData, isLoading: projectLoading } = useProject(projectId)
   const { data: summaryData, isLoading: summaryLoading } = useProjectSummary(projectId)
+  const { data: settlementsData, isLoading: settlementsLoading } = useProjectSettlements(projectId)
   const createSettlementMutation = useCreateSettlement(projectId)
 
   // ── UI State ────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<TabType>('balance')
   const [showQuickSettle, setShowQuickSettle] = useState(false)
   const [selectedSettlement, setSelectedSettlement] = useState<AggregatedSettlement | null>(null)
+  const [showHistory, setShowHistory] = useState(false)
 
   // ── Extract Data from Query Results ─────────────────────────
   const project = useMemo(() => projectData?.project || null, [projectData])
@@ -102,6 +105,7 @@ export default function SummaryPage() {
     () => summaryData?.participantExpenseBreakdown || [],
     [summaryData]
   )
+  const settlements = useMemo(() => settlementsData?.settlements || [], [settlementsData])
 
   const loading = projectLoading || summaryLoading
 
@@ -347,12 +351,23 @@ export default function SummaryPage() {
             {!isTrackingMode && hasDebt && (
               <section>
                 <div className="mb-3">
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                    با این تسویه‌ها حسابا صاف می‌شن
-                  </h2>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                    ساده‌ترین راه برای تموم‌شدن حسابا
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                        با این تسویه‌ها حسابا صاف می‌شن
+                      </h2>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                        ساده‌ترین راه برای تموم‌شدن حسابا
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setShowHistory(true)}
+                      className="text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 font-medium flex items-center gap-1"
+                    >
+                      <span>📋</span>
+                      تاریخچه
+                    </button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   {/* UX: Render aggregated settlements to reduce cognitive load */}
@@ -584,6 +599,14 @@ export default function SummaryPage() {
           loading={createSettlementMutation.isPending}
         />
       )}
+
+      {/* Settlement History Sheet */}
+      <SettlementHistorySheet
+        isOpen={showHistory}
+        onClose={() => setShowHistory(false)}
+        settlements={settlements}
+        currency={summary?.currency || 'تومان'}
+      />
     </main>
   )
 }
