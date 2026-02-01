@@ -112,6 +112,42 @@ export function ParticipantProfileSheet({
     }
   }, [isOpen, participant, fetchExpenses])
 
+  // IMPORTANT: These useCallbacks must be before early returns to maintain hook order
+  // Handle edit - navigate to full page
+  const handleEditExpense = useCallback(() => {
+    if (!selectedExpenseId) return
+    setShowExpenseDetail(false)
+    router.push(`/project/${projectId}/expense/${selectedExpenseId}`)
+  }, [selectedExpenseId, router, projectId])
+
+  // Handle delete expense
+  const handleDeleteExpense = useCallback(async () => {
+    if (!selectedExpenseId) return
+
+    if (!confirm('آیا از حذف این هزینه اطمینان دارید؟')) {
+      return
+    }
+
+    try {
+      const res = await fetch(`/api/projects/${projectId}/expenses/${selectedExpenseId}`, {
+        method: 'DELETE',
+      })
+
+      if (res.ok) {
+        setShowExpenseDetail(false)
+        setSelectedExpense(null)
+        setSelectedExpenseId(null)
+        // Refresh expenses list
+        fetchExpenses()
+      } else {
+        alert('خطا در حذف هزینه')
+      }
+    } catch (error) {
+      console.error('Error deleting expense:', error)
+      alert('خطا در حذف هزینه')
+    }
+  }, [selectedExpenseId, projectId, fetchExpenses])
+
   if (!participant) return null
 
   const isOwner = participant.role === 'OWNER'
@@ -186,41 +222,6 @@ export function ParticipantProfileSheet({
       setLoadingExpenseDetail(false)
     }
   }
-
-  // Handle edit - navigate to full page
-  const handleEditExpense = useCallback(() => {
-    if (!selectedExpenseId) return
-    setShowExpenseDetail(false)
-    router.push(`/project/${projectId}/expense/${selectedExpenseId}`)
-  }, [selectedExpenseId, router, projectId])
-
-  // Handle delete expense
-  const handleDeleteExpense = useCallback(async () => {
-    if (!selectedExpenseId) return
-
-    if (!confirm('آیا از حذف این هزینه اطمینان دارید؟')) {
-      return
-    }
-
-    try {
-      const res = await fetch(`/api/projects/${projectId}/expenses/${selectedExpenseId}`, {
-        method: 'DELETE',
-      })
-
-      if (res.ok) {
-        setShowExpenseDetail(false)
-        setSelectedExpense(null)
-        setSelectedExpenseId(null)
-        // Refresh expenses list
-        fetchExpenses()
-      } else {
-        alert('خطا در حذف هزینه')
-      }
-    } catch (error) {
-      console.error('Error deleting expense:', error)
-      alert('خطا در حذف هزینه')
-    }
-  }, [selectedExpenseId, projectId, fetchExpenses])
 
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose}>
