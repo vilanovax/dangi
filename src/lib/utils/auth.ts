@@ -1,6 +1,9 @@
 // Auth utilities - Password hashing and JWT token management
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
+import type { AccessScope, ProjectAccessLink } from '@/types/access-link'
+import { validateAccessLink } from '@/lib/services/access-link.service'
+import { hasAllScopes } from '@/lib/utils/permissions'
 
 // Bcrypt configuration
 const SALT_ROUNDS = 10 // Higher = more secure but slower (10 is recommended)
@@ -123,6 +126,13 @@ interface AuthResult {
   participant: { id: string; userId: string | null; projectId: string }
 }
 
+interface LinkAuthResult {
+  authorized: true
+  link: ProjectAccessLink
+  scopes: AccessScope[]
+  accessType: 'link'
+}
+
 interface UnauthorizedResult {
   authorized: false
   response: NextResponse
@@ -173,3 +183,91 @@ export async function requireProjectAccess(
     participant,
   }
 }
+
+/**
+ * Check project access with support for both participant-based and link-based access
+ *
+ * @param projectId - Project ID to check access for
+ * @param requiredScopes - Optional scopes required for this operation
+ * @returns AuthResult (participant access) | LinkAuthResult (link access) | UnauthorizedResult
+ */
+export async function requireProjectAccessWithLink(
+  projectId: string,
+  requiredScopes?: AccessScope[]
+): Promise<AuthResult | LinkAuthResult | UnauthorizedResult> {
+  // 1. Try participant-based access first (existing logic)
+  const participantAccess = await requireProjectAccess(projectId)
+
+  if (participantAccess.authorized) {
+    // Regular participant access - grant full access regardless of requiredScopes
+    return participantAccess
+  }
+
+  // 2. Participant access failed - check for access link token
+  const cookieStore = await cookies()
+
+  // Check cookies first
+  let accessToken = cookieStore.get('access_token')?.value
+
+  // If not in cookies, check Authorization header (for API requests)
+  if (!accessToken) {
+    // Note: In server components/route handlers, we can't directly access headers
+    // This will be handled in the API route itself if needed
+    // For now, we only support cookie-based access
+  }
+
+  if (!accessToken) {
+    // No access token found - return the original unauthorized response
+    return participantAccess
+  }
+
+  // 3. Validate the access link token
+  const validation = await validateAccessLink(accessToken)
+
+  if (!validation.valid) {
+    return {
+      authorized: false,
+      response: NextResponse.json(
+        { error: validation.reason || 'دسترسی رد شد' },
+        { status: 403 }
+      ),
+    }
+  }
+
+  // 4. Check if link is for the correct project
+  if (validation.projectId !== projectId) {
+    return {
+      authorized: false,
+      response: NextResponse.json(
+        { error: 'این لینک برای پروژه دیگری است' },
+        { status: 403 }
+      ),
+    }
+  }
+
+  // 5. Check if link has required scopes (if specified)
+  if (requiredScopes && requiredScopes.length > 0) {
+    const linkScopes = validation.scopes || []
+
+    if (!hasAllScopes(linkScopes, requiredScopes)) {
+      return {
+        authorized: false,
+        response: NextResponse.json(
+          { error: 'دسترسی کافی ندارید' },
+          { status: 403 }
+        ),
+      }
+    }
+  }
+
+  // 6. Access link is valid and has required scopes
+  return {
+    authorized: true,
+    link: validation.link!,
+    scopes: validation.scopes || [],
+    accessType: 'link',
+  }
+}
+
+// Export types for use in API routes
+export type { AuthResult, LinkAuthResult, UnauthorizedResult }

@@ -45,6 +45,39 @@ model Project {
   incomeCategories      IncomeCategory[]        // دسته‌بندی درآمد (برای template family)
   budgets               Budget[]                // بودجه‌های ماهانه (برای template family)
   recurringTransactions RecurringTransaction[] // تراکنش‌های تکراری (برای template family)
+  accessLinks           ProjectAccessLink[]     // لینک‌های دسترسی به پروژه
+}
+
+// لینک دسترسی به پروژه - اشتراک‌گذاری با دسترسی محدود
+model ProjectAccessLink {
+  id          String    @id @default(cuid())
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Link identity
+  token       String    @unique @default(cuid())  // توکن دسترسی عمومی
+  name        String?                              // نام لینک (اختیاری): "لینک خانواده", "دسترسی دوستان"
+  description String?                              // توضیحات (اختیاری)
+
+  // Permission scopes (JSON array stored as string)
+  scopes      String    @default("[]")             // دسترسی‌ها: '["expenses:read","settlements:read"]'
+  role        String?                              // نقش: "viewer", "contributor", "admin"
+
+  // Access control
+  isActive    Boolean   @default(true)             // فعال / غیرفعال
+  expiresAt   DateTime?                            // تاریخ انقضا (null = بدون انقضا)
+  maxUses     Int?                                 // حداکثر تعداد استفاده (null = نامحدود)
+  usedCount   Int       @default(0)                // تعداد دفعات استفاده شده
+  lastUsedAt  DateTime?                            // آخرین بار استفاده
+
+  // Audit
+  createdByUserId String?                          // کاربری که لینک را ساخته
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([projectId])
+  @@index([token])
+  @@index([isActive])
 }
 
 model Participant {

@@ -16,6 +16,9 @@ export type {
 } from './checklist'
 export type { CategoryBreakdown, ParticipantExpenseBreakdown } from './category-breakdown'
 
+// Access Link Types
+export * from './access-link'
+
 // Family Finance Template Types
 export type {
   Income,
