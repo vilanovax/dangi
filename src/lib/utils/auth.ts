@@ -122,15 +122,16 @@ import { NextResponse } from 'next/server'
 
 interface AuthResult {
   authorized: true
+  accessType: 'participant'
   user: { id: string; phone: string; name: string }
   participant: { id: string; userId: string | null; projectId: string }
 }
 
 interface LinkAuthResult {
   authorized: true
+  accessType: 'link'
   link: ProjectAccessLink
   scopes: AccessScope[]
-  accessType: 'link'
 }
 
 interface UnauthorizedResult {
@@ -179,6 +180,7 @@ export async function requireProjectAccess(
   // User has access
   return {
     authorized: true,
+    accessType: 'participant',
     user,
     participant,
   }

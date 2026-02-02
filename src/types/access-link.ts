@@ -72,7 +72,7 @@ export interface UpdateAccessLinkInput {
   name?: string
   description?: string
   scopes?: AccessScope[]
-  expiresAt?: Date
+  expiresAt?: Date | null
   maxUses?: number
   isActive?: boolean
 }

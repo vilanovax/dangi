@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button, Input, Card, AvatarPicker, Avatar as AvatarDisplay } from '@/components/ui'
 import type { Avatar } from '@/lib/types/avatar'
@@ -15,7 +15,7 @@ function toEnglishDigits(str: string): string {
     .replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d).toString())
 }
 
-export default function AuthPage() {
+function AuthPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [mode, setMode] = useState<AuthMode>('login')
@@ -233,5 +233,20 @@ export default function AuthPage() {
         </button>
       </div>
     </main>
+  )
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-dvh p-4 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-5xl mb-3">💰</div>
+          <p className="text-gray-500">در حال بارگذاری...</p>
+        </div>
+      </main>
+    }>
+      <AuthPageContent />
+    </Suspense>
   )
 }

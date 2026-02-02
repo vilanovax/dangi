@@ -221,9 +221,9 @@ export default function GuestHomeLayout({ scopes }: GuestHomeLayoutProps) {
               ) : (
                 <div className="divide-y divide-gray-100 dark:divide-gray-800">
                   {project.expenses
-                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                    .sort((a, b) => new Date(b.expenseDate).getTime() - new Date(a.expenseDate).getTime())
                     .map((expense) => {
-                      const payer = project.participants.find(p => p.id === expense.payerId)
+                      const payer = expense.paidBy
                       return (
                         <div key={expense.id} className="p-4 cursor-default">
                           <div className="flex items-start gap-3">
@@ -242,7 +242,7 @@ export default function GuestHomeLayout({ scopes }: GuestHomeLayoutProps) {
                                     {expense.description}
                                   </p>
                                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                    پرداخت: {payer?.name} • {new Date(expense.date).toLocaleDateString('fa-IR', { month: 'long', day: 'numeric' })}
+                                    پرداخت: {payer?.name} • {new Date(expense.expenseDate).toLocaleDateString('fa-IR', { month: 'long', day: 'numeric' })}
                                   </p>
                                 </div>
 
