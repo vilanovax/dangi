@@ -250,6 +250,14 @@ export default function AccessPage() {
                   مشاهده پروژه
                 </button>
 
+                {/* Sign up CTA */}
+                <button
+                  onClick={() => router.push(`/auth?returnTo=/project/${validation.project.id}&mode=signup`)}
+                  className="w-full px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium transition-colors"
+                >
+                  ثبت‌نام و ذخیره این پروژه
+                </button>
+
                 {/* Permissions List */}
                 <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
                   <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -271,10 +279,10 @@ export default function AccessPage() {
                   </ul>
                 </div>
 
-                {/* Soft signup suggestion */}
-                <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
-                  <p className="text-xs text-amber-700 dark:text-amber-300">
-                    💡 برای دسترسی کامل به پروژه، می‌توانید از مدیر پروژه درخواست عضویت کنید
+                {/* Helper text */}
+                <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+                  <p className="text-xs text-green-700 dark:text-green-300">
+                    💡 با ساخت حساب، این پروژه به لیست پروژه‌هات اضافه می‌شه و بعداً هم می‌تونی بهش دسترسی داشته باشی
                   </p>
                 </div>
               </div>
@@ -304,7 +312,7 @@ export default function AccessPage() {
       <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 p-4">
         <div className="max-w-2xl mx-auto text-center">
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            دسترسی از طریق لینک اشتراک • بدون نیاز به ثبت‌نام
+            دسترسی از طریق لینک اشتراک • می‌تونی بدون ثبت‌نام مشاهده کنی یا ثبت‌نام کنی و پروژه رو ذخیره کنی
           </p>
         </div>
       </div>
