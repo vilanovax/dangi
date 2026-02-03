@@ -3,6 +3,13 @@
 
 import { prisma } from '@/lib/db/prisma'
 
+// Common select for participant info
+const participantSelect = {
+  id: true,
+  name: true,
+  avatar: true,
+}
+
 /**
  * Get all shopping items for a project
  * Returns items sorted: unchecked first, then checked
@@ -12,13 +19,9 @@ export async function getShoppingItems(projectId: string) {
   const items = await prisma.shoppingItem.findMany({
     where: { projectId },
     include: {
-      addedBy: {
-        select: {
-          id: true,
-          name: true,
-          avatar: true,
-        },
-      },
+      addedBy: { select: participantSelect },
+      assignedTo: { select: participantSelect },
+      checkedBy: { select: participantSelect },
     },
     orderBy: [
       { isChecked: 'asc' }, // unchecked first (false < true)
@@ -38,6 +41,7 @@ export async function getShoppingItems(projectId: string) {
 
 /**
  * Create a new shopping item
+ * If assignedToId is not provided, defaults to addedById (creator)
  */
 export async function createShoppingItem(
   projectId: string,
@@ -46,27 +50,30 @@ export async function createShoppingItem(
     quantity?: string
     note?: string
     addedById?: string
+    assignedToId?: string
   }
 ) {
   return await prisma.shoppingItem.create({
     data: {
-      ...data,
+      text: data.text,
+      quantity: data.quantity,
+      note: data.note,
+      addedById: data.addedById,
+      // Default assignedTo to addedBy if not specified
+      assignedToId: data.assignedToId ?? data.addedById,
       projectId,
     },
     include: {
-      addedBy: {
-        select: {
-          id: true,
-          name: true,
-          avatar: true,
-        },
-      },
+      addedBy: { select: participantSelect },
+      assignedTo: { select: participantSelect },
+      checkedBy: { select: participantSelect },
     },
   })
 }
 
 /**
  * Update a shopping item
+ * When marking as checked, also records who checked it and when
  */
 export async function updateShoppingItem(
   itemId: string,
@@ -75,22 +82,41 @@ export async function updateShoppingItem(
     isChecked?: boolean
     quantity?: string
     note?: string
+    assignedToId?: string
+    checkedById?: string // Who is checking this item
   }
 ) {
+  // Build update data
+  const updateData: Record<string, unknown> = {
+    updatedAt: new Date(),
+  }
+
+  if (data.text !== undefined) updateData.text = data.text
+  if (data.quantity !== undefined) updateData.quantity = data.quantity
+  if (data.note !== undefined) updateData.note = data.note
+  if (data.assignedToId !== undefined) updateData.assignedToId = data.assignedToId
+
+  // Handle checked state
+  if (data.isChecked !== undefined) {
+    updateData.isChecked = data.isChecked
+    if (data.isChecked) {
+      // Mark as checked: record who and when
+      updateData.checkedById = data.checkedById
+      updateData.checkedAt = new Date()
+    } else {
+      // Uncheck: clear checked info
+      updateData.checkedById = null
+      updateData.checkedAt = null
+    }
+  }
+
   return await prisma.shoppingItem.update({
     where: { id: itemId },
-    data: {
-      ...data,
-      updatedAt: new Date(),
-    },
+    data: updateData,
     include: {
-      addedBy: {
-        select: {
-          id: true,
-          name: true,
-          avatar: true,
-        },
-      },
+      addedBy: { select: participantSelect },
+      assignedTo: { select: participantSelect },
+      checkedBy: { select: participantSelect },
     },
   })
 }

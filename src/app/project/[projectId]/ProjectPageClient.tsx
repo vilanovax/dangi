@@ -419,6 +419,7 @@ export default function ProjectPage() {
           <ShoppingChecklistTab
             projectId={projectId}
             currentParticipantId={myParticipantId || undefined}
+            participants={project.participants}
           />
         </section>
       )}

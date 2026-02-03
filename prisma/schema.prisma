@@ -96,7 +96,9 @@ model Participant {
   expenseShares           ExpenseShare[]
   settlementsFrom         Settlement[]            @relation("SettlementFrom")
   settlementsTo           Settlement[]            @relation("SettlementTo")
-  shoppingItemsAdded      ShoppingItem[]          // آیتم‌های لیست خریدی که اضافه کرده
+  shoppingItemsAdded      ShoppingItem[]          @relation("ShoppingItemAddedBy")    // آیتم‌های لیست خریدی که اضافه کرده
+  shoppingItemsAssigned   ShoppingItem[]          @relation("ShoppingItemAssignedTo") // آیتم‌هایی که مسئول خریدشه
+  shoppingItemsChecked    ShoppingItem[]          @relation("ShoppingItemCheckedBy")  // آیتم‌هایی که خریده
   travelChecklistItems    TravelChecklistItem[]   @relation("TravelChecklistCreator") // کارهای سفر که اضافه کرده
   incomesReceived         Income[]                @relation("IncomeReceivedBy") // درآمدهای دریافت شده (برای template family)
   recurringTransactions   RecurringTransaction[]  // تراکنش‌های تکراری این شخص
@@ -205,17 +207,22 @@ model ChargeRule {
 
 // چک‌لیست خرید - لیست خریدها برای دورهمی (فقط برای template gathering)
 model ShoppingItem {
-  id        String       @id @default(cuid())
-  text      String       // متن آیتم (مثلاً "پیتزا پپرونی 2 عدد")
-  isChecked Boolean      @default(false) // آیا خریداری شده؟
-  quantity  String?      // تعداد (اختیاری)
-  note      String?      // یادداشت (اختیاری)
-  addedById String?      // کی اضافه کرده
-  projectId String
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
-  project   Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  addedBy   Participant? @relation(fields: [addedById], references: [id], onDelete: SetNull)
+  id           String       @id @default(cuid())
+  text         String       // متن آیتم (مثلاً "پیتزا پپرونی 2 عدد")
+  isChecked    Boolean      @default(false) // آیا خریداری شده؟
+  quantity     String?      // تعداد (اختیاری)
+  note         String?      // یادداشت (اختیاری)
+  addedById    String?      // کی اضافه کرده
+  assignedToId String?      // مسئول خرید (پیش‌فرض: کسی که اضافه کرده)
+  checkedById  String?      // کی خریده
+  checkedAt    DateTime?    // زمان خرید
+  projectId    String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  addedBy      Participant? @relation("ShoppingItemAddedBy", fields: [addedById], references: [id], onDelete: SetNull)
+  assignedTo   Participant? @relation("ShoppingItemAssignedTo", fields: [assignedToId], references: [id], onDelete: SetNull)
+  checkedBy    Participant? @relation("ShoppingItemCheckedBy", fields: [checkedById], references: [id], onDelete: SetNull)
 
   @@index([projectId])
   @@index([projectId, createdAt])

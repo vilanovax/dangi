@@ -22,7 +22,7 @@ export async function PATCH(
 
     const body = await request.json()
 
-    const { text, isChecked, quantity, note } = body
+    const { text, isChecked, quantity, note, assignedToId, checkedById } = body
 
     // Validation
     if (text !== undefined) {
@@ -53,6 +53,8 @@ export async function PATCH(
       isChecked,
       quantity: quantity?.trim() || undefined,
       note: note?.trim() || undefined,
+      assignedToId: assignedToId || undefined,
+      checkedById: checkedById || undefined,
     })
 
     return NextResponse.json({ item })

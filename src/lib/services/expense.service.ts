@@ -186,6 +186,72 @@ export async function deleteExpense(expenseId: string) {
 }
 
 /**
+ * Update a single participant's share in an expense
+ * Does NOT auto-adjust other shares - caller should handle consistency
+ */
+export async function updateParticipantShare(
+  expenseId: string,
+  participantId: string,
+  newAmount: number
+) {
+  // Validate
+  if (newAmount < 0) {
+    throw new Error('Share amount cannot be negative')
+  }
+
+  // Get the expense to validate
+  const expense = await prisma.expense.findUnique({
+    where: { id: expenseId },
+    include: { shares: true },
+  })
+
+  if (!expense) {
+    throw new Error('Expense not found')
+  }
+
+  // Check that participant has a share in this expense
+  const existingShare = expense.shares.find(s => s.participantId === participantId)
+  if (!existingShare) {
+    throw new Error('Participant does not have a share in this expense')
+  }
+
+  // Validate: share cannot exceed total expense amount
+  if (newAmount > expense.amount) {
+    throw new Error('Share cannot exceed total expense amount')
+  }
+
+  // Update the share
+  const updatedShare = await prisma.expenseShare.update({
+    where: {
+      expenseId_participantId: {
+        expenseId,
+        participantId,
+      },
+    },
+    data: {
+      amount: newAmount,
+    },
+    include: {
+      participant: true,
+    },
+  })
+
+  // Calculate new total shares for warning
+  const allShares = await prisma.expenseShare.findMany({
+    where: { expenseId },
+  })
+  const totalShares = allShares.reduce((sum, s) => sum + s.amount, 0)
+  const sharesMatchTotal = Math.abs(totalShares - expense.amount) < 1 // Allow 1 unit tolerance
+
+  return {
+    share: updatedShare,
+    expense,
+    totalShares,
+    sharesMatchTotal,
+  }
+}
+
+/**
  * Update an expense (recalculates shares)
  */
 export async function updateExpense(

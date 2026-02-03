@@ -51,7 +51,7 @@ export async function POST(
 
     const body = await request.json()
 
-    const { text, quantity, note, addedById } = body
+    const { text, quantity, note, addedById, assignedToId } = body
 
     // Validation
     if (!text || typeof text !== 'string' || !text.trim()) {
@@ -73,6 +73,7 @@ export async function POST(
       quantity: quantity?.trim() || undefined,
       note: note?.trim() || undefined,
       addedById: addedById || undefined,
+      assignedToId: assignedToId || undefined,
     })
 
     return NextResponse.json({ item }, { status: 201 })

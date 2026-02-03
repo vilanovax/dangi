@@ -5,15 +5,33 @@ import type { ShoppingItem } from '@/types'
 import { Avatar } from '@/components/ui'
 import { deserializeAvatar } from '@/lib/types/avatar'
 
-interface ShoppingItemCardProps {
-  item: ShoppingItem
-  onToggle: (itemId: string, isChecked: boolean) => Promise<void>
-  onDelete: (itemId: string) => Promise<void>
-  onEdit: (itemId: string, text: string, quantity?: string, note?: string) => Promise<void>
+interface Participant {
+  id: string
+  name: string
+  avatar?: string | null
 }
 
-export function ShoppingItemCard({ item, onToggle, onDelete, onEdit }: ShoppingItemCardProps) {
+interface ShoppingItemCardProps {
+  item: ShoppingItem
+  participants: Participant[]
+  currentParticipantId?: string
+  onToggle: (itemId: string, isChecked: boolean) => Promise<void>
+  onDelete: (itemId: string) => Promise<void>
+  onEdit: (itemId: string, text: string, quantity?: string, note?: string, assignedToId?: string) => Promise<void>
+  onAssign: (itemId: string, assignedToId: string) => Promise<void>
+}
+
+export function ShoppingItemCard({
+  item,
+  participants,
+  currentParticipantId,
+  onToggle,
+  onDelete,
+  onEdit,
+  onAssign,
+}: ShoppingItemCardProps) {
   const [isEditing, setIsEditing] = useState(false)
+  const [showAssignSelector, setShowAssignSelector] = useState(false)
   const [editText, setEditText] = useState(item.text)
   const [editQuantity, setEditQuantity] = useState(item.quantity || '')
   const [editNote, setEditNote] = useState(item.note || '')
@@ -69,6 +87,15 @@ export function ShoppingItemCard({ item, onToggle, onDelete, onEdit }: ShoppingI
     setEditError('')
   }
 
+  const handleAssign = async (participantId: string) => {
+    setShowAssignSelector(false)
+    await onAssign(item.id, participantId)
+  }
+
+  // Get responsible person (assignedTo or fallback to addedBy)
+  const responsiblePerson = item.assignedTo || item.addedBy
+
+  // Edit mode
   if (isEditing) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-3 space-y-2">
@@ -76,7 +103,7 @@ export function ShoppingItemCard({ item, onToggle, onDelete, onEdit }: ShoppingI
           type="text"
           value={editText}
           onChange={(e) => setEditText(e.target.value)}
-          placeholder="مثلاً: پیتزا، نوشیدنی، اسنک…"
+          placeholder="مثلاً آب، نان، دستمال کاغذی…"
           className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500/50 focus:border-purple-300 dark:focus:border-purple-700 bg-gray-50/50 dark:bg-gray-900/30"
           autoFocus
         />
@@ -166,30 +193,99 @@ export function ShoppingItemCard({ item, onToggle, onDelete, onEdit }: ShoppingI
               </p>
 
               {/* Metadata */}
-              <div className="flex items-center gap-2 mt-1">
-                {item.quantity && (
-                  <span className="text-xs text-gray-500 dark:text-gray-500">
-                    {item.quantity}
-                  </span>
-                )}
-                {item.note && (
-                  <span className="text-xs text-gray-500 dark:text-gray-500">
-                    • {item.note}
-                  </span>
-                )}
-              </div>
+              {(item.quantity || item.note) && (
+                <div className="flex items-center gap-2 mt-1">
+                  {item.quantity && (
+                    <span className="text-xs text-gray-500 dark:text-gray-500">
+                      {item.quantity}
+                    </span>
+                  )}
+                  {item.note && (
+                    <span className="text-xs text-gray-500 dark:text-gray-500">
+                      • {item.note}
+                    </span>
+                  )}
+                </div>
+              )}
 
-              {/* Added by */}
-              {item.addedBy && (
-                <div className="flex items-center gap-1.5 mt-1.5">
-                  <Avatar
-                    name={item.addedBy.name}
-                    avatar={deserializeAvatar(item.addedBy.avatar || null, item.addedBy.name)}
-                    size="sm"
-                  />
-                  <span className="text-xs text-gray-400 dark:text-gray-600">
-                    {item.addedBy.name}
-                  </span>
+              {/* Responsible person / Checked by */}
+              {item.isChecked ? (
+                // Checked state: Show who checked it
+                item.checkedBy && (
+                  <div className="flex items-center gap-1.5 mt-1.5">
+                    <Avatar
+                      name={item.checkedBy.name}
+                      avatar={deserializeAvatar(item.checkedBy.avatar || null, item.checkedBy.name)}
+                      size="sm"
+                    />
+                    <span className="text-xs text-green-600 dark:text-green-400">
+                      خرید شده توسط {item.checkedBy.name}
+                    </span>
+                  </div>
+                )
+              ) : (
+                // Unchecked state: Show responsible person (tappable)
+                <div className="relative mt-1.5">
+                  <button
+                    onClick={() => setShowAssignSelector(!showAssignSelector)}
+                    className="flex items-center gap-1.5 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg p-1 -m-1 transition-colors"
+                  >
+                    {responsiblePerson ? (
+                      <>
+                        <Avatar
+                          name={responsiblePerson.name}
+                          avatar={deserializeAvatar(responsiblePerson.avatar || null, responsiblePerson.name)}
+                          size="sm"
+                        />
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          مسئول: {responsiblePerson.name}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-xs text-gray-400 dark:text-gray-500">
+                        + تعیین مسئول
+                      </span>
+                    )}
+                    <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  {/* Inline participant selector */}
+                  {showAssignSelector && (
+                    <div className="absolute top-full right-0 mt-1 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-2 z-10 min-w-[160px] animate-slideDown">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 px-2 pb-2 border-b border-gray-100 dark:border-gray-700 mb-2">
+                        مسئول خرید
+                      </p>
+                      {participants.map((participant) => (
+                        <button
+                          key={participant.id}
+                          onClick={() => handleAssign(participant.id)}
+                          className={`w-full flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                            responsiblePerson?.id === participant.id ? 'bg-purple-50 dark:bg-purple-900/20' : ''
+                          }`}
+                        >
+                          <Avatar
+                            name={participant.name}
+                            avatar={deserializeAvatar(participant.avatar || null, participant.name)}
+                            size="sm"
+                          />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">{participant.name}</span>
+                          {responsiblePerson?.id === participant.id && (
+                            <svg className="w-4 h-4 text-purple-500 mr-auto" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => setShowAssignSelector(false)}
+                        className="w-full mt-2 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                      >
+                        بستن
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -231,6 +327,14 @@ export function ShoppingItemCard({ item, onToggle, onDelete, onEdit }: ShoppingI
           </div>
         </div>
       </div>
+
+      {/* Click outside to close selector */}
+      {showAssignSelector && (
+        <div
+          className="fixed inset-0 z-0"
+          onClick={() => setShowAssignSelector(false)}
+        />
+      )}
     </div>
   )
 }

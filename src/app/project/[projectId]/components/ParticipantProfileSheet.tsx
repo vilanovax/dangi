@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { BottomSheet, Avatar } from '@/components/ui'
-import { formatMoney } from '@/lib/utils/money'
+import { BottomSheet, Avatar, Toast } from '@/components/ui'
+import { formatMoney, formatInputAmount, parseMoney, getCurrencyLabel } from '@/lib/utils/money'
 import { deserializeAvatar } from '@/lib/types/avatar'
 import { ExpenseDetailSheet } from '../expenses/components/ExpenseDetailSheet'
 
@@ -90,6 +90,15 @@ export function ParticipantProfileSheet({
   const [showExpenseDetail, setShowExpenseDetail] = useState(false)
   const [loadingExpenseDetail, setLoadingExpenseDetail] = useState(false)
 
+  // Inline share edit state
+  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null)
+  const [editShareValue, setEditShareValue] = useState('')
+  const [editShareError, setEditShareError] = useState<string | null>(null)
+  const [savingShare, setSavingShare] = useState(false)
+  const [shareToast, setShareToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+  const [shareMismatchWarning, setShareMismatchWarning] = useState(false)
+  const shareInputRef = useRef<HTMLInputElement>(null)
+
   // Fetch participant's expenses when sheet opens
   const fetchExpenses = useCallback(async () => {
     if (!participant || !projectId) return
@@ -150,6 +159,110 @@ export function ParticipantProfileSheet({
       alert('خطا در حذف هزینه')
     }
   }, [selectedExpenseId, projectId, fetchExpenses])
+
+  // Inline share edit handlers
+  const startEditShare = useCallback((expense: ExpenseItem, e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent opening expense detail sheet
+    setEditingExpenseId(expense.id)
+    setEditShareValue(expense.shareAmount.toLocaleString('en-US'))
+    setEditShareError(null)
+    setShareMismatchWarning(false)
+    // Focus input after render
+    setTimeout(() => shareInputRef.current?.focus(), 50)
+  }, [])
+
+  const cancelEditShare = useCallback(() => {
+    setEditingExpenseId(null)
+    setEditShareValue('')
+    setEditShareError(null)
+    setShareMismatchWarning(false)
+  }, [])
+
+  const saveEditShare = useCallback(async (expense: ExpenseItem) => {
+    if (!participant) return
+
+    const newAmount = parseMoney(editShareValue)
+
+    // Validation
+    if (!editShareValue.trim()) {
+      setEditShareError('مبلغ نمی‌تونه خالی باشه')
+      return
+    }
+
+    if (newAmount < 0) {
+      setEditShareError('سهم نمی‌تونه منفی باشه')
+      return
+    }
+
+    if (newAmount > expense.amount) {
+      setEditShareError('سهم نمی‌تونه بیشتر از کل خرج باشه')
+      return
+    }
+
+    setSavingShare(true)
+    setEditShareError(null)
+
+    try {
+      const res = await fetch(`/api/projects/${projectId}/expenses/${expense.id}/shares`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          participantId: participant.id,
+          amount: newAmount,
+        }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        setEditShareError(data.error || 'خطا در ذخیره سهم')
+        return
+      }
+
+      const data = await res.json()
+
+      // Update local expense data
+      setExpenses(prev =>
+        prev.map(exp =>
+          exp.id === expense.id
+            ? { ...exp, shareAmount: newAmount }
+            : exp
+        )
+      )
+
+      // Show warning if shares don't match total
+      if (!data.sharesMatchTotal) {
+        setShareMismatchWarning(true)
+        setShareToast({
+          message: 'سهم به‌روز شد - جمع سهم‌ها با مبلغ خرج برابر نیست',
+          type: 'success',
+        })
+      } else {
+        setShareToast({
+          message: 'سهم شخص به‌روزرسانی شد ✓',
+          type: 'success',
+        })
+      }
+
+      // Reset edit state
+      setEditingExpenseId(null)
+      setEditShareValue('')
+    } catch (error) {
+      console.error('Error saving share:', error)
+      setEditShareError('خطا در ذخیره سهم')
+    } finally {
+      setSavingShare(false)
+    }
+  }, [participant, projectId, editShareValue])
+
+  const handleShareInputKeyDown = useCallback((e: React.KeyboardEvent, expense: ExpenseItem) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      saveEditShare(expense)
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      cancelEditShare()
+    }
+  }, [saveEditShare, cancelEditShare])
 
   if (!participant) return null
 
@@ -212,6 +325,8 @@ export function ParticipantProfileSheet({
 
   // Handle expense click - open bottom sheet
   const handleExpenseClick = async (expense: ExpenseItem) => {
+    // Clear previous expense data first to prevent showing stale data
+    setSelectedExpense(null)
     setSelectedExpenseId(expense.id)
     setShowExpenseDetail(true)
     setLoadingExpenseDetail(true)
@@ -323,17 +438,18 @@ export function ParticipantProfileSheet({
           ) : (
             <div className="space-y-2">
               {displayedExpenses.map((expense) => {
-                const canEdit = myParticipantId === expense.paidById
+                const canEditExpense = myParticipantId === expense.paidById
+                const isEditing = editingExpenseId === expense.id
 
                 return (
-                  <button
+                  <div
                     key={expense.id}
-                    onClick={() => handleExpenseClick(expense)}
-                    className="w-full flex items-center gap-2.5 p-2 bg-white dark:bg-gray-900/50 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-all active:scale-[0.98] text-right"
+                    className="w-full flex items-center gap-2.5 p-2 bg-white dark:bg-gray-900/50 rounded-xl text-right"
                   >
-                    {/* Category Icon - compact */}
-                    <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                    {/* Category Icon - compact, clickable to open detail */}
+                    <button
+                      onClick={() => handleExpenseClick(expense)}
+                      className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 hover:opacity-80 transition-opacity"
                       style={{
                         backgroundColor: expense.category?.color
                           ? `${expense.category.color}20`
@@ -341,26 +457,127 @@ export function ParticipantProfileSheet({
                       }}
                     >
                       <span className="text-base">{expense.category?.icon || '💰'}</span>
-                    </div>
+                    </button>
 
                     {/* UX: Expense Info - Clear hierarchy */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
+                      {/* Title row - clickable to open detail */}
+                      <button
+                        onClick={() => handleExpenseClick(expense)}
+                        className="flex items-center gap-2 mb-0.5 hover:opacity-80 transition-opacity"
+                      >
                         <p className="font-medium text-gray-800 dark:text-gray-200 truncate">
                           {expense.title}
                         </p>
-                        {canEdit && (
+                        {canEditExpense && (
                           <span className="shrink-0 text-blue-500">
                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                             </svg>
                           </span>
                         )}
-                      </div>
-                      {/* UX: Emphasize participant's share, de-emphasize payer info */}
-                      <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                        سهم {participant.name}: {formatMoney(expense.shareAmount, currency)}
-                      </p>
+                      </button>
+
+                      {/* UX: Inline editable share amount */}
+                      {isEditing ? (
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">سهم:</span>
+                            <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 rounded-lg px-2 py-1">
+                              <input
+                                ref={shareInputRef}
+                                type="text"
+                                inputMode="numeric"
+                                value={editShareValue}
+                                onChange={(e) => {
+                                  setEditShareValue(formatInputAmount(e.target.value))
+                                  setEditShareError(null)
+                                }}
+                                onKeyDown={(e) => handleShareInputKeyDown(e, expense)}
+                                onBlur={() => {
+                                  // Small delay to allow button clicks
+                                  setTimeout(() => {
+                                    if (editingExpenseId === expense.id && !savingShare) {
+                                      cancelEditShare()
+                                    }
+                                  }, 150)
+                                }}
+                                className="w-24 text-sm font-semibold bg-transparent border-none outline-none text-blue-700 dark:text-blue-300 text-right"
+                                disabled={savingShare}
+                              />
+                              <span className="text-xs text-blue-500 dark:text-blue-400">
+                                {getCurrencyLabel(currency)}
+                              </span>
+                            </div>
+                            {/* Save button */}
+                            <button
+                              onClick={() => saveEditShare(expense)}
+                              disabled={savingShare}
+                              className="p-1 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30 rounded transition-colors"
+                            >
+                              {savingShare ? (
+                                <div className="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </button>
+                            {/* Cancel button */}
+                            <button
+                              onClick={cancelEditShare}
+                              disabled={savingShare}
+                              className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                          {/* Inline error */}
+                          {editShareError && (
+                            <p className="text-xs text-red-500 dark:text-red-400 pr-1">
+                              {editShareError}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        /* VIEW mode - Tappable share amount (disabled if settled) */
+                        isSettled ? (
+                          /* Settled state - show non-editable amount with lock hint */
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setShareToast({
+                                message: 'این خرج تسویه شده و سهمش قابل تغییر نیست',
+                                type: 'error',
+                              })
+                            }}
+                            className="group flex items-center gap-1.5 text-sm font-semibold text-gray-500 dark:text-gray-400"
+                          >
+                            <span>سهم {participant.name}:</span>
+                            <span>{formatMoney(expense.shareAmount, currency)}</span>
+                            <svg className="w-3 h-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                          </button>
+                        ) : (
+                          /* Normal state - editable */
+                          <button
+                            onClick={(e) => startEditShare(expense, e)}
+                            className="group flex items-center gap-1.5 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                          >
+                            <span>سهم {participant.name}:</span>
+                            <span className="underline decoration-dashed underline-offset-2">
+                              {formatMoney(expense.shareAmount, currency)}
+                            </span>
+                            <svg className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                          </button>
+                        )
+                      )}
+
                       <p className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                         <span>{formatDate(expense.expenseDate)}</span>
                         <span>•</span>
@@ -369,15 +586,18 @@ export function ParticipantProfileSheet({
                     </div>
 
                     {/* UX: Total amount - de-emphasized, secondary info */}
-                    <div className="text-left shrink-0">
+                    <button
+                      onClick={() => handleExpenseClick(expense)}
+                      className="text-left shrink-0 hover:opacity-80 transition-opacity"
+                    >
                       <p className="text-xs text-gray-400 dark:text-gray-500">
                         کل خرج
                       </p>
                       <p className="font-medium text-gray-600 dark:text-gray-400 text-sm">
                         {formatMoney(expense.amount, currency)}
                       </p>
-                    </div>
-                  </button>
+                    </button>
+                  </div>
                 )
               })}
 
@@ -562,6 +782,15 @@ export function ParticipantProfileSheet({
           </div>
         </div>
       )}
+
+      {/* Share edit toast feedback */}
+      <Toast
+        isOpen={!!shareToast}
+        onClose={() => setShareToast(null)}
+        message={shareToast?.message || ''}
+        type={shareToast?.type || 'success'}
+        duration={3000}
+      />
     </BottomSheet>
   )
 }

@@ -124,7 +124,7 @@ interface AuthResult {
   authorized: true
   accessType: 'participant'
   user: { id: string; phone: string; name: string }
-  participant: { id: string; userId: string | null; projectId: string }
+  participant: { id: string; userId: string | null; projectId: string; scopes: string | null }
 }
 
 interface LinkAuthResult {
@@ -164,6 +164,7 @@ export async function requireProjectAccess(
       id: true,
       userId: true,
       projectId: true,
+      scopes: true, // Include scopes to check for restricted access
     },
   })
 

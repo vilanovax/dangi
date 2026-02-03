@@ -180,18 +180,21 @@ export async function validateParticipantAccess(
  * - Role is strictly derived from access link (never upgraded)
  * - No approval needed - links grant access
  * - If user already has access, return existing participant
+ * - Scopes are stored to enforce restrictions even after authentication
  *
  * @param userId - The authenticated user's ID
  * @param projectId - The project to attach
  * @param linkRole - Role from the access link ('viewer' | 'contributor' | 'admin')
  * @param userName - User's display name
+ * @param scopes - Access scopes from the link (stored for enforcing restrictions)
  * @returns The participant record
  */
 export async function attachProjectToUser(
   userId: string,
   projectId: string,
   linkRole: string,
-  userName: string
+  userName: string,
+  scopes: string[] = []
 ) {
   // Check if user already has a participant in this project
   const existingParticipant = await prisma.participant.findFirst({
@@ -210,6 +213,10 @@ export async function attachProjectToUser(
   // Security: Role is strictly what the link grants - never more
   const participantRole = mapLinkRoleToParticipantRole(linkRole)
 
+  // Store scopes for MEMBER roles only (OWNER has full access)
+  // null scopes = full access, non-null scopes = restricted access
+  const scopesToStore = participantRole === 'OWNER' ? null : JSON.stringify(scopes)
+
   // Create new participant linked to user account
   const participant = await prisma.participant.create({
     data: {
@@ -219,6 +226,7 @@ export async function attachProjectToUser(
       role: participantRole,
       weight: 1,
       avatar: null, // Will use user's avatar from User model
+      scopes: scopesToStore,
     },
   })
 

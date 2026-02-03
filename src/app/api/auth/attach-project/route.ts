@@ -55,13 +55,17 @@ export async function POST(request: NextRequest) {
 
     const { link } = validation
 
+    // Parse scopes from link (stored as JSON string in DB)
+    const scopes = validation.scopes || []
+
     // Attach project to user account
-    // Security: Role is strictly what the link grants
+    // Security: Role AND scopes are strictly what the link grants
     const participant = await attachProjectToUser(
       currentUser.id,
       link.projectId,
       link.role || 'viewer', // Default to viewer if role not set
-      currentUser.name
+      currentUser.name,
+      scopes // Store scopes to enforce restrictions even after authentication
     )
 
     // Clear access_token cookie - no longer needed
