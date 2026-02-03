@@ -5,7 +5,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui'
 import type {
@@ -35,6 +35,25 @@ export default function NewChecklistPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<ChecklistTemplate | null>(null)
   const [isCreating, setIsCreating] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [isAnimating, setIsAnimating] = useState(false)
+
+  // Ref for scroll container
+  const templatesContainerRef = useRef<HTMLDivElement>(null)
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+  // ── Long Press Handler for Mobile ────────────────────────────
+  const handleTouchStart = useCallback((template: ChecklistTemplate) => {
+    longPressTimerRef.current = setTimeout(() => {
+      setSelectedTemplate(template)
+    }, 500) // 500ms long press
+  }, [])
+
+  const handleTouchEnd = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current)
+      longPressTimerRef.current = null
+    }
+  }, [])
 
   // ── Fetch Templates ─────────────────────────────────────────
   useEffect(() => {
@@ -52,6 +71,20 @@ export default function NewChecklistPage() {
     }
     fetchTemplates()
   }, [])
+
+  // ── Category Switch Animation & Scroll Reset ────────────────
+  useEffect(() => {
+    // Trigger animation on category change
+    setIsAnimating(true)
+    const timer = setTimeout(() => setIsAnimating(false), 300)
+
+    // Scroll to top of templates container
+    if (templatesContainerRef.current) {
+      templatesContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+
+    return () => clearTimeout(timer)
+  }, [selectedCategory])
 
   // ── Filter Templates ────────────────────────────────────────
   const filteredCategories =
@@ -131,17 +164,18 @@ export default function NewChecklistPage() {
             ایجاد چک‌لیست جدید
           </h1>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            از تمپلیت‌های آماده استفاده کنید یا یک چک‌لیست خالی بسازید
+            از تمپلیت‌های آماده استفاده کن یا چک‌لیست مخصوص خودت بساز
           </p>
         </div>
 
         {/* Category Filter Tabs */}
-        <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
+        <div className="mb-4">
+          <div className="flex items-center gap-2 mb-3 overflow-x-auto pb-2">
           <button
             onClick={() => setSelectedCategory('all')}
             className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
               selectedCategory === 'all'
-                ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
+                ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-xl shadow-blue-500/50 ring-2 ring-blue-400/30 scale-105'
                 : 'bg-white/80 dark:bg-gray-800/80 text-gray-600 dark:text-gray-400 hover:bg-white dark:hover:bg-gray-800'
             }`}
           >
@@ -153,7 +187,7 @@ export default function NewChecklistPage() {
               onClick={() => setSelectedCategory(cat.id)}
               className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all flex items-center gap-2 ${
                 selectedCategory === cat.id
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-xl shadow-blue-500/50 ring-2 ring-blue-400/30 scale-105'
                   : 'bg-white/80 dark:bg-gray-800/80 text-gray-600 dark:text-gray-400 hover:bg-white dark:hover:bg-gray-800'
               }`}
               style={
@@ -166,6 +200,10 @@ export default function NewChecklistPage() {
               <span>{cat.title}</span>
             </button>
           ))}
+          </div>
+          <p className="text-xs text-center text-gray-500 dark:text-gray-400">
+            با انتخاب هر تمپلیت، یک نسخه شخصی برایت ساخته می‌شود
+          </p>
         </div>
 
         {/* Blank Checklist Option */}
@@ -174,32 +212,35 @@ export default function NewChecklistPage() {
             onClick={() => router.push('/checklists/new/blank')}
             className="w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl p-6 text-right hover:shadow-xl transition-all border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500"
           >
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-gray-400/20 to-gray-500/20 flex items-center justify-center text-3xl">
+            <div className="flex items-start gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-gray-400/20 to-gray-500/20 flex items-center justify-center text-3xl shrink-0">
                 ✏️
               </div>
               <div className="flex-1">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">
-                  ایجاد از ابتدا
+                  ایجاد چک‌لیست از ابتدا
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  یک چک‌لیست خالی بسازید و خودتان آیتم‌ها را اضافه کنید
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                  اگر تمپلیت آماده مناسب شما نیست
+                </p>
+                <div className="inline-block px-4 py-2 bg-gradient-to-r from-gray-500 to-gray-600 text-white text-sm font-medium rounded-xl mb-2">
+                  ساخت چک‌لیست خالی
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  می‌تونی هر تعداد آیتم که بخوای اضافه کنی
                 </p>
               </div>
-              <svg
-                className="w-6 h-6 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
             </div>
           </button>
         </div>
 
         {/* Templates Grid */}
-        <div className="space-y-4">
+        <div
+          ref={templatesContainerRef}
+          className={`space-y-4 transition-all duration-300 ${
+            isAnimating ? 'opacity-0 translate-y-2' : 'opacity-100 translate-y-0'
+          }`}
+        >
           {filteredCategories.map((category) => (
             <div key={category.id}>
               {selectedCategory === 'all' && (
@@ -219,33 +260,61 @@ export default function NewChecklistPage() {
                 {category.templates.map((template) => (
                   <button
                     key={template.id}
-                    onClick={() => setSelectedTemplate(template)}
-                    className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl p-5 text-right hover:shadow-xl transition-all border border-white/50 dark:border-gray-700/50 hover:scale-[1.02]"
+                    onClick={() => handleCreateFromTemplate(template.id)}
+                    onContextMenu={(e) => {
+                      e.preventDefault()
+                      setSelectedTemplate(template)
+                    }}
+                    onTouchStart={() => handleTouchStart(template)}
+                    onTouchEnd={handleTouchEnd}
+                    onTouchMove={handleTouchEnd}
+                    disabled={isCreating}
+                    className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl p-5 text-right hover:shadow-xl transition-all border border-white/50 dark:border-gray-700/50 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{
                       borderRight: `4px solid ${template.color}`,
                     }}
                   >
-                    <div className="flex items-start gap-4">
-                      <div
-                        className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0"
-                        style={{
-                          backgroundColor: `${template.color}20`,
-                        }}
-                      >
-                        {template.icon}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-1">
-                          {template.title}
-                        </h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                          {template.description}
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <span className="px-2.5 py-1 bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400 text-xs font-medium rounded-lg">
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-start gap-4">
+                        <div
+                          className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0"
+                          style={{
+                            backgroundColor: `${template.color}20`,
+                          }}
+                        >
+                          {template.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-1">
+                            {template.title}
+                          </h3>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                            {template.description}
+                          </p>
+                          <span className="inline-block px-2.5 py-1 bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400 text-xs font-medium rounded-lg">
                             {template.items.length} مورد
                           </span>
                         </div>
+                      </div>
+
+                      <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                        <div
+                          className="w-full px-4 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-sm font-medium rounded-xl mb-2"
+                        >
+                          استفاده از این تمپلیت
+                        </div>
+                        <p className="text-xs text-center text-gray-500 dark:text-gray-400">
+                          امکان اضافه یا حذف آیتم‌ها بعداً وجود دارد
+                        </p>
+                        <span
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedTemplate(template)
+                          }}
+                          className="text-xs text-blue-600 dark:text-blue-400 mt-2 hover:underline cursor-pointer inline-block"
+                        >
+                          پیش‌نمایش آیتم‌ها ←
+                        </span>
                       </div>
                     </div>
                   </button>
@@ -257,9 +326,9 @@ export default function NewChecklistPage() {
 
         {/* Empty State */}
         {allTemplates.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-500 dark:text-gray-400">
-              تمپلیتی برای این دسته وجود ندارد
+          <div className="text-center py-12 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
+            <p className="text-gray-500 dark:text-gray-400 text-sm">
+              در این دسته هنوز تمپلیتی وجود ندارد
             </p>
           </div>
         )}
@@ -277,7 +346,10 @@ export default function NewChecklistPage() {
           >
             {/* Preview Header */}
             <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-5 z-10">
-              <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 text-center mb-4">
+                پیش‌نمایش تمپلیت
+              </h3>
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div
                     className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl"
@@ -335,6 +407,9 @@ export default function NewChecklistPage() {
               >
                 {isCreating ? 'در حال ایجاد...' : 'استفاده از این تمپلیت'}
               </Button>
+              <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-3">
+                این فقط یک پیش‌نمایش است
+              </p>
             </div>
           </div>
         </div>

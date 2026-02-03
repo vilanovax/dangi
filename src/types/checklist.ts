@@ -23,6 +23,8 @@ export interface Checklist {
   color?: string | null
   userId: string
   shareCode: string
+  isPinned: boolean
+  pinnedAt?: string | null
   isArchived: boolean
   archivedAt?: string | null
   createdAt: string
@@ -71,6 +73,7 @@ export interface UpdateChecklistInput {
   description?: string | null
   icon?: string | null
   color?: string | null
+  isPinned?: boolean
 }
 
 /**

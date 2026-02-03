@@ -5,8 +5,8 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui'
 import type { Checklist } from '@/types/checklist'
@@ -24,24 +24,99 @@ interface ChecklistsResponse {
 // Helper Functions
 // ─────────────────────────────────────────────────────────────
 
-function getProgressPercentage(checklist: Checklist): number {
-  if (!checklist.items || checklist.items.length === 0) return 0
-  const checked = checklist.items.filter((i) => i.isChecked).length
-  return Math.round((checked / checklist.items.length) * 100)
+function getProgressInfo(checklist: Checklist): { completed: number; total: number; percentage: number } {
+  const total = checklist.items?.length || 0
+  const completed = checklist.items?.filter((i) => i.isChecked).length || 0
+  const percentage = total === 0 ? 0 : Math.round((completed / total) * 100)
+  return { completed, total, percentage }
+}
+
+function isChecklistComplete(checklist: Checklist): boolean {
+  const { percentage, total } = getProgressInfo(checklist)
+  return total > 0 && percentage === 100
+}
+
+function sortChecklistsByPriority(checklists: Checklist[]): Checklist[] {
+  return [...checklists].sort((a, b) => {
+    // Pinned checklists always come first
+    if (a.isPinned && !b.isPinned) return -1
+    if (!a.isPinned && b.isPinned) return 1
+
+    // Among pinned, sort by pinnedAt (most recent first)
+    if (a.isPinned && b.isPinned) {
+      const pinnedAtA = a.pinnedAt ? new Date(a.pinnedAt).getTime() : 0
+      const pinnedAtB = b.pinnedAt ? new Date(b.pinnedAt).getTime() : 0
+      return pinnedAtB - pinnedAtA
+    }
+
+    const progressA = getProgressInfo(a)
+    const progressB = getProgressInfo(b)
+
+    // In-progress (0% < progress < 100%) come first
+    const isInProgressA = progressA.percentage > 0 && progressA.percentage < 100
+    const isInProgressB = progressB.percentage > 0 && progressB.percentage < 100
+
+    if (isInProgressA && !isInProgressB) return -1
+    if (!isInProgressA && isInProgressB) return 1
+
+    // Then sort by recently updated
+    const dateA = new Date(a.updatedAt || a.createdAt).getTime()
+    const dateB = new Date(b.updatedAt || b.createdAt).getTime()
+    return dateB - dateA
+  })
 }
 
 // ─────────────────────────────────────────────────────────────
-// Main Component
+// Main Component (with Suspense boundary)
 // ─────────────────────────────────────────────────────────────
 
 export default function ChecklistsPage() {
+  return (
+    <Suspense fallback={<ChecklistsPageSkeleton />}>
+      <ChecklistsPageContent />
+    </Suspense>
+  )
+}
+
+function ChecklistsPageSkeleton() {
+  return (
+    <main className="min-h-dvh bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 p-5">
+      <div className="max-w-2xl mx-auto">
+        <div className="h-8 w-48 bg-gray-200/50 dark:bg-gray-800/50 rounded-xl mb-6 animate-pulse" />
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-32 bg-gray-200/50 dark:bg-gray-800/50 rounded-2xl animate-pulse"
+            />
+          ))}
+        </div>
+      </div>
+    </main>
+  )
+}
+
+function ChecklistsPageContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   // ── State ───────────────────────────────────────────────────
   const [checklists, setChecklists] = useState<Checklist[]>([])
   const [selectedCategory, setSelectedCategory] = useState<ChecklistCategoryId | 'all'>('all')
-  const [showArchived, setShowArchived] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [showSavedToast, setShowSavedToast] = useState(false)
+  const [pinningId, setPinningId] = useState<string | null>(null)
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+
+  // ── Check for saved feedback ────────────────────────────────
+  useEffect(() => {
+    if (searchParams.get('saved') === 'true') {
+      setShowSavedToast(true)
+      // Remove the param from URL
+      router.replace('/checklists', { scroll: false })
+      setTimeout(() => setShowSavedToast(false), 2000)
+    }
+  }, [searchParams, router])
 
   // ── Fetch Checklists ────────────────────────────────────────
   useEffect(() => {
@@ -65,8 +140,65 @@ export default function ChecklistsPage() {
     fetchChecklists()
   }, [selectedCategory])
 
-  // ── Filter Checklists ───────────────────────────────────────
-  const activeChecklists = checklists.filter((c) => !c.isArchived)
+  // ── Pin/Unpin Handler ─────────────────────────────────────────
+  const handleTogglePin = async (e: React.MouseEvent, checklistId: string, currentlyPinned: boolean) => {
+    e.preventDefault() // Prevent navigation
+    e.stopPropagation()
+
+    if (pinningId) return // Prevent double-clicks
+
+    setPinningId(checklistId)
+
+    try {
+      const res = await fetch(`/api/checklists/${checklistId}/pin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: !currentlyPinned }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        if (data.error === 'MAX_PINNED') {
+          setToast({ message: 'حداکثر ۳ چک‌لیست می‌تونی سنجاق کنی', type: 'error' })
+        } else {
+          setToast({ message: 'خطا در سنجاق کردن', type: 'error' })
+        }
+        return
+      }
+
+      // Update local state
+      setChecklists((prev) =>
+        prev.map((c) =>
+          c.id === checklistId
+            ? { ...c, isPinned: !currentlyPinned, pinnedAt: !currentlyPinned ? new Date().toISOString() : null }
+            : c
+        )
+      )
+
+      // Haptic feedback
+      if (navigator.vibrate) navigator.vibrate(10)
+
+      // Show toast
+      setToast({
+        message: !currentlyPinned ? 'به بالای لیست منتقل شد ⭐' : 'از سنجاق‌ها برداشته شد',
+        type: 'success',
+      })
+    } catch (error) {
+      console.error('Error pinning checklist:', error)
+      setToast({ message: 'خطا در سنجاق کردن', type: 'error' })
+    } finally {
+      setPinningId(null)
+      setTimeout(() => setToast(null), 2500)
+    }
+  }
+
+  // ── Filter & Sort Checklists ──────────────────────────────────
+  // Filter out completed (100%) checklists - they go to the completed page
+  const activeChecklists = sortChecklistsByPriority(
+    checklists.filter((c) => !c.isArchived && !isChecklistComplete(c))
+  )
+  const completedChecklists = checklists.filter((c) => !c.isArchived && isChecklistComplete(c))
   const archivedChecklists = checklists.filter((c) => c.isArchived)
 
   // ── Loading State ───────────────────────────────────────────
@@ -164,16 +296,16 @@ export default function ChecklistsPage() {
         </div>
 
         {/* Empty State */}
-        {activeChecklists.length === 0 && archivedChecklists.length === 0 ? (
+        {activeChecklists.length === 0 && completedChecklists.length === 0 && archivedChecklists.length === 0 ? (
           <div className="text-center py-16">
             <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-blue-500/20 to-purple-600/20 flex items-center justify-center text-5xl">
               📝
             </div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-              هنوز چک‌لیستی ندارید
+              هنوز چک‌لیستی نساختی
             </h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-              چک‌لیست برای مدیریت کارها و خریدهای خود بسازید
+              با تمپلیت‌های آماده یا از صفر شروع کن
             </p>
             <Link href="/checklists/new">
               <Button
@@ -192,19 +324,50 @@ export default function ChecklistsPage() {
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-purple-600 rounded-full" />
                   <h2 className="text-base font-bold text-gray-700 dark:text-gray-200">
-                    چک‌لیست‌های فعال
+                    {activeChecklists.length} چک‌لیست فعال داری
                   </h2>
-                  <span className="px-2.5 py-1 text-xs font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full">
-                    {activeChecklists.length}
-                  </span>
                 </div>
 
                 <div className="space-y-4">
                   {activeChecklists.map((checklist) => {
-                    const progress = getProgressPercentage(checklist)
+                    const { completed, total, percentage } = getProgressInfo(checklist)
+                    const isComplete = percentage === 100
+                    const isNotStarted = percentage === 0 && total > 0
+                    const isPinning = pinningId === checklist.id
+
                     return (
                       <Link key={checklist.id} href={`/checklists/${checklist.id}`}>
-                        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl p-5 hover:shadow-xl transition-all border border-white/50 dark:border-gray-700/50 hover:scale-[1.02]">
+                        <div
+                          className={`relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl p-5 hover:shadow-xl transition-all border border-white/50 dark:border-gray-700/50 hover:scale-[1.01] ${
+                            isComplete ? 'opacity-70' : ''
+                          } ${checklist.isPinned ? 'ring-2 ring-amber-400/50 dark:ring-amber-500/30' : ''}`}
+                        >
+                          {/* Pinned Badge */}
+                          {checklist.isPinned && (
+                            <div className="absolute -top-2 left-4 px-2 py-0.5 bg-gradient-to-r from-amber-400 to-yellow-500 text-white text-xs font-medium rounded-full shadow-sm flex items-center gap-1">
+                              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z" />
+                              </svg>
+                              سنجاق‌شده
+                            </div>
+                          )}
+
+                          {/* Pin Button */}
+                          <button
+                            onClick={(e) => handleTogglePin(e, checklist.id, checklist.isPinned)}
+                            disabled={isPinning}
+                            className={`absolute top-3 left-3 w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+                              checklist.isPinned
+                                ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400'
+                                : 'bg-gray-100 dark:bg-gray-700/50 text-gray-400 dark:text-gray-500 hover:bg-amber-100 dark:hover:bg-amber-900/30 hover:text-amber-600 dark:hover:text-amber-400'
+                            } ${isPinning ? 'opacity-50' : ''}`}
+                            title={checklist.isPinned ? 'برداشتن از سنجاق' : 'سنجاق کردن چک‌لیست'}
+                          >
+                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z" />
+                            </svg>
+                          </button>
+
                           <div className="flex items-start gap-4 mb-4">
                             <div
                               className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0"
@@ -212,7 +375,7 @@ export default function ChecklistsPage() {
                             >
                               {checklist.icon || '📋'}
                             </div>
-                            <div className="flex-1 min-w-0">
+                            <div className="flex-1 min-w-0 pr-8">
                               <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-1">
                                 {checklist.title}
                               </h3>
@@ -223,28 +386,54 @@ export default function ChecklistsPage() {
                               )}
                               <div className="flex items-center gap-2">
                                 <span className="px-2.5 py-1 bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400 text-xs font-medium rounded-lg">
-                                  {checklist.items?.length || 0} مورد
+                                  {total} مورد
                                 </span>
                               </div>
                             </div>
                           </div>
 
                           {/* Progress Bar */}
-                          <div>
+                          <div className="mb-3">
                             <div className="flex items-center justify-between mb-2">
                               <span className="text-xs text-gray-500 dark:text-gray-400">
                                 پیشرفت
                               </span>
-                              <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                                {progress}%
-                              </span>
+                              {isComplete ? (
+                                <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                                  انجام شد 🎉
+                                </span>
+                              ) : (
+                                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                                  {completed} از {total} انجام شده
+                                </span>
+                              )}
                             </div>
                             <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                               <div
-                                className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-500"
-                                style={{ width: `${progress}%` }}
+                                className={`h-full rounded-full transition-all duration-500 ${
+                                  isComplete
+                                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500'
+                                    : 'bg-gradient-to-r from-blue-500 to-purple-600'
+                                }`}
+                                style={{ width: `${percentage}%` }}
                               />
                             </div>
+                            {/* Helper hint for 0% checklists */}
+                            {isNotStarted && (
+                              <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                                با انجام اولین آیتم شروع کن
+                              </p>
+                            )}
+                          </div>
+
+                          {/* CTA */}
+                          <div className="flex items-center justify-end">
+                            <span className="text-sm font-medium text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                              {isComplete ? 'مشاهده' : 'ادامه چک‌لیست'}
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                            </span>
                           </div>
                         </div>
                       </Link>
@@ -254,101 +443,90 @@ export default function ChecklistsPage() {
               </div>
             )}
 
-            {/* Archived Checklists */}
-            {archivedChecklists.length > 0 && (
-              <div>
-                <button
-                  onClick={() => setShowArchived(!showArchived)}
-                  className="flex items-center gap-3 mb-4 group"
-                >
-                  <div className="w-1 h-6 bg-gradient-to-b from-amber-400 to-orange-500 rounded-full" />
-                  <h2 className="text-base font-bold text-gray-500 dark:text-gray-400">
-                    آرشیو شده
-                  </h2>
-                  <span className="px-2.5 py-1 text-xs font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-full">
-                    {archivedChecklists.length}
-                  </span>
-                  <svg
-                    className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${showArchived ? 'rotate-180' : ''}`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </button>
-
-                {showArchived && (
-                  <div className="space-y-4">
-                    {archivedChecklists.map((checklist) => {
-                      const progress = getProgressPercentage(checklist)
-                      return (
-                        <Link key={checklist.id} href={`/checklists/${checklist.id}`}>
-                          <div className="relative opacity-75 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl p-5 hover:shadow-xl transition-all border border-white/50 dark:border-gray-700/50">
-                            {/* Archive Badge */}
-                            <div className="absolute -top-2 right-4 px-2 py-0.5 bg-amber-500 text-white text-xs font-medium rounded-full shadow-sm">
-                              📦 آرشیو شده
-                            </div>
-
-                            <div className="flex items-start gap-4 mb-4">
-                              <div
-                                className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0"
-                                style={{ backgroundColor: `${checklist.color}20` }}
-                              >
-                                {checklist.icon || '📋'}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-1">
-                                  {checklist.title}
-                                </h3>
-                                {checklist.description && (
-                                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                                    {checklist.description}
-                                  </p>
-                                )}
-                                <div className="flex items-center gap-2">
-                                  <span className="px-2.5 py-1 bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400 text-xs font-medium rounded-lg">
-                                    {checklist.items?.length || 0} مورد
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Progress Bar */}
-                            <div>
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-xs text-gray-500 dark:text-gray-400">
-                                  پیشرفت
-                                </span>
-                                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                                  {progress}%
-                                </span>
-                              </div>
-                              <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-gradient-to-r from-amber-500 to-orange-600 rounded-full transition-all duration-500"
-                                  style={{ width: `${progress}%` }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </Link>
-                      )
-                    })}
+            {/* Completed Checklists Link */}
+            {completedChecklists.length > 0 && (
+              <div className="mb-6">
+                <Link href="/checklists/completed">
+                  <div className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-2xl p-4 border border-emerald-200/50 dark:border-emerald-800/50 hover:shadow-lg transition-all">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-xl">
+                          🏆
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-bold text-emerald-800 dark:text-emerald-200">
+                            چک‌لیست‌های انجام‌شده
+                          </h3>
+                          <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                            {completedChecklists.length} چک‌لیست تکمیل‌شده
+                          </p>
+                        </div>
+                      </div>
+                      <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
                   </div>
-                )}
+                </Link>
+              </div>
+            )}
+
+            {/* Archived Checklists Link */}
+            {archivedChecklists.length > 0 && (
+              <div className="mb-6">
+                <Link href="/checklists/archive">
+                  <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-2xl p-4 border border-amber-200/50 dark:border-amber-800/50 hover:shadow-lg transition-all">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-xl">
+                          📦
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-bold text-amber-800 dark:text-amber-200">
+                            آرشیو چک‌لیست‌ها
+                          </h3>
+                          <p className="text-xs text-amber-600 dark:text-amber-400">
+                            {archivedChecklists.length} چک‌لیست آرشیو شده
+                          </p>
+                        </div>
+                      </div>
+                      <svg className="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </div>
+                </Link>
               </div>
             )}
           </>
         )}
       </div>
 
-      {/* Fixed Create Button */}
+      {/* Saved Toast */}
+      {showSavedToast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-slide-down">
+          <div className="bg-emerald-600 text-white rounded-xl px-4 py-3 shadow-xl flex items-center gap-2">
+            <span className="text-sm font-medium">پیشرفتت ذخیره شد 👌</span>
+          </div>
+        </div>
+      )}
+
+      {/* Pin Toast */}
+      {toast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-slide-down">
+          <div
+            className={`rounded-xl px-4 py-3 shadow-xl flex items-center gap-2 ${
+              toast.type === 'success'
+                ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-white'
+                : 'bg-red-500 text-white'
+            }`}
+          >
+            <span className="text-sm font-medium">{toast.message}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Fixed Create Button (FAB) */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white/95 to-transparent dark:from-gray-900 dark:via-gray-900/95 dark:to-transparent pt-10">
         <Link href="/checklists/new">
           <Button

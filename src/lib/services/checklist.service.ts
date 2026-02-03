@@ -149,6 +149,57 @@ export async function archiveChecklist(checklistId: string, archive: boolean) {
 }
 
 /**
+ * Pin or unpin a checklist
+ * Returns the count of currently pinned checklists for the user
+ */
+export async function pinChecklist(
+  checklistId: string,
+  userId: string,
+  pin: boolean
+) {
+  // If pinning, check the limit first
+  if (pin) {
+    const pinnedCount = await prisma.checklist.count({
+      where: {
+        userId,
+        isPinned: true,
+      },
+    })
+
+    if (pinnedCount >= 3) {
+      return { error: 'MAX_PINNED', pinnedCount }
+    }
+  }
+
+  const updated = await prisma.checklist.update({
+    where: { id: checklistId },
+    data: {
+      isPinned: pin,
+      pinnedAt: pin ? new Date() : null,
+    },
+    include: {
+      items: {
+        orderBy: { order: 'asc' },
+      },
+    },
+  })
+
+  return { checklist: updated }
+}
+
+/**
+ * Get count of pinned checklists for a user
+ */
+export async function getPinnedCount(userId: string) {
+  return prisma.checklist.count({
+    where: {
+      userId,
+      isPinned: true,
+    },
+  })
+}
+
+/**
  * Delete a checklist permanently
  */
 export async function deleteChecklist(checklistId: string) {
@@ -254,6 +305,8 @@ export const checklistService = {
   createChecklistFromTemplate,
   updateChecklist,
   archiveChecklist,
+  pinChecklist,
+  getPinnedCount,
   deleteChecklist,
   createChecklistItem,
   updateChecklistItem,
