@@ -41,19 +41,7 @@ export function CategorySelector({
       </label>
 
       <div className="flex flex-wrap gap-2">
-        {/* گزینه بدون دسته - Always first, always valid */}
-        <button
-          type="button"
-          onClick={() => onSelect(null)}
-          className={`px-3.5 py-2 rounded-full text-sm transition-all active:scale-95 ${
-            selectedId === null
-              ? 'bg-gray-800 dark:bg-gray-100 text-white dark:text-gray-900 shadow-sm'
-              : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-          }`}
-        >
-          بدون دسته
-        </button>
-
+        {/* Category chips - sorted by usage */}
         {categories.map((cat) => (
           <button
             type="button"
@@ -70,6 +58,19 @@ export function CategorySelector({
           </button>
         ))}
 
+        {/* گزینه بدون دسته - Last, neutral unless selected */}
+        <button
+          type="button"
+          onClick={() => onSelect(null)}
+          className={`px-3.5 py-2 rounded-full text-sm transition-all active:scale-95 ${
+            selectedId === null
+              ? 'bg-gray-500 text-white shadow-sm'
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700'
+          }`}
+        >
+          سایر
+        </button>
+
         {/* افزودن دسته جدید - Subtle, not prominent */}
         <button
           type="button"
@@ -80,9 +81,9 @@ export function CategorySelector({
         </button>
       </div>
 
-      {/* پیام کمکی - Subtle hint */}
+      {/* پیام کمکی - Encourages categorization */}
       <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-2.5">
-        بعداً هم می‌تونی دسته‌بندی رو عوض کنی
+        دسته‌بندی کمک می‌کنه خرج‌ها مرتب‌تر باشن
       </p>
     </div>
   )

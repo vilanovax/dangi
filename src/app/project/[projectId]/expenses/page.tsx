@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import { FloatingButton } from '@/components/ui'
+import { FloatingButton, Toast } from '@/components/ui'
 import { getTemplate } from '@/lib/domain/templates'
 import { getRecentPeriods, formatPeriodKey } from '@/lib/utils/persian-date'
 import {
@@ -17,6 +17,7 @@ import {
   ExpensesList,
   FilterSheet,
   ExpenseDetailSheet,
+  QuickEditExpenseSheet,
 } from './components'
 import type { SmartFilter } from './components/SmartFilterChips'
 
@@ -235,6 +236,13 @@ export default function ExpensesPage() {
   // Expense detail sheet state
   const [showExpenseDetail, setShowExpenseDetail] = useState(false)
   const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null)
+
+  // Quick edit sheet state
+  const [showQuickEdit, setShowQuickEdit] = useState(false)
+  const [quickEditExpense, setQuickEditExpense] = useState<Expense | null>(null)
+
+  // Toast state for inline edits
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
   // Apply filters from URL query params
   useEffect(() => {
@@ -461,6 +469,117 @@ export default function ExpensesPage() {
     }
   }, [selectedExpenseId, projectId])
 
+  // Quick Edit handlers
+  const handleQuickEdit = useCallback((expense: { id: string; title: string; amount: number; paidById: string; categoryId?: string | null }) => {
+    // Find the full expense data from the state
+    const fullExpense = expenses.find(e => e.id === expense.id)
+    if (fullExpense) {
+      setQuickEditExpense(fullExpense)
+      setShowQuickEdit(true)
+    }
+  }, [expenses])
+
+  const handleQuickEditSave = useCallback(async (
+    expenseId: string,
+    updates: { amount: number; categoryId: string | null; paidById: string; title: string }
+  ): Promise<boolean> => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}/expenses/${expenseId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      })
+
+      if (res.ok) {
+        // Update expense in local state
+        setExpenses(prev => prev.map(e =>
+          e.id === expenseId
+            ? {
+                ...e,
+                amount: updates.amount,
+                title: updates.title,
+                paidById: updates.paidById,
+                categoryId: updates.categoryId || undefined,
+                paidBy: project?.participants.find(p => p.id === updates.paidById) || e.paidBy,
+                category: updates.categoryId
+                  ? project?.categories.find(c => c.id === updates.categoryId)
+                  : undefined,
+              }
+            : e
+        ))
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error('Error updating expense:', error)
+      return false
+    }
+  }, [projectId, project])
+
+  // Inline amount update handler
+  const handleAmountUpdate = useCallback(async (expenseId: string, newAmount: number): Promise<boolean> => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}/expenses/${expenseId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: newAmount }),
+      })
+
+      if (res.ok) {
+        // Update expense in local state
+        setExpenses(prev => prev.map(e =>
+          e.id === expenseId
+            ? { ...e, amount: newAmount }
+            : e
+        ))
+        setToast({ message: 'مبلغ خرج به‌روزرسانی شد ✓', type: 'success' })
+        return true
+      }
+      setToast({ message: 'خطا در ذخیره مبلغ', type: 'error' })
+      return false
+    } catch (error) {
+      console.error('Error updating expense amount:', error)
+      setToast({ message: 'خطا در ذخیره مبلغ', type: 'error' })
+      return false
+    }
+  }, [projectId])
+
+  // Inline category update handler
+  const handleCategoryUpdate = useCallback(async (expenseId: string, newCategoryId: string | null): Promise<boolean> => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}/expenses/${expenseId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ categoryId: newCategoryId }),
+      })
+
+      if (res.ok) {
+        // Update expense in local state
+        const newCategory = newCategoryId
+          ? project?.categories.find(c => c.id === newCategoryId)
+          : undefined
+        setExpenses(prev => prev.map(e =>
+          e.id === expenseId
+            ? { ...e, categoryId: newCategoryId || undefined, category: newCategory }
+            : e
+        ))
+        setToast({ message: 'دسته خرج به‌روزرسانی شد ✓', type: 'success' })
+        return true
+      }
+      setToast({ message: 'خطا در ذخیره دسته', type: 'error' })
+      return false
+    } catch (error) {
+      console.error('Error updating expense category:', error)
+      setToast({ message: 'خطا در ذخیره دسته', type: 'error' })
+      return false
+    }
+  }, [projectId, project])
+
+  // Handler to open category creation (navigate to categories page)
+  const handleAddCategory = useCallback(() => {
+    router.push(`/project/${projectId}/settings?tab=categories`)
+  }, [router, projectId])
+
   // Loading state
   if (loading) {
     return (
@@ -606,6 +725,11 @@ export default function ExpensesPage() {
         showPeriod={supportsPeriod}
         myParticipantId={myParticipantId}
         onExpenseClick={handleExpenseClick}
+        onQuickEdit={handleQuickEdit}
+        onAmountUpdate={handleAmountUpdate}
+        onCategoryUpdate={handleCategoryUpdate}
+        categories={project?.categories || []}
+        onAddCategory={handleAddCategory}
       />
 
       {/* Floating Add Button - secondary to list items, clear action */}
@@ -648,6 +772,27 @@ export default function ExpensesPage() {
         myParticipantId={myParticipantId}
         onEdit={handleEditExpense}
         onDelete={handleDeleteExpense}
+      />
+
+      {/* Quick Edit Bottom Sheet */}
+      <QuickEditExpenseSheet
+        isOpen={showQuickEdit}
+        onClose={() => setShowQuickEdit(false)}
+        expense={quickEditExpense}
+        categories={project?.categories || []}
+        participants={project?.participants || []}
+        currency={project?.currency || 'IRR'}
+        projectId={projectId}
+        onSave={handleQuickEditSave}
+      />
+
+      {/* Toast for inline amount edits */}
+      <Toast
+        isOpen={!!toast}
+        onClose={() => setToast(null)}
+        message={toast?.message || ''}
+        type={toast?.type || 'success'}
+        duration={2000}
       />
     </main>
   )

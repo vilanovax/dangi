@@ -46,6 +46,21 @@ export default async function ProjectPage({ params }: PageProps) {
     if (!authResult.authorized) {
       redirect('/')
     }
+
+    // CRITICAL: Check if this user has restricted access (stored scopes)
+    // This handles users who signed up via viewer/contributor links
+    if (authResult.participant.scopes) {
+      // User has restricted access - parse and enforce scopes
+      try {
+        isGuestAccess = true
+        guestScopes = JSON.parse(authResult.participant.scopes) as AccessScope[]
+      } catch {
+        // If scopes parsing fails, treat as restricted with no scopes (most restrictive)
+        isGuestAccess = true
+        guestScopes = []
+      }
+    }
+    // If scopes is null, user has full access - continue to ProjectPageClient
   }
 
   // Fetch project to check template

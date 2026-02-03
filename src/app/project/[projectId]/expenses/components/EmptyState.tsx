@@ -24,10 +24,10 @@ export function EmptyState({ isFiltered, onClearFilters }: EmptyStateProps) {
         <span className="text-4xl">{isFiltered ? '🔍' : '✨'}</span>
       </div>
       <p className="font-medium" style={{ color: 'var(--building-text-primary)' }}>
-        {isFiltered ? 'خرج سنگینی پیدا نشد' : 'هنوز خرجی ثبت نشده'}
+        {isFiltered ? 'خرجی با این فیلتر پیدا نشد' : 'هنوز خرجی ثبت نشده'}
       </p>
       <p className="text-sm mt-1" style={{ color: 'var(--building-text-secondary)' }}>
-        {isFiltered ? 'فیلتر دیگه‌ای امتحان کن' : 'اولین خرج سفر رو ثبت کن'}
+        {isFiltered ? 'فیلتر دیگه‌ای امتحان کن یا همه رو ببین' : 'اولین خرج رو ثبت کن'}
       </p>
       {isFiltered && (
         <button

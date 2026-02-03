@@ -29,7 +29,7 @@ export function AmountInput({ value, onChange, currency, error }: AmountInputPro
       <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">
         مبلغ پرداختی
       </label>
-      <div className={`bg-gradient-to-br rounded-2xl border p-5 focus-within:ring-2 transition-all shadow-sm ${
+      <div className={`bg-gradient-to-br rounded-2xl border p-5 focus-within:ring-2 transition-all shadow-sm overflow-hidden ${
         hasError
           ? 'from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30 border-red-200 dark:border-red-800/50 focus-within:ring-red-500 focus-within:border-transparent'
           : 'from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-100 dark:border-green-800/30 focus-within:ring-green-500 focus-within:border-transparent'
@@ -40,8 +40,8 @@ export function AmountInput({ value, onChange, currency, error }: AmountInputPro
             inputMode="numeric"
             value={value}
             onChange={handleChange}
-            placeholder="۰"
-            className={`flex-1 text-4xl font-bold text-center bg-transparent border-none outline-none ${
+            placeholder="مثلاً ۱,۲۰۰,۰۰۰"
+            className={`flex-1 min-w-0 text-3xl font-bold text-center bg-transparent border-none outline-none ${
               hasError
                 ? 'placeholder:text-red-300 dark:placeholder:text-red-800 text-red-700 dark:text-red-300'
                 : 'placeholder:text-green-300 dark:placeholder:text-green-800 text-green-700 dark:text-green-300'

@@ -52,7 +52,7 @@ export function SearchBar({
           </svg>
           <input
             type="text"
-            placeholder="تو خرج‌ها بگرد…"
+            placeholder="جستجو در خرج‌ها…"
             value={value}
             onChange={(e) => onChange(e.target.value)}
             className="w-full pr-9 pl-9 py-2.5 rounded-xl outline-none text-sm transition-all"

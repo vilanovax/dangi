@@ -32,10 +32,9 @@ export function ExpenseTitleInput({
       </label>
       <input
         type="text"
-        placeholder="شام، بنزین، بلیط..."
+        placeholder="مثلاً شام، بنزین، بلیط..."
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        autoFocus
         className="w-full text-lg font-medium bg-transparent border-none outline-none text-gray-800 dark:text-gray-100 placeholder:text-gray-300 dark:placeholder:text-gray-600"
       />
     </div>

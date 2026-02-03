@@ -248,6 +248,11 @@ export default function ProjectPage() {
     (b) => Math.abs(b.balance) < 1
   ) ?? false
 
+  // Count participants with outstanding balances (proxy for pending settlements)
+  const pendingSettlementsCount = summary?.participantBalances.filter(
+    (b) => Math.abs(b.balance) >= 1
+  ).length ?? 0
+
   // Get current user's balance for header micro-summary
   const myBalance = summary?.participantBalances.find(
     (b) => b.participantId === myParticipantId
@@ -291,6 +296,8 @@ export default function ProjectPage() {
           participantCount={project.participants.length}
           totalExpenses={totalExpenses}
           currency={project.currency}
+          isSettled={isAllSettled}
+          pendingSettlements={pendingSettlementsCount}
         />
       ) : (
         <DashboardHeader
@@ -324,7 +331,7 @@ export default function ProjectPage() {
           />
         )
       ) : (
-        <QuickActions projectId={projectId} template={project.template} isSettled={isAllSettled} />
+        <QuickActions projectId={projectId} template={project.template} isSettled={isAllSettled} pendingSettlements={pendingSettlementsCount} />
       )}
 
       {/* Travel Checklist */}
@@ -336,6 +343,38 @@ export default function ProjectPage() {
             onUpdate={handleRefreshData}
           />
         </div>
+      )}
+
+      {/* ─── Recent Settlements Section (Prominent Position) ───────── */}
+      {!(project.template === 'personal' && project.trackingOnly) &&
+       settlements.length > 0 && (
+        <section className="px-4 mt-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400">
+              تسویه‌های اخیر
+            </h2>
+            <Link
+              href={`/project/${projectId}/settlements`}
+              className="text-xs text-green-500 hover:text-green-600 transition-colors"
+            >
+              همه →
+            </Link>
+          </div>
+          <div className="space-y-2">
+            {settlements.slice(0, 3).map((settlement) => (
+              <RecentSettlementCard
+                key={settlement.id}
+                id={settlement.id}
+                projectId={projectId}
+                from={settlement.from}
+                to={settlement.to}
+                amount={settlement.amount}
+                currency={project.currency}
+                settledAt={settlement.settledAt}
+              />
+            ))}
+          </div>
+        </section>
       )}
 
       {/* Participants */}
@@ -434,58 +473,29 @@ export default function ProjectPage() {
       </section>
       )}
 
-      {/* ─── Recent Settlements Section ───────────────────────────── */}
-      {(project.template !== 'gathering' || activeTab === 'expenses') &&
-       !(project.template === 'personal' && project.trackingOnly) &&
-       settlements.length > 0 && (
-        <section className="px-4 mt-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100">
-              تسویه‌های اخیر
-            </h2>
-            <Link
-              href={`/project/${projectId}/settlements`}
-              className="text-sm text-green-500 hover:text-green-600 transition-colors"
-            >
-              همه →
-            </Link>
-          </div>
-          <div className="space-y-2.5">
-            {settlements.slice(0, 3).map((settlement) => (
-              <RecentSettlementCard
-                key={settlement.id}
-                id={settlement.id}
-                projectId={projectId}
-                from={settlement.from}
-                to={settlement.to}
-                amount={settlement.amount}
-                currency={project.currency}
-                settledAt={settlement.settledAt}
-              />
-            ))}
-          </div>
-        </section>
-      )}
 
-      {/* Floating Add Button - Enhanced prominence */}
+      {/* Floating Add Button - Primary CTA with enhanced prominence */}
       {(project.template !== 'gathering' || activeTab === 'expenses') && (
       <div
         className="fixed bottom-6 left-1/2 -translate-x-1/2 z-10 safe-bottom flex flex-col items-center gap-2"
-        /* TODO: Add long-press handler for future quick actions menu */
         data-supports-long-press="true"
       >
-        {/* Hint text - only show when few expenses to encourage first action */}
-        {project.expenses.length < 3 && (
-          <span className="text-[10px] text-gray-400 dark:text-gray-500 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-sm border border-gray-100 dark:border-gray-800">
+        {/* Context-aware hint text */}
+        {project.expenses.length === 0 ? (
+          <span className="text-[10px] text-blue-600 dark:text-blue-400 bg-blue-50/95 dark:bg-blue-950/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm border border-blue-100 dark:border-blue-800/50 font-medium animate-pulse">
+            اولین خرج رو ثبت کن ✨
+          </span>
+        ) : project.expenses.length < 3 ? (
+          <span className="text-[10px] text-gray-500 dark:text-gray-400 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-sm border border-gray-100 dark:border-gray-800">
             سریع و راحت ⚡
           </span>
-        )}
+        ) : null}
         <FloatingButton
           onClick={() => router.push(`/project/${projectId}/add-expense`)}
-          className="!static !translate-x-0 !shadow-[0_12px_32px_rgba(14,165,233,0.40)] hover:!shadow-[0_16px_40px_rgba(14,165,233,0.45)] !scale-105"
+          className="!static !translate-x-0 !shadow-[0_12px_32px_rgba(14,165,233,0.45)] hover:!shadow-[0_16px_40px_rgba(14,165,233,0.50)] !scale-105 hover:!scale-110 transition-all"
           icon={
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
             </svg>
           }
         >

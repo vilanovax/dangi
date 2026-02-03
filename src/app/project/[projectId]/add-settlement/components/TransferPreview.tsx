@@ -31,6 +31,19 @@ export function TransferPreview({
 }: TransferPreviewProps) {
   return (
     <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-2xl p-4">
+      {/* Card Header */}
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-xs font-medium text-green-600 dark:text-green-400">
+          خلاصه تسویه
+        </span>
+        <button
+          onClick={onSwap}
+          className="text-xs text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 transition-colors"
+        >
+          تغییر ↔
+        </button>
+      </div>
+
       <div className="bg-white dark:bg-gray-900/80 rounded-2xl p-4 border border-green-100 dark:border-green-800/30 shadow-sm">
         {/* Force LTR for payment direction (From → To) to match arrow */}
         <div className="flex items-center justify-between" dir="ltr">
@@ -101,13 +114,17 @@ export function TransferPreview({
         </div>
 
         {/* Amount Preview */}
-        {amount && amount > 0 && (
-          <div className="mt-3 pt-3 border-t border-green-100 dark:border-green-800/30 text-center">
+        <div className="mt-3 pt-3 border-t border-green-100 dark:border-green-800/30 text-center">
+          {amount && amount > 0 ? (
             <p className="text-xl font-bold text-green-600 dark:text-green-400">
               {formatMoney(amount, currency)}
             </p>
-          </div>
-        )}
+          ) : (
+            <p className="text-sm text-gray-400 dark:text-gray-500">
+              مبلغ هنوز وارد نشده
+            </p>
+          )}
+        </div>
       </div>
     </div>
   )

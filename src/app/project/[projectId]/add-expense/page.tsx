@@ -77,6 +77,10 @@ export default function AddExpensePage() {
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false)
   const advancedSectionRef = useRef<HTMLDivElement>(null)
 
+  // UX: Shake animation for invalid submit
+  const [shakeAmount, setShakeAmount] = useState(false)
+  const heroRef = useRef<HTMLDivElement>(null)
+
   // Add category modal
   const [showAddCategory, setShowAddCategory] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
@@ -401,16 +405,25 @@ export default function AddExpensePage() {
   const isHangout = template.id === 'gathering'
   const parsedAmount = parseMoney(amount)
 
-  // UX: Dynamic CTA label with amount
+  // UX: Dynamic CTA label
   const getSubmitButtonLabel = () => {
     if (submitting) return labels.submittingButton
-    if (parsedAmount && parsedAmount > 0) {
-      // Use formatNumber to avoid duplicate currency (تومان + تومانی)
-      return `ثبت خرج ${formatNumber(parsedAmount)}${
-        project.currency === 'IRR' ? ' تومانی' : ` ${project.currency}`
-      }`
+    return 'ثبتش کن'
+  }
+
+  // UX: Handle submit button tap when invalid - shake amount input
+  const handleSubmitTap = () => {
+    const parsedAmt = parseMoney(amount)
+    if (!amount || !parsedAmt || parsedAmt <= 0) {
+      setError('اول مبلغ رو وارد کن')
+      setShakeAmount(true)
+      setTimeout(() => setShakeAmount(false), 500)
+      // Scroll to hero section
+      heroRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      return
     }
-    return labels.submitButton
+    // Otherwise proceed with normal submit
+    handleSubmit()
   }
 
   return (
@@ -426,31 +439,27 @@ export default function AddExpensePage() {
           />
         }
         hero={
-          <AmountInput
-            value={amount}
-            onChange={setAmount}
-            currency={project.currency}
-            label={labels.amountLabel}
-            placeholder={labels.amountPlaceholder}
-            sharePerPerson={sharePreview}
-            participantCount={includedParticipantIds.length}
-            participantTerm={labels.participantTerm}
-            autoFocus // UX: Auto-focus on amount for fast entry
-          />
+          <div
+            ref={heroRef}
+            className={shakeAmount ? 'animate-shake' : ''}
+          >
+            <AmountInput
+              value={amount}
+              onChange={setAmount}
+              currency={project.currency}
+              label={labels.amountLabel}
+              placeholder={labels.amountPlaceholder}
+              sharePerPerson={sharePreview}
+              participantCount={includedParticipantIds.length}
+              participantTerm={labels.participantTerm}
+              autoFocus // UX: Auto-focus on amount for fast entry
+            />
+          </div>
         }
         footer={
           <Button
-            onClick={handleSubmit}
+            onClick={handleSubmitTap}
             loading={submitting}
-            disabled={
-              !amount || // UX: CTA disabled until amount is entered
-              parsedAmount === 0 ||
-              !title.trim() ||
-              !paidById ||
-              includedParticipantIds.length === 0 ||
-              (template.periodRequired && !periodKey) ||
-              (splitMode === 'MANUAL' && !getCustomAmountsInfo().isValid)
-            }
             className={`w-full shadow-lg ${
               isHangout
                 ? 'shadow-purple-500/20 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
@@ -634,6 +643,11 @@ export default function AddExpensePage() {
                       دستی ✏️
                     </button>
                   </div>
+                  {splitMode === 'EQUAL' && (
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                      بین همه به‌صورت مساوی تقسیم می‌شه
+                    </p>
+                  )}
                 </FormSection>
 
                 {/* Split Between - Participants */}

@@ -57,15 +57,22 @@ export function ParticipantsRow({
   return (
     <div className="px-4 mt-6">
       {/* Section header with hint */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100">هم‌سفرها</h2>
           <span className="text-xs text-gray-400 dark:text-gray-500">({participants.length} نفر)</span>
         </div>
-        {/* Hint for tapping avatars - subtle */}
-        <p className="text-[10px] text-gray-400/80 dark:text-gray-500/80">
-          برای وضعیت بزن روش
-        </p>
+        {/* Color legend - very subtle */}
+        <div className="flex items-center gap-2 text-[9px] text-gray-400/70 dark:text-gray-500/70">
+          <span className="flex items-center gap-0.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            طلبکار
+          </span>
+          <span className="flex items-center gap-0.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-400"></span>
+            بدهکار
+          </span>
+        </div>
       </div>
 
       {/* Avatars row - color-coded by balance status */}

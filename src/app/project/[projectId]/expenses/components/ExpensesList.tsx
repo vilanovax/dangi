@@ -14,6 +14,13 @@ interface ExpenseShare {
   amount: number
 }
 
+interface Category {
+  id: string
+  name: string
+  icon: string
+  color: string
+}
+
 interface Expense {
   id: string
   title: string
@@ -25,12 +32,22 @@ interface Expense {
     name: string
   }
   paidById: string
+  categoryId?: string | null
   category?: {
     name: string
     icon: string
     color: string
   } | null
   shares?: ExpenseShare[]
+}
+
+// Minimal expense data for quick edit callback
+interface QuickEditExpenseData {
+  id: string
+  title: string
+  amount: number
+  paidById: string
+  categoryId?: string | null
 }
 
 interface ExpensesListProps {
@@ -43,6 +60,11 @@ interface ExpensesListProps {
   showPeriod?: boolean
   myParticipantId?: string | null
   onExpenseClick?: (expenseId: string) => void
+  onQuickEdit?: (expense: QuickEditExpenseData) => void
+  onAmountUpdate?: (expenseId: string, newAmount: number) => Promise<boolean>
+  onCategoryUpdate?: (expenseId: string, newCategoryId: string | null) => Promise<boolean>
+  categories?: Category[]
+  onAddCategory?: () => void
 }
 
 /**
@@ -65,6 +87,11 @@ export function ExpensesList({
   showPeriod = false,
   myParticipantId,
   onExpenseClick,
+  onQuickEdit,
+  onAmountUpdate,
+  onCategoryUpdate,
+  categories = [],
+  onAddCategory,
 }: ExpensesListProps) {
   // Calculate high-cost threshold (top 20% of expenses) - using analytics utility
   const highCostThreshold = useMemo(() => {
@@ -99,6 +126,7 @@ export function ExpensesList({
                   currency={currency}
                   payer={expense.paidBy}
                   category={expense.category}
+                  categoryId={expense.categoryId}
                   periodKey={expense.periodKey}
                   showPeriod={showPeriod}
                   isHighCost={expense.amount >= highCostThreshold}
@@ -106,6 +134,11 @@ export function ExpensesList({
                   isSettled={true} // Future feature: compute settlement status
                   myParticipantId={myParticipantId}
                   onClick={onExpenseClick ? () => onExpenseClick(expense.id) : undefined}
+                  onQuickEdit={onQuickEdit ? () => onQuickEdit(expense) : undefined}
+                  onAmountUpdate={onAmountUpdate}
+                  onCategoryUpdate={onCategoryUpdate}
+                  categories={categories}
+                  onAddCategory={onAddCategory}
                 />
               )
             })}

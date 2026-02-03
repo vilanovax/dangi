@@ -89,7 +89,7 @@ export function FormLayout({
   stickyFooter = true,
 }: FormLayoutProps) {
   return (
-    <main className={cn('min-h-dvh bg-gray-50 dark:bg-gray-950', className)}>
+    <main className={cn('min-h-dvh bg-gray-50 dark:bg-gray-950 overflow-x-hidden', className)}>
       {/* Header - Sticky at top */}
       <div className="sticky top-0 z-10">{header}</div>
 

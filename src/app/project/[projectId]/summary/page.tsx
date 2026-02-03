@@ -311,6 +311,19 @@ export default function SummaryPage() {
                 </div>
               </div>
             )}
+
+            {/* Quick Settlement CTA - Only when there's debt */}
+            {!isTrackingMode && hasDebt && (
+              <div className="col-span-2">
+                <Link
+                  href={`/project/${projectId}/add-settlement`}
+                  className="flex items-center justify-center gap-2 w-full py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl text-sm font-medium transition-colors"
+                >
+                  <span>💰</span>
+                  <span>رفتن به تسویه حساب‌ها</span>
+                </Link>
+              </div>
+            )}
           </div>
         </UnifiedHeader>
       </div>
@@ -349,27 +362,27 @@ export default function SummaryPage() {
           <>
             {/* Settlement Suggestions - Hero Section (moved to top for action priority) */}
             {!isTrackingMode && hasDebt && (
-              <section>
-                <div className="mb-3">
+              <section className="bg-gradient-to-br from-blue-50/80 to-indigo-50/80 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-2xl p-4 border border-blue-100/50 dark:border-blue-800/30">
+                <div className="mb-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                        با این تسویه‌ها حسابا صاف می‌شن
+                      <h2 className="text-base font-bold text-gray-900 dark:text-white">
+                        با این تسویه‌ها حساب‌ها صاف می‌شن
                       </h2>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                        ساده‌ترین راه برای تموم‌شدن حسابا
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        پیشنهاد هوشمند برای کمترین تعداد پرداخت
                       </p>
                     </div>
                     <button
                       onClick={() => setShowHistory(true)}
-                      className="text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 font-medium flex items-center gap-1"
+                      className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium flex items-center gap-1.5 bg-white/60 dark:bg-gray-800/60 px-2.5 py-1.5 rounded-lg"
                     >
                       <span>📋</span>
                       تاریخچه
                     </button>
                   </div>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {/* UX: Render aggregated settlements to reduce cognitive load */}
                   {aggregatedSettlements.map((s, index) => (
                     <SettlementSuggestionCard
@@ -427,7 +440,7 @@ export default function SummaryPage() {
             {/* Balance Overview - Simplified */}
             {!isTrackingMode && hasExpenses && summary.participantBalances.length > 1 && hasDebt && (
               <section>
-                <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3">وضعیت کلی</h2>
+                <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3">وضعیت کلی حساب‌ها</h2>
                 <BalanceChart balances={summary.participantBalances} currency={summary.currency} />
               </section>
             )}
@@ -435,7 +448,7 @@ export default function SummaryPage() {
             {/* Member Status - Secondary */}
             {!isTrackingMode && hasExpenses && (
               <section>
-                <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3">وضعیت هم‌سفرها</h2>
+                <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3">وضعیت نهایی هم‌سفرها</h2>
                 <div className="space-y-2">
                   {balancesWithChargeDebt.map((p) => (
                     <MemberBalanceCard
@@ -606,6 +619,7 @@ export default function SummaryPage() {
         onClose={() => setShowHistory(false)}
         settlements={settlements}
         currency={summary?.currency || 'تومان'}
+        projectName={summary?.projectName}
       />
     </main>
   )
@@ -805,44 +819,50 @@ function SettlementSuggestionCard({
   originalSettlements?: any[]
 }) {
   return (
-    <Card className="p-4">
-      {/* Force LTR for payment direction (From → To) to match arrow */}
+    <div className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 hover:shadow-md transition-shadow">
+      {/* Direction: From → To (Force LTR for arrow) */}
       <div className="flex items-center gap-3" dir="ltr">
-        <div className="flex items-center gap-2 flex-1">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
           {fromAvatar ? (
             <Avatar avatar={fromAvatar} name={fromName} size="sm" />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-              <span className="text-sm font-bold text-red-600">{fromName.charAt(0)}</span>
+            <div className="w-9 h-9 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
+              <span className="text-sm font-bold text-orange-600 dark:text-orange-400">{fromName.charAt(0)}</span>
             </div>
           )}
-          <span className="font-medium text-sm">{fromName}</span>
+          <span className="font-medium text-sm text-gray-700 dark:text-gray-300 truncate">{fromName}</span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="flex-shrink-0">
+          <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
           </svg>
         </div>
 
-        <div className="flex items-center gap-2 flex-1 justify-end">
-          <span className="font-medium text-sm">{toName}</span>
+        <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
+          <span className="font-medium text-sm text-gray-700 dark:text-gray-300 truncate">{toName}</span>
           {toAvatar ? (
             <Avatar avatar={toAvatar} name={toName} size="sm" />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-              <span className="text-sm font-bold text-green-600">{toName.charAt(0)}</span>
+            <div className="w-9 h-9 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
+              <span className="text-sm font-bold text-green-600 dark:text-green-400">{toName.charAt(0)}</span>
             </div>
           )}
         </div>
       </div>
 
-      <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-        <p className="text-lg font-bold text-blue-600">{formatMoney(amount, currency)}</p>
-        <Button size="sm" onClick={onSettle} className="!bg-green-500 hover:!bg-green-600">
+      {/* Amount + Action */}
+      <div className="flex items-center justify-between mt-4">
+        <div>
+          <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{formatMoney(amount, currency)}</p>
+          <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
+            با این پرداخت، بدهی کامل تسویه می‌شود
+          </p>
+        </div>
+        <Button size="sm" onClick={onSettle} className="!bg-green-500 hover:!bg-green-600 !px-5">
           تسویه
         </Button>
       </div>
-    </Card>
+    </div>
   )
 }

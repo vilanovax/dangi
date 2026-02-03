@@ -81,6 +81,9 @@ export function ParticipantProfileSheet({
   const [loadingExpenses, setLoadingExpenses] = useState(false)
   const [showAllExpenses, setShowAllExpenses] = useState(false)
 
+  // Delete confirmation dialog state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
   // Expense detail sheet state
   const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null)
   const [selectedExpense, setSelectedExpense] = useState<any>(null)
@@ -230,7 +233,7 @@ export function ParticipantProfileSheet({
     <BottomSheet isOpen={isOpen} onClose={onClose}>
       {/* UX: Animate entrance for better perceived performance */}
       <div className="space-y-4 max-h-[80vh] overflow-y-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
-        {/* UX: Profile Header - Reduced spacing, emphasized name */}
+        {/* UX: Profile Header - Avatar, name, and PRIMARY financial status */}
         <div className="text-center -mt-2">
           <div className="relative inline-block">
             {/* UX: Owner badge with gradient glow */}
@@ -253,31 +256,48 @@ export function ParticipantProfileSheet({
               </div>
             )}
           </div>
-          {/* UX: Emphasized participant name - Primary identity */}
+          {/* UX: Emphasized participant name */}
           <h2 className="text-2xl font-bold mt-3 mb-1">{participant.name}</h2>
+          {/* UX: PRIMARY financial status - immediately visible */}
+          <p className={`text-sm font-semibold ${balanceStyle.text}`}>
+            {isSettled
+              ? '✓ حساب تسویه شده'
+              : isCreditor
+                ? `طلبکار: ${formatMoney(Math.abs(balanceAmount), currency)}`
+                : `بدهکار: ${formatMoney(Math.abs(balanceAmount), currency)}`
+            }
+          </p>
           {isOwner && (
-            <span className="inline-block px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-medium rounded-full">
+            <span className="inline-block mt-1.5 px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-medium rounded-full">
               مدیر پروژه
             </span>
           )}
         </div>
 
-        {/* UX: Balance Card - PRIMARY FOCUS with helper text */}
-        <div className={`${balanceStyle.bg} rounded-2xl p-5 shadow-sm border border-transparent animate-in fade-in zoom-in-95 duration-300 delay-100`}>
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">مانده حساب</span>
-            <span className="text-2xl">{balanceStyle.icon}</span>
-          </div>
-          <div className="text-center space-y-2">
-            {/* UX: Large balance amount for immediate recognition */}
-            <p className={`text-3xl font-bold ${balanceStyle.text}`}>
-              {isSettled ? '۰' : (isCreditor ? '+' : '') + formatMoney(Math.abs(balanceAmount), currency)}
-            </p>
-            <p className={`text-sm font-medium ${balanceStyle.text}`}>{balanceStyle.label}</p>
-            {/* UX: Human-readable helper text explaining what this means */}
-            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-              {balanceStyle.helper}
-            </p>
+        {/* UX: Balance Card - Simplified, no duplication */}
+        <div className={`${balanceStyle.bg} rounded-2xl p-4 border ${
+          isSettled
+            ? 'border-gray-200 dark:border-gray-700'
+            : isCreditor
+              ? 'border-green-200 dark:border-green-800/50'
+              : 'border-red-200 dark:border-red-800/50'
+        }`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">مانده حساب</p>
+              <p className={`text-2xl font-bold ${balanceStyle.text}`}>
+                {isSettled ? '۰' : formatMoney(Math.abs(balanceAmount), currency)}
+              </p>
+            </div>
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+              isSettled
+                ? 'bg-gray-200 dark:bg-gray-700'
+                : isCreditor
+                  ? 'bg-green-100 dark:bg-green-900/30'
+                  : 'bg-red-100 dark:bg-red-900/30'
+            }`}>
+              <span className="text-2xl">{balanceStyle.icon}</span>
+            </div>
           </div>
         </div>
 
@@ -309,18 +329,18 @@ export function ParticipantProfileSheet({
                   <button
                     key={expense.id}
                     onClick={() => handleExpenseClick(expense)}
-                    className="w-full flex items-center gap-3 p-3 bg-white dark:bg-gray-900/50 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-all active:scale-[0.98] text-right"
+                    className="w-full flex items-center gap-2.5 p-2 bg-white dark:bg-gray-900/50 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-all active:scale-[0.98] text-right"
                   >
-                    {/* Category Icon */}
+                    {/* Category Icon - compact */}
                     <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+                      className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
                       style={{
                         backgroundColor: expense.category?.color
                           ? `${expense.category.color}20`
                           : '#f3f4f6',
                       }}
                     >
-                      <span className="text-lg">{expense.category?.icon || '💰'}</span>
+                      <span className="text-base">{expense.category?.icon || '💰'}</span>
                     </div>
 
                     {/* UX: Expense Info - Clear hierarchy */}
@@ -392,33 +412,28 @@ export function ParticipantProfileSheet({
           )}
         </div>
 
-        {/* UX: Activity Summary - Clear labels for better understanding */}
-        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-4">
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">خلاصه فعالیت</h3>
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div className="space-y-1">
-              <p className="text-lg font-bold text-gray-800 dark:text-gray-200">
+        {/* UX: Activity Summary - Compact horizontal layout */}
+        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-gray-500 dark:text-gray-400">پرداخت:</span>
+              <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
                 {formatMoney(balance?.totalPaid || 0, currency)}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 leading-tight">
-                پرداخت کرده
-              </p>
+              </span>
             </div>
-            <div className="space-y-1">
-              <p className="text-lg font-bold text-gray-800 dark:text-gray-200">
+            <div className="w-px h-4 bg-gray-300 dark:bg-gray-600" />
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-gray-500 dark:text-gray-400">سهم:</span>
+              <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
                 {formatMoney(balance?.totalShare || 0, currency)}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 leading-tight">
-                سهمش بوده
-              </p>
+              </span>
             </div>
-            <div className="space-y-1">
-              <p className="text-lg font-bold text-gray-800 dark:text-gray-200">
+            <div className="w-px h-4 bg-gray-300 dark:bg-gray-600" />
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-gray-500 dark:text-gray-400">تسویه:</span>
+              <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
                 {settlementCount}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 leading-tight">
-                تسویه
-              </p>
+              </span>
             </div>
           </div>
         </div>
@@ -449,9 +464,9 @@ export function ParticipantProfileSheet({
             <span className="text-xs font-medium">ویرایش</span>
           </button>
 
-          {/* UX: Delete Button - Destructive, disabled for owner */}
+          {/* UX: Delete Button - Opens confirmation dialog */}
           <button
-            onClick={onDelete}
+            onClick={() => setShowDeleteConfirm(true)}
             disabled={isOwner}
             className={`flex-1 flex flex-col items-center gap-1.5 py-4 px-4 rounded-xl transition-all ${
               isOwner
@@ -488,6 +503,65 @@ export function ParticipantProfileSheet({
         onEdit={handleEditExpense}
         onDelete={handleDeleteExpense}
       />
+
+      {/* UX: Delete Confirmation Dialog - Clear warning with participant context */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowDeleteConfirm(false)}
+          />
+          {/* Dialog */}
+          <div className="relative bg-white dark:bg-gray-900 rounded-2xl p-5 w-full max-w-sm shadow-xl animate-in zoom-in-95 duration-200">
+            {/* Warning Icon */}
+            <div className="flex justify-center mb-4">
+              <div className="w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <svg className="w-7 h-7 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Title */}
+            <h3 className="text-lg font-bold text-center text-gray-900 dark:text-gray-100 mb-2">
+              حذف {participant.name}؟
+            </h3>
+
+            {/* Warning Message - Different based on activity */}
+            <p className="text-sm text-center text-gray-600 dark:text-gray-400 mb-5 leading-relaxed">
+              {hasActivity ? (
+                <>
+                  با حذف این عضو، <span className="font-semibold text-red-600 dark:text-red-400">تمام سهم‌ها و تسویه‌هایش</span> هم پاک می‌شه.
+                  <br />
+                  <span className="text-xs text-gray-500 dark:text-gray-500 mt-1 block">این عمل قابل بازگشت نیست.</span>
+                </>
+              ) : (
+                'این عضو هنوز فعالیتی نداشته و به راحتی حذف می‌شه.'
+              )}
+            </p>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 py-3 px-4 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              >
+                انصراف
+              </button>
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false)
+                  onDelete()
+                }}
+                className="flex-1 py-3 px-4 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 active:scale-[0.98] transition-all"
+              >
+                حذف کن
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </BottomSheet>
   )
 }

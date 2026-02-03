@@ -91,7 +91,7 @@ export function SmartFilterChips({
           variant="neutral"
         />
 
-        {/* Heavy Expenses */}
+        {/* Heavy Expenses - Top 20% by amount */}
         {heavyCount > 0 && (
           <Chip
             label="خرج‌های سنگین"
@@ -100,6 +100,7 @@ export function SmartFilterChips({
             onClick={() => onFilterChange('heavy')}
             variant="warning"
             icon="💰"
+            subtitle="بالاترین ۲۰٪ خرج‌ها"
           />
         )}
 
@@ -138,13 +139,14 @@ interface ChipProps {
   label: string
   count?: number
   icon?: string
+  subtitle?: string // Small hint text below label
   isActive: boolean
   onClick: () => void
   variant: 'neutral' | 'warning' | 'danger' | 'category'
   color?: string // For category variant
 }
 
-function Chip({ label, count, icon, isActive, onClick, variant, color }: ChipProps) {
+function Chip({ label, count, icon, subtitle, isActive, onClick, variant, color }: ChipProps) {
   const getChipStyles = () => {
     if (isActive) {
       // Active state - uses primary color
@@ -197,6 +199,7 @@ function Chip({ label, count, icon, isActive, onClick, variant, color }: ChipPro
         borderStyle: 'solid',
         borderColor: styles.borderColor,
       }}
+      title={subtitle} // Tooltip hint
     >
       {icon && <span className="text-sm">{icon}</span>}
       <span>{label}</span>

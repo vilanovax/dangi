@@ -61,11 +61,13 @@ const SPLIT_TYPES = [
  */
 function CollapsibleSection({
   title,
+  summary,
   children,
   defaultOpen = true,
   isDanger = false,
 }: {
   title: string
+  summary?: string
   children: React.ReactNode
   defaultOpen?: boolean
   isDanger?: boolean
@@ -79,9 +81,17 @@ function CollapsibleSection({
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center justify-between mb-3 group"
       >
-        <h2 className={`text-base font-bold ${isDanger ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}>
-          {title}
-        </h2>
+        <div className="flex items-center gap-2">
+          <h2 className={`text-base font-bold ${isDanger ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}>
+            {title}
+          </h2>
+          {/* Summary text when collapsed */}
+          {!isOpen && summary && (
+            <span className="text-xs text-gray-400 dark:text-gray-500">
+              {summary}
+            </span>
+          )}
+        </div>
         <svg
           className={`w-5 h-5 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
@@ -233,7 +243,7 @@ export default function SettingsPage() {
 
       const data = await res.json()
       setProject(data.project)
-      setSuccess('✅ تنظیمات با موفقیت ذخیره شد')
+      setSuccess('تنظیمات به‌روزرسانی شد ✓')
       setTimeout(() => setSuccess(''), 3000)
     } catch {
       setError('خطا در ذخیره تنظیمات')
@@ -460,7 +470,9 @@ export default function SettingsPage() {
           </button>
           <div>
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">تنظیمات پروژه</h1>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{project.name}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              تغییرات این صفحه روی همه خرج‌ها و تسویه‌ها اثر می‌گذارد
+            </p>
           </div>
         </div>
       </div>
@@ -487,17 +499,25 @@ export default function SettingsPage() {
         {/* UX: Most frequently edited settings at the top */}
         <CollapsibleSection title="اطلاعات پروژه" defaultOpen={true}>
           <Card className="space-y-4 p-4">
-            <Input
-              label="نام پروژه"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="مثلاً: سفر شمال تابستان ۱۴۰۳"
-            />
+            <div>
+              <Input
+                label="نام پروژه"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="مثلاً: سفر شمال تابستان ۱۴۰۳"
+              />
+              {/* Name change hint */}
+              {project && name.trim() !== project.name && name.trim() && (
+                <p className="text-xs text-blue-500 dark:text-blue-400 mt-1.5 pr-1">
+                  نام جدید در همه جا نمایش داده می‌شود
+                </p>
+              )}
+            </div>
             <Input
               label="توضیحات (اختیاری)"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="یک توضیح کوتاه که به یادآوری اطلاعات کمک کنه"
+              placeholder="مثلاً سفر شمال یا جشن تولد"
             />
           </Card>
         </CollapsibleSection>
@@ -512,7 +532,7 @@ export default function SettingsPage() {
             >
               <div className="text-right">
                 <p className="font-medium text-gray-900 dark:text-white">واحد پول</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">برای نمایش قیمت‌ها</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">واحد نمایش مبلغ‌ها در این پروژه</p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600 dark:text-gray-300">{getCurrencyLabel(currency)}</span>
@@ -528,7 +548,7 @@ export default function SettingsPage() {
             >
               <div className="text-right">
                 <p className="font-medium text-gray-900 dark:text-white">نوع تقسیم</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">چطور هزینه‌ها تقسیم بشن</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">پیش‌فرض تقسیم خرج‌های جدید</p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600 dark:text-gray-300">
@@ -616,7 +636,7 @@ export default function SettingsPage() {
 
         {/* C. اعضا */}
         {/* UX: Member management and sharing grouped together */}
-        <CollapsibleSection title="اعضا" defaultOpen={false}>
+        <CollapsibleSection title="اعضا" summary={`${project.participants.length} نفر عضو`} defaultOpen={false}>
           <div className="space-y-3">
             <Card>
               <button
@@ -660,7 +680,7 @@ export default function SettingsPage() {
 
         {/* D. لینک‌های اشتراک */}
         {/* UX: Share links for granular permissions */}
-        <CollapsibleSection title="لینک‌های اشتراک" defaultOpen={false}>
+        <CollapsibleSection title="لینک‌های اشتراک" summary="دعوت افراد جدید" defaultOpen={false}>
           <div className="space-y-3">
             <div className="flex items-center justify-between px-1">
               <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -714,7 +734,7 @@ export default function SettingsPage() {
 
         {/* E. دسته‌بندی‌ها */}
         {/* UX: Advanced feature, collapsed by default */}
-        <CollapsibleSection title="دسته‌بندی‌ها" defaultOpen={false}>
+        <CollapsibleSection title="دسته‌بندی‌ها" summary="مدیریت دسته‌های خرج" defaultOpen={false}>
           <div className="space-y-3">
             <div className="flex items-center justify-between px-1">
               <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -829,7 +849,7 @@ export default function SettingsPage() {
 
         {/* H. منطقه خطر (Danger Zone) */}
         {/* UX: Visually distinct danger zone, collapsed by default */}
-        <CollapsibleSection title="منطقه خطر ⚠️" defaultOpen={false} isDanger>
+        <CollapsibleSection title="منطقه خطر" summary="عملیات غیرقابل بازگشت" defaultOpen={false} isDanger>
           <Card className="border-2 border-red-200 dark:border-red-900 bg-red-50/30 dark:bg-red-900/10">
             <div className="space-y-4">
               {/* UX: Warning message for transparency */}

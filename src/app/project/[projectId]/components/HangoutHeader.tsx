@@ -10,6 +10,10 @@ interface HangoutHeaderProps {
   participantCount: number
   totalExpenses: number
   currency: string
+  /** Is all balances settled? */
+  isSettled?: boolean
+  /** Number of pending settlements needed */
+  pendingSettlements?: number
 }
 
 /**
@@ -28,14 +32,32 @@ export function HangoutHeader({
   participantCount,
   totalExpenses,
   currency,
+  isSettled = false,
+  pendingSettlements = 0,
 }: HangoutHeaderProps) {
   const router = useRouter()
+
+  // Build status hint based on settlement state
+  const getStatusHint = () => {
+    if (isSettled) {
+      return '✓ حساب‌ها صاف'
+    }
+    if (pendingSettlements > 0) {
+      return 'آماده صاف‌کردن حساب'
+    }
+    return null
+  }
+
+  const statusHint = getStatusHint()
+  const subtitle = statusHint
+    ? `${participantCount} نفر • ${statusHint}`
+    : `${participantCount} نفر`
 
   return (
     <UnifiedHeader
       variant="hangout"
       title={projectName}
-      subtitle={`${participantCount} نفر`}
+      subtitle={subtitle}
       showBack
       onBack={() => router.push('/')}
       rightAction={

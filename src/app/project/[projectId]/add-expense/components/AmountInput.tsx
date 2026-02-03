@@ -34,6 +34,9 @@ export function AmountInput({
   participantTerm,
   autoFocus,
 }: AmountInputProps) {
+  // Dynamic placeholder based on currency
+  const dynamicPlaceholder = currency === 'IRR' ? 'مثلاً ۴۵۵,۹۸۹' : '0'
+
   return (
     <div className="bg-gradient-to-br from-blue-50/80 to-indigo-50/50 dark:from-blue-950/30 dark:to-indigo-950/20 rounded-3xl p-6 text-center border border-blue-100/50 dark:border-blue-900/30">
       {/* Friendly label */}
@@ -46,7 +49,7 @@ export function AmountInput({
         <input
           type="text"
           inputMode="numeric"
-          placeholder="۰"
+          placeholder={dynamicPlaceholder}
           value={value}
           onChange={(e) => onChange(formatInputAmount(e.target.value))}
           autoFocus={autoFocus}
@@ -57,9 +60,14 @@ export function AmountInput({
         </span>
       </div>
 
+      {/* Helper text - subtle guidance */}
+      <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+        مبلغ کل خرج
+      </p>
+
       {/* Share preview - friendly and secondary */}
       {sharePerPerson !== null && participantCount > 0 && (
-        <div className="mt-4 pt-3 border-t border-blue-100/50 dark:border-blue-900/30">
+        <div className="mt-3 pt-3 border-t border-blue-100/50 dark:border-blue-900/30">
           <p className="text-sm text-gray-500 dark:text-gray-400">
             سهم هر {participantTerm}:{' '}
             <span className="font-semibold text-gray-700 dark:text-gray-300">{formatMoney(sharePerPerson, currency)}</span>

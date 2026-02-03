@@ -360,7 +360,7 @@ export default function AddSettlementPage() {
         <UnifiedHeader
           variant="form"
           title="صاف‌کردن حساب"
-          subtitle="یه پرداخت انجام شده؟ اینجا ثبتش کن"
+          subtitle="اگه پول جابه‌جا شده، ثبتش کن تا حساب‌ها دقیق بمونه"
           showBack
           onBack={handleBack}
         />
@@ -429,7 +429,7 @@ export default function AddSettlementPage() {
         <Input
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          placeholder="اگه خواستی، توضیح کوتاه بنویس"
+          placeholder="مثلاً کارت‌به‌کارت یا پرداخت نقدی"
         />
       </FormSection>
 
@@ -468,7 +468,7 @@ export default function AddSettlementPage() {
         onUndo={handleUndo}
         onDismiss={() => setShowUndoToast(false)}
         onAutoConfirm={handleAutoConfirm}
-        message="تسویه با موفقیت ثبت شد ✓"
+        message="تسویه با موفقیت ثبت شد 🎉"
         duration={30000}
       />
     </FormLayout>
