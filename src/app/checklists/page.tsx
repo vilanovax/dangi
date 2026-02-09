@@ -5,10 +5,10 @@
 
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useRef, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Button } from '@/components/ui'
+import { Button, BottomSheet } from '@/components/ui'
 import type { Checklist } from '@/types/checklist'
 import type { ChecklistCategoryId } from '@/lib/domain/checklist-templates/types'
 
@@ -108,6 +108,16 @@ function ChecklistsPageContent() {
   const [pinningId, setPinningId] = useState<string | null>(null)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
+  // Long press state
+  const [selectedChecklist, setSelectedChecklist] = useState<Checklist | null>(null)
+  const [showMenu, setShowMenu] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [isDuplicating, setIsDuplicating] = useState(false)
+  const [isArchiving, setIsArchiving] = useState(false)
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null)
+  const longPressTriggered = useRef(false)
+
   // ── Check for saved feedback ────────────────────────────────
   useEffect(() => {
     if (searchParams.get('saved') === 'true') {
@@ -139,6 +149,159 @@ function ChecklistsPageContent() {
     }
     fetchChecklists()
   }, [selectedCategory])
+
+  // ── Long Press Handlers ──────────────────────────────────────
+  const handlePointerDown = useCallback((checklist: Checklist, e: React.PointerEvent) => {
+    // Only trigger for non-button interactions
+    if ((e.target as HTMLElement).tagName === 'BUTTON' || (e.target as HTMLElement).closest('button')) {
+      return
+    }
+
+    e.preventDefault()
+    longPressTriggered.current = false
+    longPressTimer.current = setTimeout(() => {
+      longPressTriggered.current = true
+      setSelectedChecklist(checklist)
+      setShowMenu(true)
+      if (navigator.vibrate) {
+        navigator.vibrate(50)
+      }
+    }, 500)
+  }, [])
+
+  const handlePointerUp = useCallback((checklistId: string, e: React.PointerEvent) => {
+    // Only trigger for non-button interactions
+    if ((e.target as HTMLElement).tagName === 'BUTTON' || (e.target as HTMLElement).closest('button')) {
+      return
+    }
+
+    e.preventDefault()
+    e.stopPropagation()
+
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+
+    if (longPressTriggered.current) {
+      longPressTriggered.current = false
+      return
+    }
+
+    setTimeout(() => {
+      router.push(`/checklists/${checklistId}`)
+    }, 10)
+  }, [router])
+
+  const handlePointerMove = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+  }, [])
+
+  // ── Action Handlers ────────────────────────────────────────────
+  const refetch = useCallback(async () => {
+    const params = new URLSearchParams()
+    if (selectedCategory !== 'all') params.set('category', selectedCategory)
+    params.set('includeArchived', 'true')
+
+    const res = await fetch(`/api/checklists?${params.toString()}`)
+    if (res.ok) {
+      const data: ChecklistsResponse = await res.json()
+      setChecklists(data.checklists)
+    }
+  }, [selectedCategory])
+
+  const handleDuplicate = useCallback(async () => {
+    if (!selectedChecklist) return
+
+    setIsDuplicating(true)
+    setShowMenu(false)
+    try {
+      const res = await fetch('/api/checklists', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: `${selectedChecklist.title} (کپی)`,
+          description: selectedChecklist.description,
+          icon: selectedChecklist.icon,
+          color: selectedChecklist.color,
+          category: selectedChecklist.category,
+          items: (selectedChecklist.items || []).map(item => ({
+            text: item.text,
+            note: item.note,
+          })),
+        }),
+      })
+
+      if (!res.ok) throw new Error('Failed to duplicate checklist')
+
+      await refetch()
+      setSelectedChecklist(null)
+      setToast({ message: 'چک‌لیست کپی شد ✅', type: 'success' })
+      setTimeout(() => setToast(null), 2500)
+    } catch (error) {
+      console.error('Error duplicating checklist:', error)
+      setToast({ message: 'خطا در کپی کردن', type: 'error' })
+      setTimeout(() => setToast(null), 2500)
+    } finally {
+      setIsDuplicating(false)
+    }
+  }, [selectedChecklist, refetch])
+
+  const handleArchive = useCallback(async () => {
+    if (!selectedChecklist) return
+
+    setIsArchiving(true)
+    setShowMenu(false)
+    try {
+      const res = await fetch(`/api/checklists/${selectedChecklist.id}/archive`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ archive: true }),
+      })
+
+      if (!res.ok) throw new Error('Failed to archive checklist')
+
+      await refetch()
+      setSelectedChecklist(null)
+      setToast({ message: 'آرشیو شد 📦', type: 'success' })
+      setTimeout(() => setToast(null), 2500)
+    } catch (error) {
+      console.error('Error archiving checklist:', error)
+      setToast({ message: 'خطا در آرشیو کردن', type: 'error' })
+      setTimeout(() => setToast(null), 2500)
+    } finally {
+      setIsArchiving(false)
+    }
+  }, [selectedChecklist, refetch])
+
+  const handleDelete = useCallback(async () => {
+    if (!selectedChecklist) return
+
+    setIsDeleting(true)
+    try {
+      const res = await fetch(`/api/checklists/${selectedChecklist.id}`, {
+        method: 'DELETE',
+      })
+
+      if (!res.ok) throw new Error('Failed to delete checklist')
+
+      setShowDeleteConfirm(false)
+      setShowMenu(false)
+      await refetch()
+      setSelectedChecklist(null)
+      setToast({ message: 'حذف شد 🗑️', type: 'success' })
+      setTimeout(() => setToast(null), 2500)
+    } catch (error) {
+      console.error('Error deleting checklist:', error)
+      setToast({ message: 'خطا در حذف', type: 'error' })
+      setTimeout(() => setToast(null), 2500)
+    } finally {
+      setIsDeleting(false)
+    }
+  }, [selectedChecklist, refetch])
 
   // ── Pin/Unpin Handler ─────────────────────────────────────────
   const handleTogglePin = async (e: React.MouseEvent, checklistId: string, currentlyPinned: boolean) => {
@@ -336,12 +499,15 @@ function ChecklistsPageContent() {
                     const isPinning = pinningId === checklist.id
 
                     return (
-                      <Link key={checklist.id} href={`/checklists/${checklist.id}`}>
-                        <div
-                          className={`relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl p-5 hover:shadow-xl transition-all border border-white/50 dark:border-gray-700/50 hover:scale-[1.01] ${
-                            isComplete ? 'opacity-70' : ''
-                          } ${checklist.isPinned ? 'ring-2 ring-amber-400/50 dark:ring-amber-500/30' : ''}`}
-                        >
+                      <div
+                        key={checklist.id}
+                        onPointerDown={(e) => handlePointerDown(checklist, e)}
+                        onPointerUp={(e) => handlePointerUp(checklist.id, e)}
+                        onPointerMove={handlePointerMove}
+                        className={`relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl p-5 hover:shadow-xl transition-all border border-white/50 dark:border-gray-700/50 hover:scale-[1.01] cursor-pointer touch-none ${
+                          isComplete ? 'opacity-70' : ''
+                        } ${checklist.isPinned ? 'ring-2 ring-amber-400/50 dark:ring-amber-500/30' : ''}`}
+                      >
                           {/* Pinned Badge */}
                           {checklist.isPinned && (
                             <div className="absolute -top-2 left-4 px-2 py-0.5 bg-gradient-to-r from-amber-400 to-yellow-500 text-white text-xs font-medium rounded-full shadow-sm flex items-center gap-1">
@@ -435,8 +601,7 @@ function ChecklistsPageContent() {
                               </svg>
                             </span>
                           </div>
-                        </div>
-                      </Link>
+                      </div>
                     )
                   })}
                 </div>
@@ -522,6 +687,120 @@ function ChecklistsPageContent() {
             }`}
           >
             <span className="text-sm font-medium">{toast.message}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Actions BottomSheet */}
+      {selectedChecklist && (
+        <BottomSheet isOpen={showMenu} onClose={() => setShowMenu(false)} title="کارهای قبل از خروج">
+          <div className="space-y-3 pb-4">
+            {/* Duplicate */}
+            <button
+              onClick={handleDuplicate}
+              disabled={isDuplicating}
+              className="w-full flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-blue-500/5 to-indigo-500/5 hover:from-blue-500/10 hover:to-indigo-500/10 transition-all duration-300 group disabled:opacity-50"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25 group-hover:scale-110 transition-transform">
+                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                </svg>
+              </div>
+              <div className="flex-1 text-right">
+                <p className="font-semibold text-gray-800 dark:text-gray-100">
+                  {isDuplicating ? 'در حال کپی...' : 'کپی چک‌لیست'}
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">ساخت نسخه جدید از این چک‌لیست</p>
+              </div>
+              <svg className="w-5 h-5 text-gray-300 group-hover:text-gray-400 group-hover:-translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+
+            {/* Archive */}
+            <button
+              onClick={handleArchive}
+              disabled={isArchiving}
+              className="w-full flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-orange-500/5 to-amber-500/5 hover:from-orange-500/10 hover:to-amber-500/10 transition-all duration-300 group disabled:opacity-50"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-lg shadow-orange-500/25 group-hover:scale-110 transition-transform">
+                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                </svg>
+              </div>
+              <div className="flex-1 text-right">
+                <p className="font-semibold text-gray-800 dark:text-gray-100">
+                  {isArchiving ? 'در حال آرشیو...' : 'آرشیو کردن'}
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">انتقال به بخش آرشیو</p>
+              </div>
+              <svg className="w-5 h-5 text-gray-300 group-hover:text-gray-400 group-hover:-translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+
+            {/* Delete */}
+            <div className="my-2" />
+            <button
+              onClick={() => {
+                setShowMenu(false)
+                setShowDeleteConfirm(true)
+              }}
+              className="w-full flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-red-500/5 to-rose-500/5 hover:from-red-500/10 hover:to-rose-500/10 transition-all duration-300 group"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center shadow-lg shadow-red-500/25 group-hover:scale-110 transition-transform">
+                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+              <div className="flex-1 text-right">
+                <p className="font-semibold text-red-600 dark:text-red-400">حذف چک‌لیست</p>
+                <p className="text-sm text-red-500 dark:text-red-500/70">حذف دائمی و غیرقابل بازگشت</p>
+              </div>
+              <svg className="w-5 h-5 text-red-300 group-hover:text-red-400 group-hover:-translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+          </div>
+        </BottomSheet>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && selectedChecklist && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowDeleteConfirm(false)}
+          />
+          <div className="relative bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-3xl">
+                🗑️
+              </div>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
+                حذف چک‌لیست؟
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                این کار قابل بازگشت نیست
+                <br />
+                و همه آیتم‌ها حذف می‌شوند
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                انصراف
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-medium hover:from-red-600 hover:to-red-700 transition-colors disabled:opacity-50"
+              >
+                {isDeleting ? 'در حال حذف...' : 'حذف برای همیشه'}
+              </button>
+            </div>
           </div>
         </div>
       )}
