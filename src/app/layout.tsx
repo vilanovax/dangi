@@ -61,9 +61,12 @@ export default function RootLayout({
           <ThemeProvider>
             <ServiceWorkerRegistration />
             <OfflineBanner />
-            <ClientErrorBoundary>
-              {children}
-            </ClientErrorBoundary>
+            {/* Desktop PWA Container - Center mobile view on desktop */}
+            <div className="min-h-dvh mx-auto max-w-[480px] bg-white dark:bg-gray-900 shadow-2xl">
+              <ClientErrorBoundary>
+                {children}
+              </ClientErrorBoundary>
+            </div>
             <InstallPrompt />
           </ThemeProvider>
         </QueryProvider>
