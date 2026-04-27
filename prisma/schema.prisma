@@ -346,6 +346,7 @@ model Checklist {
   shareCode   String           @unique @default(cuid()) // کد اشتراک‌گذاری
   isPinned    Boolean          @default(false) // سنجاق شده بالای لیست
   pinnedAt    DateTime?        // تاریخ سنجاق کردن (برای مرتب‌سازی)
+  isTemplate  Boolean          @default(false) // ذخیره شده به عنوان تمپلیت قابل استفاده مجدد
   isArchived  Boolean          @default(false) // آرشیو شده
   archivedAt  DateTime?        // تاریخ آرشیو
   createdAt   DateTime         @default(now())
