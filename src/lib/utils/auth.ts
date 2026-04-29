@@ -139,22 +139,23 @@ interface UnauthorizedResult {
   response: NextResponse
 }
 
-export async function requireProjectAccess(
-  projectId: string
-): Promise<AuthResult | UnauthorizedResult> {
-  // 1. Check if user is authenticated
+function parseParticipantScopes(scopes: string | null): AccessScope[] | null {
+  if (scopes === null) return null
+
+  try {
+    const parsed = JSON.parse(scopes)
+    return Array.isArray(parsed) ? parsed as AccessScope[] : []
+  } catch {
+    return []
+  }
+}
+
+async function getAuthenticatedProjectParticipant(projectId: string) {
   const user = await getCurrentUser()
   if (!user) {
-    return {
-      authorized: false,
-      response: NextResponse.json(
-        { error: 'لطفاً وارد حساب کاربری خود شوید' },
-        { status: 401 }
-      ),
-    }
+    return { user: null, participant: null }
   }
 
-  // 2. Check if user is a participant of this project
   const participant = await prisma.participant.findFirst({
     where: {
       projectId,
@@ -164,9 +165,27 @@ export async function requireProjectAccess(
       id: true,
       userId: true,
       projectId: true,
-      scopes: true, // Include scopes to check for restricted access
+      scopes: true,
     },
   })
+
+  return { user, participant }
+}
+
+export async function requireProjectAccess(
+  projectId: string
+): Promise<AuthResult | UnauthorizedResult> {
+  const { user, participant } = await getAuthenticatedProjectParticipant(projectId)
+
+  if (!user) {
+    return {
+      authorized: false,
+      response: NextResponse.json(
+        { error: 'لطفاً وارد حساب کاربری خود شوید' },
+        { status: 401 }
+      ),
+    }
+  }
 
   if (!participant) {
     return {
@@ -178,7 +197,17 @@ export async function requireProjectAccess(
     }
   }
 
-  // User has access
+  if (participant.scopes !== null) {
+    return {
+      authorized: false,
+      response: NextResponse.json(
+        { error: 'دسترسی کافی ندارید' },
+        { status: 403 }
+      ),
+    }
+  }
+
+  // User has unrestricted participant access
   return {
     authorized: true,
     accessType: 'participant',
@@ -198,12 +227,34 @@ export async function requireProjectAccessWithLink(
   projectId: string,
   requiredScopes?: AccessScope[]
 ): Promise<AuthResult | LinkAuthResult | UnauthorizedResult> {
-  // 1. Try participant-based access first (existing logic)
-  const participantAccess = await requireProjectAccess(projectId)
+  // 1. Try participant-based access first. Participants created from access
+  // links keep their scopes, so they must pass the same scope checks as links.
+  const { user, participant } = await getAuthenticatedProjectParticipant(projectId)
 
-  if (participantAccess.authorized) {
-    // Regular participant access - grant full access regardless of requiredScopes
-    return participantAccess
+  if (user && participant) {
+    const participantScopes = parseParticipantScopes(participant.scopes)
+
+    if (
+      participantScopes === null ||
+      !requiredScopes ||
+      requiredScopes.length === 0 ||
+      hasAllScopes(participantScopes, requiredScopes)
+    ) {
+      return {
+        authorized: true,
+        accessType: 'participant',
+        user,
+        participant,
+      }
+    }
+
+    return {
+      authorized: false,
+      response: NextResponse.json(
+        { error: 'دسترسی کافی ندارید' },
+        { status: 403 }
+      ),
+    }
   }
 
   // 2. Participant access failed - check for access link token
@@ -220,8 +271,13 @@ export async function requireProjectAccessWithLink(
   }
 
   if (!accessToken) {
-    // No access token found - return the original unauthorized response
-    return participantAccess
+    return {
+      authorized: false,
+      response: NextResponse.json(
+        { error: user ? 'شما به این پروژه دسترسی ندارید' : 'لطفاً وارد حساب کاربری خود شوید' },
+        { status: user ? 403 : 401 }
+      ),
+    }
   }
 
   // 3. Validate the access link token
