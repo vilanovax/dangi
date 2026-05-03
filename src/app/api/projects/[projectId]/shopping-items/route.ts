@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getShoppingItems, createShoppingItem } from '@/lib/services/shopping.service'
+import {
+  getShoppingItems,
+  createShoppingItem,
+  ShoppingParticipantNotFoundError,
+} from '@/lib/services/shopping.service'
 import { requireProjectAccess } from '@/lib/utils/auth'
 import { logApiError } from '@/lib/utils/logger'
 
@@ -51,7 +55,7 @@ export async function POST(
 
     const body = await request.json()
 
-    const { text, quantity, note, addedById, assignedToId } = body
+    const { text, quantity, note, assignedToId } = body
 
     // Validation
     if (!text || typeof text !== 'string' || !text.trim()) {
@@ -72,12 +76,19 @@ export async function POST(
       text: text.trim(),
       quantity: quantity?.trim() || undefined,
       note: note?.trim() || undefined,
-      addedById: addedById || undefined,
+      addedById: authResult.participant.id,
       assignedToId: assignedToId || undefined,
     })
 
     return NextResponse.json({ item }, { status: 201 })
   } catch (error) {
+    if (error instanceof ShoppingParticipantNotFoundError) {
+      return NextResponse.json(
+        { error: 'مسئول خرید در این پروژه یافت نشد' },
+        { status: 400 }
+      )
+    }
+
     logApiError(error, { context: 'POST /api/projects/[projectId]/shopping-items' })
     return NextResponse.json(
       { error: 'خطا در افزودن آیتم' },

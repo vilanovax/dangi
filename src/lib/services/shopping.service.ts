@@ -10,6 +10,31 @@ const participantSelect = {
   avatar: true,
 }
 
+export class ShoppingItemNotFoundError extends Error {
+  constructor() {
+    super('Shopping item not found')
+    this.name = 'ShoppingItemNotFoundError'
+  }
+}
+
+export class ShoppingParticipantNotFoundError extends Error {
+  constructor() {
+    super('Shopping participant not found')
+    this.name = 'ShoppingParticipantNotFoundError'
+  }
+}
+
+async function ensureParticipantInProject(participantId: string, projectId: string) {
+  const participant = await prisma.participant.findFirst({
+    where: { id: participantId, projectId },
+    select: { id: true },
+  })
+
+  if (!participant) {
+    throw new ShoppingParticipantNotFoundError()
+  }
+}
+
 /**
  * Get all shopping items for a project
  * Returns items sorted: unchecked first, then checked
@@ -53,6 +78,14 @@ export async function createShoppingItem(
     assignedToId?: string
   }
 ) {
+  if (data.addedById) {
+    await ensureParticipantInProject(data.addedById, projectId)
+  }
+
+  if (data.assignedToId) {
+    await ensureParticipantInProject(data.assignedToId, projectId)
+  }
+
   return await prisma.shoppingItem.create({
     data: {
       text: data.text,
@@ -76,6 +109,7 @@ export async function createShoppingItem(
  * When marking as checked, also records who checked it and when
  */
 export async function updateShoppingItem(
+  projectId: string,
   itemId: string,
   data: {
     text?: string
@@ -86,6 +120,14 @@ export async function updateShoppingItem(
     checkedById?: string // Who is checking this item
   }
 ) {
+  if (data.assignedToId) {
+    await ensureParticipantInProject(data.assignedToId, projectId)
+  }
+
+  if (data.checkedById) {
+    await ensureParticipantInProject(data.checkedById, projectId)
+  }
+
   // Build update data
   const updateData: Record<string, unknown> = {
     updatedAt: new Date(),
@@ -110,22 +152,36 @@ export async function updateShoppingItem(
     }
   }
 
-  return await prisma.shoppingItem.update({
-    where: { id: itemId },
-    data: updateData,
-    include: {
-      addedBy: { select: participantSelect },
-      assignedTo: { select: participantSelect },
-      checkedBy: { select: participantSelect },
-    },
+  return await prisma.$transaction(async (tx) => {
+    const result = await tx.shoppingItem.updateMany({
+      where: { id: itemId, projectId },
+      data: updateData,
+    })
+
+    if (result.count === 0) {
+      throw new ShoppingItemNotFoundError()
+    }
+
+    return tx.shoppingItem.findFirstOrThrow({
+      where: { id: itemId, projectId },
+      include: {
+        addedBy: { select: participantSelect },
+        assignedTo: { select: participantSelect },
+        checkedBy: { select: participantSelect },
+      },
+    })
   })
 }
 
 /**
  * Delete a shopping item
  */
-export async function deleteShoppingItem(itemId: string) {
-  await prisma.shoppingItem.delete({
-    where: { id: itemId },
+export async function deleteShoppingItem(projectId: string, itemId: string) {
+  const result = await prisma.shoppingItem.deleteMany({
+    where: { id: itemId, projectId },
   })
+
+  if (result.count === 0) {
+    throw new ShoppingItemNotFoundError()
+  }
 }
