@@ -4,7 +4,7 @@ import {
   deactivateAccessLink,
   reactivateAccessLink,
 } from '@/lib/services/access-link.service'
-import { requireProjectAccess } from '@/lib/utils/auth'
+import { requireFullProjectAccess } from '@/lib/utils/auth'
 import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
@@ -15,7 +15,7 @@ type RouteContext = {
  * POST /api/projects/[projectId]/access-links/[linkId]/toggle
  * Toggle access link active status (activate/deactivate)
  *
- * Auth: Requires project membership
+ * Auth: Requires unrestricted project membership
  * Body: { isActive: boolean }
  */
 export async function POST(request: NextRequest, context: RouteContext) {
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const { projectId, linkId } = await context.params
 
     // Authorization check
-    const authResult = await requireProjectAccess(projectId)
+    const authResult = await requireFullProjectAccess(projectId)
     if (!authResult.authorized) {
       return authResult.response
     }
