@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSettlementById, updateSettlement, deleteSettlement } from '@/lib/services/settlement.service'
 import { getProjectById } from '@/lib/services/project.service'
+import { requireFullProjectAccess, requireProjectAccessWithLink } from '@/lib/utils/auth'
 import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
@@ -10,6 +11,11 @@ type RouteContext = {
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { projectId, settlementId } = await context.params
+
+    const authResult = await requireProjectAccessWithLink(projectId, ['settlements:read'])
+    if (!authResult.authorized) {
+      return authResult.response
+    }
 
     const settlement = await getSettlementById(settlementId)
 
@@ -31,6 +37,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
 export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     const { projectId, settlementId } = await context.params
+
+    const authResult = await requireFullProjectAccess(projectId)
+    if (!authResult.authorized) {
+      return authResult.response
+    }
 
     const existingSettlement = await getSettlementById(settlementId)
 
@@ -98,6 +109,11 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
     const { projectId, settlementId } = await context.params
+
+    const authResult = await requireFullProjectAccess(projectId)
+    if (!authResult.authorized) {
+      return authResult.response
+    }
 
     const existingSettlement = await getSettlementById(settlementId)
 

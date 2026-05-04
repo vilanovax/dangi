@@ -139,6 +139,25 @@ interface UnauthorizedResult {
   response: NextResponse
 }
 
+function insufficientAccessResponse(): UnauthorizedResult {
+  return {
+    authorized: false,
+    response: NextResponse.json(
+      { error: 'دسترسی کافی ندارید' },
+      { status: 403 }
+    ),
+  }
+}
+
+function parseStoredScopes(scopes: string): AccessScope[] | null {
+  try {
+    const parsed = JSON.parse(scopes)
+    return Array.isArray(parsed) ? parsed : null
+  } catch {
+    return null
+  }
+}
+
 export async function requireProjectAccess(
   projectId: string
 ): Promise<AuthResult | UnauthorizedResult> {
@@ -188,6 +207,29 @@ export async function requireProjectAccess(
 }
 
 /**
+ * Require unrestricted project membership.
+ *
+ * Participants created from limited access links keep their scopes in the
+ * participant row after signup; mutating/member-management APIs must not treat
+ * those scoped participants as full project members.
+ */
+export async function requireFullProjectAccess(
+  projectId: string
+): Promise<AuthResult | UnauthorizedResult> {
+  const authResult = await requireProjectAccess(projectId)
+
+  if (!authResult.authorized) {
+    return authResult
+  }
+
+  if (authResult.participant.scopes) {
+    return insufficientAccessResponse()
+  }
+
+  return authResult
+}
+
+/**
  * Check project access with support for both participant-based and link-based access
  *
  * @param projectId - Project ID to check access for
@@ -202,7 +244,14 @@ export async function requireProjectAccessWithLink(
   const participantAccess = await requireProjectAccess(projectId)
 
   if (participantAccess.authorized) {
-    // Regular participant access - grant full access regardless of requiredScopes
+    if (participantAccess.participant.scopes && requiredScopes && requiredScopes.length > 0) {
+      const participantScopes = parseStoredScopes(participantAccess.participant.scopes)
+
+      if (!participantScopes || !hasAllScopes(participantScopes, requiredScopes)) {
+        return insufficientAccessResponse()
+      }
+    }
+
     return participantAccess
   }
 
@@ -253,13 +302,7 @@ export async function requireProjectAccessWithLink(
     const linkScopes = validation.scopes || []
 
     if (!hasAllScopes(linkScopes, requiredScopes)) {
-      return {
-        authorized: false,
-        response: NextResponse.json(
-          { error: 'دسترسی کافی ندارید' },
-          { status: 403 }
-        ),
-      }
+      return insufficientAccessResponse()
     }
   }
 

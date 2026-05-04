@@ -4,7 +4,7 @@ import {
   updateAccessLink,
   deleteAccessLink,
 } from '@/lib/services/access-link.service'
-import { requireProjectAccess } from '@/lib/utils/auth'
+import { requireFullProjectAccess } from '@/lib/utils/auth'
 import { logApiError } from '@/lib/utils/logger'
 import type { AccessScope } from '@/types/access-link'
 
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const { projectId, linkId } = await context.params
 
     // Authorization check
-    const authResult = await requireProjectAccess(projectId)
+    const authResult = await requireFullProjectAccess(projectId)
     if (!authResult.authorized) {
       return authResult.response
     }
@@ -63,7 +63,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const { projectId, linkId } = await context.params
 
     // Authorization check
-    const authResult = await requireProjectAccess(projectId)
+    const authResult = await requireFullProjectAccess(projectId)
     if (!authResult.authorized) {
       return authResult.response
     }
@@ -121,7 +121,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     const { projectId, linkId } = await context.params
 
     // Authorization check
-    const authResult = await requireProjectAccess(projectId)
+    const authResult = await requireFullProjectAccess(projectId)
     if (!authResult.authorized) {
       return authResult.response
     }
