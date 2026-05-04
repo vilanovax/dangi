@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getExpenseById, updateParticipantShare } from '@/lib/services/expense.service'
-import { requireProjectAccess } from '@/lib/utils/auth'
+import { requireFullProjectAccess } from '@/lib/utils/auth'
 import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
@@ -17,8 +17,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     const { projectId, expenseId } = await context.params
 
-    // Authorization check: user must be a participant
-    const authResult = await requireProjectAccess(projectId)
+    // Authorization check: user must have unrestricted project access
+    const authResult = await requireFullProjectAccess(projectId)
     if (!authResult.authorized) {
       return authResult.response
     }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getExpenseById, updateExpense, deleteExpense } from '@/lib/services/expense.service'
 import { getProjectById } from '@/lib/services/project.service'
-import { requireProjectAccess, requireProjectAccessWithLink } from '@/lib/utils/auth'
+import { requireFullProjectAccess, requireProjectAccessWithLink } from '@/lib/utils/auth'
 import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
@@ -39,8 +39,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     const { projectId, expenseId } = await context.params
 
-    // Authorization check: user must be a participant
-    const authResult = await requireProjectAccess(projectId)
+    // Authorization check: user must be an unrestricted participant
+    const authResult = await requireFullProjectAccess(projectId)
     if (!authResult.authorized) {
       return authResult.response
     }
@@ -126,8 +126,8 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
     const { projectId, expenseId } = await context.params
 
-    // Authorization check: user must be a participant
-    const authResult = await requireProjectAccess(projectId)
+    // Authorization check: user must be an unrestricted participant
+    const authResult = await requireFullProjectAccess(projectId)
     if (!authResult.authorized) {
       return authResult.response
     }
