@@ -76,6 +76,13 @@ export async function POST(
       assignedToId: assignedToId || undefined,
     })
 
+    if (!item) {
+      return NextResponse.json(
+        { error: 'عضو انتخاب‌شده به این پروژه تعلق ندارد' },
+        { status: 400 }
+      )
+    }
+
     return NextResponse.json({ item }, { status: 201 })
   } catch (error) {
     logApiError(error, { context: 'POST /api/projects/[projectId]/shopping-items' })
