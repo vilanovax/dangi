@@ -481,7 +481,7 @@ export default function ExpensesPage() {
 
   const handleQuickEditSave = useCallback(async (
     expenseId: string,
-    updates: { amount: number; categoryId: string | null; paidById: string; title: string }
+    updates: { amount?: number; categoryId: string | null; paidById: string; title: string }
   ): Promise<boolean> => {
     try {
       const res = await fetch(`/api/projects/${projectId}/expenses/${expenseId}`, {
@@ -496,7 +496,7 @@ export default function ExpensesPage() {
           e.id === expenseId
             ? {
                 ...e,
-                amount: updates.amount,
+                amount: updates.amount ?? e.amount,
                 title: updates.title,
                 paidById: updates.paidById,
                 categoryId: updates.categoryId || undefined,

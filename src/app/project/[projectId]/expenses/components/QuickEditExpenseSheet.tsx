@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { BottomSheet, Button, Toast } from '@/components/ui'
+import { buildQuickEditExpenseUpdates, type QuickEditExpenseUpdates } from './quick-edit-updates'
 
 interface Category {
   id: string
@@ -32,12 +33,7 @@ interface QuickEditExpenseSheetProps {
   participants: Participant[]
   currency: string
   projectId: string
-  onSave: (expenseId: string, updates: {
-    amount: number
-    categoryId: string | null
-    paidById: string
-    title: string
-  }) => Promise<boolean>
+  onSave: (expenseId: string, updates: QuickEditExpenseUpdates) => Promise<boolean>
 }
 
 /**
@@ -106,12 +102,14 @@ export function QuickEditExpenseSheet({
 
     setSaving(true)
     try {
-      const success = await onSave(expense.id, {
+      const updates = buildQuickEditExpenseUpdates(expense, {
         amount: amountNum,
         categoryId,
         paidById: payerId,
         title: title.trim() || expense.title,
       })
+
+      const success = await onSave(expense.id, updates)
 
       if (success) {
         // Show specific toast for payer change, generic for others

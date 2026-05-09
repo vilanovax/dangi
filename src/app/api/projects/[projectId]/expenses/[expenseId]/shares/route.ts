@@ -17,8 +17,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     const { projectId, expenseId } = await context.params
 
-    // Authorization check: user must be a participant
-    const authResult = await requireProjectAccess(projectId)
+    // Authorization check: restricted participants need write permission.
+    const authResult = await requireProjectAccess(projectId, ['expenses:create'])
     if (!authResult.authorized) {
       return authResult.response
     }

@@ -35,9 +35,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const { projectId } = await context.params
 
-    // Authorization check: user must be a FULL participant (NOT link-based access)
-    // Settlements can only be created by full project members
-    const authResult = await requireProjectAccess(projectId)
+    // Authorization check: restricted participants need settlement write permission.
+    const authResult = await requireProjectAccess(projectId, ['settlements:create'])
     if (!authResult.authorized) {
       return authResult.response
     }

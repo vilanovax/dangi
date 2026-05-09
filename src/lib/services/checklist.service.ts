@@ -380,15 +380,24 @@ export async function createTravelChecklistItem(
  * Toggle travel checklist item status (active ↔ done)
  */
 export async function toggleTravelChecklistItem(
+  projectId: string,
   itemId: string,
   status: 'active' | 'done'
 ) {
-  return prisma.travelChecklistItem.update({
-    where: { id: itemId },
+  const result = await prisma.travelChecklistItem.updateMany({
+    where: { id: itemId, projectId },
     data: {
       status,
       completedAt: status === 'done' ? new Date() : null,
     },
+  })
+
+  if (result.count === 0) {
+    return null
+  }
+
+  return prisma.travelChecklistItem.findUnique({
+    where: { id: itemId },
     include: {
       createdBy: {
         select: {
@@ -402,9 +411,9 @@ export async function toggleTravelChecklistItem(
 /**
  * Delete a travel checklist item
  */
-export async function deleteTravelChecklistItem(itemId: string) {
-  return prisma.travelChecklistItem.delete({
-    where: { id: itemId },
+export async function deleteTravelChecklistItem(projectId: string, itemId: string) {
+  return prisma.travelChecklistItem.deleteMany({
+    where: { id: itemId, projectId },
   })
 }
 

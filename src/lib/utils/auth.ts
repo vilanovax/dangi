@@ -139,8 +139,30 @@ interface UnauthorizedResult {
   response: NextResponse
 }
 
+function parseParticipantScopes(scopes: string | null): AccessScope[] | null {
+  if (!scopes) return null
+
+  try {
+    const parsed = JSON.parse(scopes)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+function insufficientScopeResponse(): UnauthorizedResult {
+  return {
+    authorized: false,
+    response: NextResponse.json(
+      { error: 'دسترسی کافی ندارید' },
+      { status: 403 }
+    ),
+  }
+}
+
 export async function requireProjectAccess(
-  projectId: string
+  projectId: string,
+  requiredScopes?: AccessScope[]
 ): Promise<AuthResult | UnauthorizedResult> {
   // 1. Check if user is authenticated
   const user = await getCurrentUser()
@@ -178,6 +200,13 @@ export async function requireProjectAccess(
     }
   }
 
+  if (requiredScopes && requiredScopes.length > 0) {
+    const participantScopes = parseParticipantScopes(participant.scopes)
+    if (participantScopes && !hasAllScopes(participantScopes, requiredScopes)) {
+      return insufficientScopeResponse()
+    }
+  }
+
   // User has access
   return {
     authorized: true,
@@ -199,10 +228,10 @@ export async function requireProjectAccessWithLink(
   requiredScopes?: AccessScope[]
 ): Promise<AuthResult | LinkAuthResult | UnauthorizedResult> {
   // 1. Try participant-based access first (existing logic)
-  const participantAccess = await requireProjectAccess(projectId)
+  const participantAccess = await requireProjectAccess(projectId, requiredScopes)
 
   if (participantAccess.authorized) {
-    // Regular participant access - grant full access regardless of requiredScopes
+    // Unrestricted participants have full access; restricted participants must match requiredScopes.
     return participantAccess
   }
 
@@ -253,13 +282,7 @@ export async function requireProjectAccessWithLink(
     const linkScopes = validation.scopes || []
 
     if (!hasAllScopes(linkScopes, requiredScopes)) {
-      return {
-        authorized: false,
-        response: NextResponse.json(
-          { error: 'دسترسی کافی ندارید' },
-          { status: 403 }
-        ),
-      }
+      return insufficientScopeResponse()
     }
   }
 
