@@ -22,7 +22,7 @@ export async function PATCH(
 
     const body = await request.json()
 
-    const { text, isChecked, quantity, note, assignedToId, checkedById } = body
+    const { text, isChecked, quantity, note, assignedToId } = body
 
     // Validation
     if (text !== undefined) {
@@ -48,18 +48,31 @@ export async function PATCH(
       )
     }
 
-    const item = await updateShoppingItem(itemId, {
+    const item = await updateShoppingItem(projectId, itemId, {
       text: text?.trim(),
       isChecked,
       quantity: quantity?.trim() || undefined,
       note: note?.trim() || undefined,
       assignedToId: assignedToId || undefined,
-      checkedById: checkedById || undefined,
+      checkedById: isChecked ? authResult.participant.id : undefined,
     })
+
+    if (!item) {
+      return NextResponse.json(
+        { error: 'آیتم متعلق به این پروژه نیست یا یافت نشد' },
+        { status: 404 }
+      )
+    }
 
     return NextResponse.json({ item })
   } catch (error) {
     logApiError(error, { context: 'PATCH /api/projects/[projectId]/shopping-items/[itemId]' })
+    if (error instanceof Error && error.message === 'Participant does not belong to this project') {
+      return NextResponse.json(
+        { error: 'شرکت‌کننده انتخاب‌شده عضو این پروژه نیست' },
+        { status: 400 }
+      )
+    }
     return NextResponse.json(
       { error: 'خطا در به‌روزرسانی آیتم' },
       { status: 500 }
@@ -84,7 +97,14 @@ export async function DELETE(
       return authResult.response
     }
 
-    await deleteShoppingItem(itemId)
+    const deleted = await deleteShoppingItem(projectId, itemId)
+
+    if (!deleted) {
+      return NextResponse.json(
+        { error: 'آیتم متعلق به این پروژه نیست یا یافت نشد' },
+        { status: 404 }
+      )
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

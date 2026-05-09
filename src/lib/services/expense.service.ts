@@ -280,6 +280,8 @@ export async function updateExpense(
   const shouldRecalculateShares =
     input.amount !== undefined || input.includedParticipantIds !== undefined
 
+  let recalculatedShares: ReturnType<typeof calculateSplit> | null = null
+
   if (shouldRecalculateShares) {
     // Determine which participants to include
     const participantsForSplit = input.includedParticipantIds
@@ -305,30 +307,15 @@ export async function updateExpense(
           }))
         : undefined)
 
-    const shares = calculateSplit({
+    recalculatedShares = calculateSplit({
       amount: newAmount,
       participants: participantsForSplit,
       splitType: effectiveSplitType,
       customShares: effectiveCustomShares,
     })
-
-    // Delete old shares and create new ones
-    await prisma.expenseShare.deleteMany({
-      where: { expenseId },
-    })
-
-    await prisma.expenseShare.createMany({
-      data: shares.map((share) => ({
-        expenseId,
-        participantId: share.participantId,
-        amount: share.amount,
-        weightAtTime: share.weight,
-      })),
-    })
   }
 
-  // Update expense
-  return prisma.expense.update({
+  const expenseUpdate = {
     where: { id: expenseId },
     data: {
       title: input.title,
@@ -347,5 +334,26 @@ export async function updateExpense(
         },
       },
     },
+  }
+
+  if (!recalculatedShares) {
+    return prisma.expense.update(expenseUpdate)
+  }
+
+  return prisma.$transaction(async (tx) => {
+    await tx.expenseShare.deleteMany({
+      where: { expenseId },
+    })
+
+    await tx.expenseShare.createMany({
+      data: recalculatedShares.map((share) => ({
+        expenseId,
+        participantId: share.participantId,
+        amount: share.amount,
+        weightAtTime: share.weight,
+      })),
+    })
+
+    return tx.expense.update(expenseUpdate)
   })
 }

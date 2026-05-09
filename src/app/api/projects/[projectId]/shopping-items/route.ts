@@ -51,7 +51,7 @@ export async function POST(
 
     const body = await request.json()
 
-    const { text, quantity, note, addedById, assignedToId } = body
+    const { text, quantity, note, assignedToId } = body
 
     // Validation
     if (!text || typeof text !== 'string' || !text.trim()) {
@@ -72,13 +72,19 @@ export async function POST(
       text: text.trim(),
       quantity: quantity?.trim() || undefined,
       note: note?.trim() || undefined,
-      addedById: addedById || undefined,
+      addedById: authResult.participant.id,
       assignedToId: assignedToId || undefined,
     })
 
     return NextResponse.json({ item }, { status: 201 })
   } catch (error) {
     logApiError(error, { context: 'POST /api/projects/[projectId]/shopping-items' })
+    if (error instanceof Error && error.message === 'Participant does not belong to this project') {
+      return NextResponse.json(
+        { error: 'شرکت‌کننده انتخاب‌شده عضو این پروژه نیست' },
+        { status: 400 }
+      )
+    }
     return NextResponse.json(
       { error: 'خطا در افزودن آیتم' },
       { status: 500 }

@@ -10,6 +10,22 @@ const participantSelect = {
   avatar: true,
 }
 
+async function ensureParticipantsBelongToProject(projectId: string, participantIds: string[]) {
+  const uniqueParticipantIds = Array.from(new Set(participantIds.filter(Boolean)))
+  if (uniqueParticipantIds.length === 0) return
+
+  const matchingParticipants = await prisma.participant.count({
+    where: {
+      projectId,
+      id: { in: uniqueParticipantIds },
+    },
+  })
+
+  if (matchingParticipants !== uniqueParticipantIds.length) {
+    throw new Error('Participant does not belong to this project')
+  }
+}
+
 /**
  * Get all shopping items for a project
  * Returns items sorted: unchecked first, then checked
@@ -53,6 +69,11 @@ export async function createShoppingItem(
     assignedToId?: string
   }
 ) {
+  await ensureParticipantsBelongToProject(
+    projectId,
+    [data.addedById, data.assignedToId].filter((id): id is string => !!id)
+  )
+
   return await prisma.shoppingItem.create({
     data: {
       text: data.text,
@@ -76,6 +97,7 @@ export async function createShoppingItem(
  * When marking as checked, also records who checked it and when
  */
 export async function updateShoppingItem(
+  projectId: string,
   itemId: string,
   data: {
     text?: string
@@ -86,6 +108,11 @@ export async function updateShoppingItem(
     checkedById?: string // Who is checking this item
   }
 ) {
+  await ensureParticipantsBelongToProject(
+    projectId,
+    [data.assignedToId, data.checkedById].filter((id): id is string => !!id)
+  )
+
   // Build update data
   const updateData: Record<string, unknown> = {
     updatedAt: new Date(),
@@ -110,9 +137,17 @@ export async function updateShoppingItem(
     }
   }
 
-  return await prisma.shoppingItem.update({
-    where: { id: itemId },
+  const result = await prisma.shoppingItem.updateMany({
+    where: { id: itemId, projectId },
     data: updateData,
+  })
+
+  if (result.count === 0) {
+    return null
+  }
+
+  return await prisma.shoppingItem.findUnique({
+    where: { id: itemId },
     include: {
       addedBy: { select: participantSelect },
       assignedTo: { select: participantSelect },
@@ -124,8 +159,10 @@ export async function updateShoppingItem(
 /**
  * Delete a shopping item
  */
-export async function deleteShoppingItem(itemId: string) {
-  await prisma.shoppingItem.delete({
-    where: { id: itemId },
+export async function deleteShoppingItem(projectId: string, itemId: string) {
+  const result = await prisma.shoppingItem.deleteMany({
+    where: { id: itemId, projectId },
   })
+
+  return result.count > 0
 }
