@@ -2,12 +2,33 @@
 // Manages shopping items for gathering template projects
 
 import { prisma } from '@/lib/db/prisma'
+import { NotFoundError, ValidationError } from '@/lib/errors'
 
 // Common select for participant info
 const participantSelect = {
   id: true,
   name: true,
   avatar: true,
+}
+
+async function ensureParticipantInProject(
+  participantId: string | undefined,
+  projectId: string,
+  fieldName: string
+) {
+  if (!participantId) return
+
+  const participant = await prisma.participant.findFirst({
+    where: {
+      id: participantId,
+      projectId,
+    },
+    select: { id: true },
+  })
+
+  if (!participant) {
+    throw new ValidationError(`${fieldName} عضو این پروژه نیست`)
+  }
 }
 
 /**
@@ -53,6 +74,9 @@ export async function createShoppingItem(
     assignedToId?: string
   }
 ) {
+  await ensureParticipantInProject(data.addedById, projectId, 'ثبت‌کننده')
+  await ensureParticipantInProject(data.assignedToId, projectId, 'مسئول خرید')
+
   return await prisma.shoppingItem.create({
     data: {
       text: data.text,
@@ -76,6 +100,7 @@ export async function createShoppingItem(
  * When marking as checked, also records who checked it and when
  */
 export async function updateShoppingItem(
+  projectId: string,
   itemId: string,
   data: {
     text?: string
@@ -86,6 +111,21 @@ export async function updateShoppingItem(
     checkedById?: string // Who is checking this item
   }
 ) {
+  const item = await prisma.shoppingItem.findFirst({
+    where: {
+      id: itemId,
+      projectId,
+    },
+    select: { id: true },
+  })
+
+  if (!item) {
+    throw new NotFoundError('آیتم خرید')
+  }
+
+  await ensureParticipantInProject(data.assignedToId, projectId, 'مسئول خرید')
+  await ensureParticipantInProject(data.checkedById, projectId, 'خریدار')
+
   // Build update data
   const updateData: Record<string, unknown> = {
     updatedAt: new Date(),
@@ -124,8 +164,15 @@ export async function updateShoppingItem(
 /**
  * Delete a shopping item
  */
-export async function deleteShoppingItem(itemId: string) {
-  await prisma.shoppingItem.delete({
-    where: { id: itemId },
+export async function deleteShoppingItem(projectId: string, itemId: string) {
+  const result = await prisma.shoppingItem.deleteMany({
+    where: {
+      id: itemId,
+      projectId,
+    },
   })
+
+  if (result.count === 0) {
+    throw new NotFoundError('آیتم خرید')
+  }
 }

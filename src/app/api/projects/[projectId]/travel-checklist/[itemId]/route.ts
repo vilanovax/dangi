@@ -3,6 +3,7 @@ import { toggleTravelChecklistItem, deleteTravelChecklistItem } from '@/lib/serv
 import { requireProjectAccess } from '@/lib/utils/auth'
 import { logApiError } from '@/lib/utils/logger'
 import { prisma } from '@/lib/db/prisma'
+import { isAppError } from '@/lib/errors'
 
 type RouteContext = {
   params: Promise<{ projectId: string; itemId: string }>
@@ -24,9 +25,13 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'وضعیت نامعتبر' }, { status: 400 })
     }
 
-    const item = await toggleTravelChecklistItem(itemId, status)
+    const item = await toggleTravelChecklistItem(projectId, itemId, status)
     return NextResponse.json({ item })
   } catch (error) {
+    if (isAppError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
+
     logApiError(error, { context: 'PATCH /api/projects/[projectId]/travel-checklist/[itemId]' })
     return NextResponse.json({ error: 'خطا در به‌روزرسانی' }, { status: 500 })
   }
@@ -42,8 +47,11 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     }
 
     // Check if current user is the creator
-    const item = await prisma.travelChecklistItem.findUnique({
-      where: { id: itemId },
+    const item = await prisma.travelChecklistItem.findFirst({
+      where: {
+        id: itemId,
+        projectId,
+      },
     })
 
     if (!item) {
@@ -57,9 +65,13 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       )
     }
 
-    await deleteTravelChecklistItem(itemId)
+    await deleteTravelChecklistItem(projectId, itemId)
     return NextResponse.json({ success: true })
   } catch (error) {
+    if (isAppError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
+
     logApiError(error, { context: 'DELETE /api/projects/[projectId]/travel-checklist/[itemId]' })
     return NextResponse.json({ error: 'خطا در حذف' }, { status: 500 })
   }
