@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { updateShoppingItem, deleteShoppingItem } from '@/lib/services/shopping.service'
 import { requireProjectAccess } from '@/lib/utils/auth'
 import { logApiError } from '@/lib/utils/logger'
+import { isAppError } from '@/lib/errors'
 
 /**
  * PATCH /api/projects/[projectId]/shopping-items/[itemId]
@@ -22,7 +23,7 @@ export async function PATCH(
 
     const body = await request.json()
 
-    const { text, isChecked, quantity, note, assignedToId, checkedById } = body
+    const { text, isChecked, quantity, note, assignedToId } = body
 
     // Validation
     if (text !== undefined) {
@@ -48,17 +49,21 @@ export async function PATCH(
       )
     }
 
-    const item = await updateShoppingItem(itemId, {
+    const item = await updateShoppingItem(projectId, itemId, {
       text: text?.trim(),
       isChecked,
       quantity: quantity?.trim() || undefined,
       note: note?.trim() || undefined,
       assignedToId: assignedToId || undefined,
-      checkedById: checkedById || undefined,
+      checkedById: isChecked ? authResult.participant.id : undefined,
     })
 
     return NextResponse.json({ item })
   } catch (error) {
+    if (isAppError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
+
     logApiError(error, { context: 'PATCH /api/projects/[projectId]/shopping-items/[itemId]' })
     return NextResponse.json(
       { error: 'خطا در به‌روزرسانی آیتم' },
@@ -84,10 +89,14 @@ export async function DELETE(
       return authResult.response
     }
 
-    await deleteShoppingItem(itemId)
+    await deleteShoppingItem(projectId, itemId)
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    if (isAppError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
+
     logApiError(error, { context: 'DELETE /api/projects/[projectId]/shopping-items/[itemId]' })
     return NextResponse.json(
       { error: 'خطا در حذف آیتم' },

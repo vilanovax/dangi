@@ -201,7 +201,7 @@ export default function GuestHomeLayout({ scopes }: GuestHomeLayoutProps) {
                         به‌عنوان مهمان
                       </p>
                     </div>
-                    <Link href={`/project/${projectId}/expenses/new`}>
+                    <Link href={`/project/${projectId}/add-expense`}>
                       <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
                         + ثبت خرج
                       </Button>

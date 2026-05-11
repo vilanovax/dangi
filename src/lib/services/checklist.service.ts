@@ -4,6 +4,7 @@
  */
 
 import { prisma } from '@/lib/db/prisma'
+import { NotFoundError } from '@/lib/errors'
 import { getTemplateById } from '@/lib/domain/checklist-templates'
 import type {
   CreateChecklistInput,
@@ -380,9 +381,22 @@ export async function createTravelChecklistItem(
  * Toggle travel checklist item status (active ↔ done)
  */
 export async function toggleTravelChecklistItem(
+  projectId: string,
   itemId: string,
   status: 'active' | 'done'
 ) {
+  const item = await prisma.travelChecklistItem.findFirst({
+    where: {
+      id: itemId,
+      projectId,
+    },
+    select: { id: true },
+  })
+
+  if (!item) {
+    throw new NotFoundError('آیتم')
+  }
+
   return prisma.travelChecklistItem.update({
     where: { id: itemId },
     data: {
@@ -402,10 +416,17 @@ export async function toggleTravelChecklistItem(
 /**
  * Delete a travel checklist item
  */
-export async function deleteTravelChecklistItem(itemId: string) {
-  return prisma.travelChecklistItem.delete({
-    where: { id: itemId },
+export async function deleteTravelChecklistItem(projectId: string, itemId: string) {
+  const result = await prisma.travelChecklistItem.deleteMany({
+    where: {
+      id: itemId,
+      projectId,
+    },
   })
+
+  if (result.count === 0) {
+    throw new NotFoundError('آیتم')
+  }
 }
 
 /**
