@@ -222,7 +222,7 @@ export async function requireProjectAccessWithLink(
   const cookieStore = await cookies()
 
   // Check cookies first
-  let accessToken = cookieStore.get('access_token')?.value
+  const accessToken = cookieStore.get('access_token')?.value
 
   // If not in cookies, check Authorization header (for API requests)
   if (!accessToken) {
