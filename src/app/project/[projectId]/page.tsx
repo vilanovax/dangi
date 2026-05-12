@@ -42,7 +42,7 @@ export default async function ProjectPage({ params }: PageProps) {
     }
   } else {
     // User is authenticated - verify they have access to this project
-    const authResult = await requireProjectAccess(projectId)
+    const authResult = await requireProjectAccess(projectId, ['project:read'])
     if (!authResult.authorized) {
       redirect('/')
     }

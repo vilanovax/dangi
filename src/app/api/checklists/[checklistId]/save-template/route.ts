@@ -46,7 +46,7 @@ export async function POST(
       )
     }
 
-    // Create a new checklist as template (duplicate with isTemplate = true)
+    // Create a reusable copy of the checklist.
     // Reset all items to unchecked
     const templateItems = checklist.items.map(item => ({
       text: item.text,
@@ -63,7 +63,6 @@ export async function POST(
         icon: checklist.icon,
         color: checklist.color,
         userId: user.id,
-        isTemplate: true,
         items: {
           create: templateItems
         }
