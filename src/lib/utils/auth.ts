@@ -140,7 +140,8 @@ interface UnauthorizedResult {
 }
 
 export async function requireProjectAccess(
-  projectId: string
+  projectId: string,
+  requiredScopes?: AccessScope[]
 ): Promise<AuthResult | UnauthorizedResult> {
   // 1. Check if user is authenticated
   const user = await getCurrentUser()
@@ -178,6 +179,18 @@ export async function requireProjectAccess(
     }
   }
 
+  if (participant.scopes !== null) {
+    const participantScopes = parseParticipantScopes(participant.scopes)
+
+    if (!requiredScopes || requiredScopes.length === 0) {
+      return insufficientScopedAccessResponse()
+    }
+
+    if (!hasAllScopes(participantScopes, requiredScopes)) {
+      return insufficientScopedAccessResponse()
+    }
+  }
+
   // User has access
   return {
     authorized: true,
@@ -199,10 +212,9 @@ export async function requireProjectAccessWithLink(
   requiredScopes?: AccessScope[]
 ): Promise<AuthResult | LinkAuthResult | UnauthorizedResult> {
   // 1. Try participant-based access first (existing logic)
-  const participantAccess = await requireProjectAccess(projectId)
+  const participantAccess = await requireProjectAccess(projectId, requiredScopes)
 
   if (participantAccess.authorized) {
-    // Regular participant access - grant full access regardless of requiredScopes
     return participantAccess
   }
 
@@ -269,6 +281,25 @@ export async function requireProjectAccessWithLink(
     link: validation.link!,
     scopes: validation.scopes || [],
     accessType: 'link',
+  }
+}
+
+function parseParticipantScopes(scopesString: string): AccessScope[] {
+  try {
+    const scopes = JSON.parse(scopesString)
+    return Array.isArray(scopes) ? (scopes as AccessScope[]) : []
+  } catch {
+    return []
+  }
+}
+
+function insufficientScopedAccessResponse(): UnauthorizedResult {
+  return {
+    authorized: false,
+    response: NextResponse.json(
+      { error: 'دسترسی کافی ندارید' },
+      { status: 403 }
+    ),
   }
 }
 
