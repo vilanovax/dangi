@@ -76,6 +76,7 @@ export async function createShoppingItem(
  * When marking as checked, also records who checked it and when
  */
 export async function updateShoppingItem(
+  projectId: string,
   itemId: string,
   data: {
     text?: string
@@ -110,22 +111,34 @@ export async function updateShoppingItem(
     }
   }
 
-  return await prisma.shoppingItem.update({
-    where: { id: itemId },
-    data: updateData,
-    include: {
-      addedBy: { select: participantSelect },
-      assignedTo: { select: participantSelect },
-      checkedBy: { select: participantSelect },
-    },
+  return await prisma.$transaction(async (tx) => {
+    const result = await tx.shoppingItem.updateMany({
+      where: { id: itemId, projectId },
+      data: updateData,
+    })
+
+    if (result.count === 0) {
+      return null
+    }
+
+    return tx.shoppingItem.findUnique({
+      where: { id: itemId },
+      include: {
+        addedBy: { select: participantSelect },
+        assignedTo: { select: participantSelect },
+        checkedBy: { select: participantSelect },
+      },
+    })
   })
 }
 
 /**
  * Delete a shopping item
  */
-export async function deleteShoppingItem(itemId: string) {
-  await prisma.shoppingItem.delete({
-    where: { id: itemId },
+export async function deleteShoppingItem(projectId: string, itemId: string) {
+  const result = await prisma.shoppingItem.deleteMany({
+    where: { id: itemId, projectId },
   })
+
+  return result.count > 0
 }

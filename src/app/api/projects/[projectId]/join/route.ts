@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getProjectById } from '@/lib/services/project.service'
-import { joinProject } from '@/lib/services/participant.service'
+import { getParticipantById, joinProject } from '@/lib/services/participant.service'
 import { cookies } from 'next/headers'
 import { logApiError } from '@/lib/utils/logger'
 
@@ -48,7 +48,9 @@ export async function POST(
       maxAge: 60 * 60 * 24 * 365, // 1 year
     })
 
-    return NextResponse.json({ participant })
+    const publicParticipant = await getParticipantById(participant.id)
+
+    return NextResponse.json({ participant: publicParticipant })
   } catch (error) {
     logApiError(error, { context: 'POST /api/projects/[projectId]/join' })
     return NextResponse.json(
