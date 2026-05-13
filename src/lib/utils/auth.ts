@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import type { AccessScope, ProjectAccessLink } from '@/types/access-link'
 import { validateAccessLink } from '@/lib/services/access-link.service'
-import { hasAllScopes } from '@/lib/utils/permissions'
+import { hasAllScopes, participantHasRequiredScopes } from '@/lib/utils/permissions'
 
 // Bcrypt configuration
 const SALT_ROUNDS = 10 // Higher = more secure but slower (10 is recommended)
@@ -137,36 +137,6 @@ interface LinkAuthResult {
 interface UnauthorizedResult {
   authorized: false
   response: NextResponse
-}
-
-export function parseStoredParticipantScopes(scopes: string | null): AccessScope[] | null {
-  if (scopes === null) {
-    return null
-  }
-
-  try {
-    const parsed = JSON.parse(scopes)
-    return Array.isArray(parsed) ? (parsed as AccessScope[]) : []
-  } catch {
-    return []
-  }
-}
-
-export function participantHasRequiredScopes(
-  storedScopes: string | null,
-  requiredScopes?: AccessScope[]
-): boolean {
-  const participantScopes = parseStoredParticipantScopes(storedScopes)
-
-  if (participantScopes === null) {
-    return true
-  }
-
-  if (!requiredScopes || requiredScopes.length === 0) {
-    return false
-  }
-
-  return hasAllScopes(participantScopes, requiredScopes)
 }
 
 export async function requireProjectAccess(

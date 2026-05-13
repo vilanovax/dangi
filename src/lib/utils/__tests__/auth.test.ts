@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   parseStoredParticipantScopes,
   participantHasRequiredScopes,
-} from '../auth'
+} from '../permissions'
 
 describe('participant scope authorization', () => {
   it('treats null scopes as full project access', () => {
