@@ -2,6 +2,7 @@
 // Data access layer for expenses
 
 import { prisma } from '@/lib/db/prisma'
+import { publicParticipantSelect } from '@/lib/db/selects'
 import { calculateSplit } from '@/lib/domain/splitters'
 import type { ExpenseInput, SplitType } from '@/lib/types/domain'
 
@@ -34,7 +35,9 @@ export async function createExpense(projectId: string, input: ExpenseInput) {
   const project = await prisma.project.findUnique({
     where: { id: projectId },
     include: {
-      participants: true,
+      participants: {
+        select: publicParticipantSelect,
+      },
     },
   })
 
@@ -95,11 +98,15 @@ export async function createExpense(projectId: string, input: ExpenseInput) {
       },
     },
     include: {
-      paidBy: true,
+      paidBy: {
+        select: publicParticipantSelect,
+      },
       category: true,
       shares: {
         include: {
-          participant: true,
+          participant: {
+            select: publicParticipantSelect,
+          },
         },
       },
     },
@@ -131,11 +138,15 @@ export async function getProjectExpenses(
   const expenses = await prisma.expense.findMany({
     where: { projectId },
     include: {
-      paidBy: true,
+      paidBy: {
+        select: publicParticipantSelect,
+      },
       category: true,
       shares: {
         include: {
-          participant: true,
+          participant: {
+            select: publicParticipantSelect,
+          },
         },
       },
     },
@@ -165,11 +176,15 @@ export async function getExpenseById(expenseId: string) {
   return prisma.expense.findUnique({
     where: { id: expenseId },
     include: {
-      paidBy: true,
+      paidBy: {
+        select: publicParticipantSelect,
+      },
       category: true,
       shares: {
         include: {
-          participant: true,
+          participant: {
+            select: publicParticipantSelect,
+          },
         },
       },
     },
@@ -232,7 +247,9 @@ export async function updateParticipantShare(
       amount: newAmount,
     },
     include: {
-      participant: true,
+      participant: {
+        select: publicParticipantSelect,
+      },
     },
   })
 
@@ -263,7 +280,9 @@ export async function updateExpense(
     include: {
       project: {
         include: {
-          participants: true,
+          participants: {
+            select: publicParticipantSelect,
+          },
         },
       },
       shares: true,
@@ -339,11 +358,15 @@ export async function updateExpense(
       expenseDate: input.expenseDate,
     },
     include: {
-      paidBy: true,
+      paidBy: {
+        select: publicParticipantSelect,
+      },
       category: true,
       shares: {
         include: {
-          participant: true,
+          participant: {
+            select: publicParticipantSelect,
+          },
         },
       },
     },

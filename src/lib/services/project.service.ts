@@ -2,6 +2,7 @@
 // Data access layer for projects
 
 import { prisma } from '@/lib/db/prisma'
+import { publicParticipantSelect } from '@/lib/db/selects'
 import { getTemplate } from '@/lib/domain/templates'
 import type { SplitType } from '@/lib/types/domain'
 
@@ -87,16 +88,22 @@ export async function getProjectById(projectId: string, includeExpenses = true) 
   return prisma.project.findUnique({
     where: { id: projectId },
     include: {
-      participants: true,
+      participants: {
+        select: publicParticipantSelect,
+      },
       categories: true,
       expenses: includeExpenses
         ? {
             include: {
-              paidBy: true,
+              paidBy: {
+                select: publicParticipantSelect,
+              },
               category: true,
               shares: {
                 include: {
-                  participant: true,
+                  participant: {
+                    select: publicParticipantSelect,
+                  },
                 },
               },
             },

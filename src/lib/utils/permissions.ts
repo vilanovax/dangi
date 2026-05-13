@@ -42,6 +42,36 @@ export function hasAllScopes(userScopes: AccessScope[], requiredScopes: AccessSc
   return requiredScopes.every((scope) => userScopes.includes(scope))
 }
 
+export function parseStoredParticipantScopes(scopes: string | null): AccessScope[] | null {
+  if (scopes === null) {
+    return null
+  }
+
+  try {
+    const parsed = JSON.parse(scopes)
+    return Array.isArray(parsed) ? (parsed as AccessScope[]) : []
+  } catch {
+    return []
+  }
+}
+
+export function participantHasRequiredScopes(
+  storedScopes: string | null,
+  requiredScopes?: AccessScope[]
+): boolean {
+  const participantScopes = parseStoredParticipantScopes(storedScopes)
+
+  if (participantScopes === null) {
+    return true
+  }
+
+  if (!requiredScopes || requiredScopes.length === 0) {
+    return false
+  }
+
+  return hasAllScopes(participantScopes, requiredScopes)
+}
+
 // ═══════════════════════════════════════════════════════════════
 // RESOURCE ACCESS CHECKING
 // ═══════════════════════════════════════════════════════════════

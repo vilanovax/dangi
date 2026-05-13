@@ -2,6 +2,7 @@
 // Data access layer for settlements (payments between members)
 
 import { prisma } from '@/lib/db/prisma'
+import { publicParticipantSelect } from '@/lib/db/selects'
 
 export interface SettlementInput {
   fromId: string    // کسی که پول داده
@@ -47,8 +48,12 @@ export async function createSettlement(projectId: string, input: SettlementInput
       type: 'normal',
     },
     include: {
-      from: true,
-      to: true,
+      from: {
+        select: publicParticipantSelect,
+      },
+      to: {
+        select: publicParticipantSelect,
+      },
     },
   })
 }
@@ -73,8 +78,12 @@ export async function confirmSettlement(settlementId: string) {
     where: { id: settlementId },
     data: { status: 'confirmed' },
     include: {
-      from: true,
-      to: true,
+      from: {
+        select: publicParticipantSelect,
+      },
+      to: {
+        select: publicParticipantSelect,
+      },
     },
   })
 }
@@ -117,8 +126,12 @@ export async function reverseSettlement(settlementId: string, note?: string) {
   const settlement = await prisma.settlement.findUnique({
     where: { id: settlementId },
     include: {
-      from: true,
-      to: true,
+      from: {
+        select: publicParticipantSelect,
+      },
+      to: {
+        select: publicParticipantSelect,
+      },
     },
   })
 
@@ -148,8 +161,12 @@ export async function reverseSettlement(settlementId: string, note?: string) {
       settledAt: new Date(),
     },
     include: {
-      from: true,
-      to: true,
+      from: {
+        select: publicParticipantSelect,
+      },
+      to: {
+        select: publicParticipantSelect,
+      },
     },
   })
 
@@ -169,8 +186,12 @@ export async function getProjectSettlements(projectId: string) {
   return prisma.settlement.findMany({
     where: { projectId },
     include: {
-      from: true,
-      to: true,
+      from: {
+        select: publicParticipantSelect,
+      },
+      to: {
+        select: publicParticipantSelect,
+      },
     },
     orderBy: {
       settledAt: 'desc',
@@ -185,8 +206,12 @@ export async function getSettlementById(settlementId: string) {
   return prisma.settlement.findUnique({
     where: { id: settlementId },
     include: {
-      from: true,
-      to: true,
+      from: {
+        select: publicParticipantSelect,
+      },
+      to: {
+        select: publicParticipantSelect,
+      },
     },
   })
 }
@@ -238,8 +263,12 @@ export async function updateSettlement(
       settledAt: input.settledAt,
     },
     include: {
-      from: true,
-      to: true,
+      from: {
+        select: publicParticipantSelect,
+      },
+      to: {
+        select: publicParticipantSelect,
+      },
     },
   })
 }

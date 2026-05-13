@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { joinProject, getProjectParticipants } from '@/lib/services/participant.service'
+import { joinProject, getProjectParticipants, getParticipantById } from '@/lib/services/participant.service'
 import { getProjectById } from '@/lib/services/project.service'
 import { requireProjectAccess } from '@/lib/utils/auth'
 import { logApiError } from '@/lib/utils/logger'
@@ -59,12 +59,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Add the participant
-    const participant = await joinProject({
+    const newParticipant = await joinProject({
       projectId,
       name: name.trim(),
       weight: weight || 1,
       avatar: avatar || null,
     })
+
+    const participant = await getParticipantById(newParticipant.id)
 
     return NextResponse.json({ participant }, { status: 201 })
   } catch (error) {

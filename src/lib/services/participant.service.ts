@@ -2,6 +2,7 @@
 // Data access layer for participants
 
 import { prisma } from '@/lib/db/prisma'
+import { publicParticipantSelect } from '@/lib/db/selects'
 
 interface JoinProjectInput {
   projectId: string
@@ -46,6 +47,7 @@ export async function getParticipantByToken(sessionToken: string) {
 export async function getProjectParticipants(projectId: string) {
   return prisma.participant.findMany({
     where: { projectId },
+    select: publicParticipantSelect,
     orderBy: { createdAt: 'asc' },
   })
 }
@@ -82,9 +84,7 @@ export async function updateParticipantPercentage(
 export async function getParticipantById(participantId: string) {
   return prisma.participant.findUnique({
     where: { id: participantId },
-    include: {
-      project: true,
-    },
+    select: publicParticipantSelect,
   })
 }
 
@@ -103,6 +103,7 @@ export async function updateParticipant(
   return prisma.participant.update({
     where: { id: participantId },
     data,
+    select: publicParticipantSelect,
   })
 }
 

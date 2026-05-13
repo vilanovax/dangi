@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import type { AccessScope, ProjectAccessLink } from '@/types/access-link'
 import { validateAccessLink } from '@/lib/services/access-link.service'
-import { hasAllScopes } from '@/lib/utils/permissions'
+import { hasAllScopes, participantHasRequiredScopes } from '@/lib/utils/permissions'
 
 // Bcrypt configuration
 const SALT_ROUNDS = 10 // Higher = more secure but slower (10 is recommended)
@@ -140,7 +140,8 @@ interface UnauthorizedResult {
 }
 
 export async function requireProjectAccess(
-  projectId: string
+  projectId: string,
+  requiredScopes?: AccessScope[]
 ): Promise<AuthResult | UnauthorizedResult> {
   // 1. Check if user is authenticated
   const user = await getCurrentUser()
@@ -178,6 +179,16 @@ export async function requireProjectAccess(
     }
   }
 
+  if (!participantHasRequiredScopes(participant.scopes, requiredScopes)) {
+    return {
+      authorized: false,
+      response: NextResponse.json(
+        { error: 'دسترسی کافی ندارید' },
+        { status: 403 }
+      ),
+    }
+  }
+
   // User has access
   return {
     authorized: true,
@@ -199,10 +210,10 @@ export async function requireProjectAccessWithLink(
   requiredScopes?: AccessScope[]
 ): Promise<AuthResult | LinkAuthResult | UnauthorizedResult> {
   // 1. Try participant-based access first (existing logic)
-  const participantAccess = await requireProjectAccess(projectId)
+  const participantAccess = await requireProjectAccess(projectId, requiredScopes)
 
   if (participantAccess.authorized) {
-    // Regular participant access - grant full access regardless of requiredScopes
+    // Regular participant access, including stored scope checks for restricted members
     return participantAccess
   }
 
