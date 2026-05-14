@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { getProjectById, updateProject, deleteProject } from '@/lib/services/project.service'
-import { prisma } from '@/lib/db/prisma'
-import { requireProjectAccess, requireProjectAccessWithLink } from '@/lib/utils/auth'
+import { requireFullProjectAccess, requireProjectAccessWithLink } from '@/lib/utils/auth'
 import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
@@ -63,8 +61,8 @@ export async function PATCH(
   try {
     const { projectId } = await context.params
 
-    // Authorization check: user must be a participant
-    const authResult = await requireProjectAccess(projectId)
+    // Authorization check: project settings changes require full member access
+    const authResult = await requireFullProjectAccess(projectId)
     if (!authResult.authorized) {
       return authResult.response
     }
@@ -145,8 +143,8 @@ export async function DELETE(
   try {
     const { projectId } = await context.params
 
-    // Authorization check: user must be a participant
-    const authResult = await requireProjectAccess(projectId)
+    // Authorization check: project deletion requires full member access
+    const authResult = await requireFullProjectAccess(projectId)
     if (!authResult.authorized) {
       return authResult.response
     }

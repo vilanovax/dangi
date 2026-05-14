@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
-import { requireProjectAccess } from '@/lib/utils/auth'
+import { requireFullProjectAccess } from '@/lib/utils/auth'
 
 type RouteContext = {
   params: Promise<{ projectId: string }>
@@ -17,8 +17,8 @@ export async function GET(
   try {
     const { projectId } = await context.params
 
-    // Authorization check: user must be a participant
-    const authResult = await requireProjectAccess(projectId)
+    // Authorization check: full backups require full member access
+    const authResult = await requireFullProjectAccess(projectId)
     if (!authResult.authorized) {
       return authResult.response
     }

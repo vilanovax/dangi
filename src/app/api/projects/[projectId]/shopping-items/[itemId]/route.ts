@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { updateShoppingItem, deleteShoppingItem } from '@/lib/services/shopping.service'
-import { requireProjectAccess } from '@/lib/utils/auth'
+import { requireFullProjectAccess } from '@/lib/utils/auth'
 import { logApiError } from '@/lib/utils/logger'
 
 /**
@@ -15,7 +15,7 @@ export async function PATCH(
     const { projectId, itemId } = await params
 
     // Authorization check: user must be a participant
-    const authResult = await requireProjectAccess(projectId)
+    const authResult = await requireFullProjectAccess(projectId)
     if (!authResult.authorized) {
       return authResult.response
     }
@@ -79,7 +79,7 @@ export async function DELETE(
     const { projectId, itemId } = await params
 
     // Authorization check: user must be a participant
-    const authResult = await requireProjectAccess(projectId)
+    const authResult = await requireFullProjectAccess(projectId)
     if (!authResult.authorized) {
       return authResult.response
     }

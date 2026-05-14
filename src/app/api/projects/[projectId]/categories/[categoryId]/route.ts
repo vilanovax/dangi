@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
 import { getProjectById } from '@/lib/services/project.service'
-import { requireProjectAccess } from '@/lib/utils/auth'
+import { requireFullProjectAccess } from '@/lib/utils/auth'
 import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
@@ -17,7 +17,7 @@ export async function PUT(
     const { projectId, categoryId } = await context.params
 
     // Authorization check: user must be a participant
-    const authResult = await requireProjectAccess(projectId)
+    const authResult = await requireFullProjectAccess(projectId)
     if (!authResult.authorized) {
       return authResult.response
     }
@@ -92,7 +92,7 @@ export async function DELETE(
     const { projectId, categoryId } = await context.params
 
     // Authorization check: user must be a participant
-    const authResult = await requireProjectAccess(projectId)
+    const authResult = await requireFullProjectAccess(projectId)
     if (!authResult.authorized) {
       return authResult.response
     }
