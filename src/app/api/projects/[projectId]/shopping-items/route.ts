@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getShoppingItems, createShoppingItem } from '@/lib/services/shopping.service'
-import { requireProjectAccess } from '@/lib/utils/auth'
+import { requireFullProjectAccess, requireProjectAccess } from '@/lib/utils/auth'
 import { logApiError } from '@/lib/utils/logger'
 
 /**
@@ -43,8 +43,8 @@ export async function POST(
   try {
     const { projectId } = await params
 
-    // Authorization check: user must be a participant
-    const authResult = await requireProjectAccess(projectId)
+    // Authorization check: shopping list changes require full member access
+    const authResult = await requireFullProjectAccess(projectId)
     if (!authResult.authorized) {
       return authResult.response
     }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { joinProject, getProjectParticipants } from '@/lib/services/participant.service'
 import { getProjectById } from '@/lib/services/project.service'
-import { requireProjectAccess } from '@/lib/utils/auth'
+import { requireFullProjectAccess, requireProjectAccess } from '@/lib/utils/auth'
 import { logApiError } from '@/lib/utils/logger'
 
 interface RouteParams {
@@ -38,8 +38,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const { projectId } = await params
 
-    // Authorization check: user must be a participant
-    const authResult = await requireProjectAccess(projectId)
+    // Authorization check: adding participants requires full member access
+    const authResult = await requireFullProjectAccess(projectId)
     if (!authResult.authorized) {
       return authResult.response
     }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { toggleTravelChecklistItem, deleteTravelChecklistItem } from '@/lib/services/checklist.service'
-import { requireProjectAccess } from '@/lib/utils/auth'
+import { requireFullProjectAccess } from '@/lib/utils/auth'
 import { logApiError } from '@/lib/utils/logger'
 import { prisma } from '@/lib/db/prisma'
 
@@ -12,7 +12,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     const { projectId, itemId } = await context.params
 
-    const authResult = await requireProjectAccess(projectId)
+    const authResult = await requireFullProjectAccess(projectId)
     if (!authResult.authorized) {
       return authResult.response
     }
@@ -36,7 +36,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
     const { projectId, itemId } = await context.params
 
-    const authResult = await requireProjectAccess(projectId)
+    const authResult = await requireFullProjectAccess(projectId)
     if (!authResult.authorized) {
       return authResult.response
     }

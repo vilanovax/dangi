@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSettlement, getProjectSettlements } from '@/lib/services/settlement.service'
 import { getProjectById } from '@/lib/services/project.service'
-import { requireProjectAccess, requireProjectAccessWithLink } from '@/lib/utils/auth'
+import { requireFullProjectAccess, requireProjectAccessWithLink } from '@/lib/utils/auth'
 import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     // Authorization check: user must be a FULL participant (NOT link-based access)
     // Settlements can only be created by full project members
-    const authResult = await requireProjectAccess(projectId)
+    const authResult = await requireFullProjectAccess(projectId)
     if (!authResult.authorized) {
       return authResult.response
     }

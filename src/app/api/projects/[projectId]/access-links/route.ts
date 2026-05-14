@@ -4,7 +4,7 @@ import {
   getProjectAccessLinks,
 } from '@/lib/services/access-link.service'
 import { getProjectById } from '@/lib/services/project.service'
-import { requireProjectAccess } from '@/lib/utils/auth'
+import { requireProjectOwnerAccess } from '@/lib/utils/auth'
 import { logApiError } from '@/lib/utils/logger'
 import type { AccessScope } from '@/types/access-link'
 
@@ -16,14 +16,14 @@ type RouteContext = {
  * GET /api/projects/[projectId]/access-links
  * List all access links for a project
  *
- * Auth: Requires project membership (participant)
+ * Auth: Requires project owner
  */
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { projectId } = await context.params
 
-    // Authorization check: user must be a participant
-    const authResult = await requireProjectAccess(projectId)
+    // Authorization check: only project owners can list raw invite tokens
+    const authResult = await requireProjectOwnerAccess(projectId)
     if (!authResult.authorized) {
       return authResult.response
     }
@@ -51,15 +51,15 @@ export async function GET(request: NextRequest, context: RouteContext) {
  * POST /api/projects/[projectId]/access-links
  * Create a new access link
  *
- * Auth: Requires project membership (participant)
+ * Auth: Requires project owner
  * Body: { templateId, name?, description?, expiresAt?, maxUses? }
  */
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const { projectId } = await context.params
 
-    // Authorization check: user must be a participant
-    const authResult = await requireProjectAccess(projectId)
+    // Authorization check: only project owners can create invite links
+    const authResult = await requireProjectOwnerAccess(projectId)
     if (!authResult.authorized) {
       return authResult.response
     }

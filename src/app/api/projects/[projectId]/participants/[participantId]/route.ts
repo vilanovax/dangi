@@ -4,7 +4,7 @@ import {
   updateParticipant,
   deleteParticipant,
 } from '@/lib/services/participant.service'
-import { requireProjectAccess } from '@/lib/utils/auth'
+import { requireFullProjectAccess, requireProjectAccess } from '@/lib/utils/auth'
 import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
@@ -47,8 +47,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     const { projectId, participantId } = await context.params
 
-    // Authorization check: user must be a participant
-    const authResult = await requireProjectAccess(projectId)
+    // Authorization check: participant changes require full member access
+    const authResult = await requireFullProjectAccess(projectId)
     if (!authResult.authorized) {
       return authResult.response
     }
@@ -108,8 +108,8 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
     const { projectId, participantId } = await context.params
 
-    // Authorization check: user must be a participant
-    const authResult = await requireProjectAccess(projectId)
+    // Authorization check: participant deletion requires full member access
+    const authResult = await requireFullProjectAccess(projectId)
     if (!authResult.authorized) {
       return authResult.response
     }

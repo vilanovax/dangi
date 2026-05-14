@@ -4,7 +4,7 @@ import {
   updateAccessLink,
   deleteAccessLink,
 } from '@/lib/services/access-link.service'
-import { requireProjectAccess } from '@/lib/utils/auth'
+import { requireProjectOwnerAccess } from '@/lib/utils/auth'
 import { logApiError } from '@/lib/utils/logger'
 import type { AccessScope } from '@/types/access-link'
 
@@ -16,14 +16,14 @@ type RouteContext = {
  * GET /api/projects/[projectId]/access-links/[linkId]
  * Get a single access link
  *
- * Auth: Requires project membership
+ * Auth: Requires project owner
  */
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { projectId, linkId } = await context.params
 
     // Authorization check
-    const authResult = await requireProjectAccess(projectId)
+    const authResult = await requireProjectOwnerAccess(projectId)
     if (!authResult.authorized) {
       return authResult.response
     }
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
  * PATCH /api/projects/[projectId]/access-links/[linkId]
  * Update an access link
  *
- * Auth: Requires project membership
+ * Auth: Requires project owner
  * Body: { name?, description?, expiresAt?, maxUses?, isActive? }
  */
 export async function PATCH(request: NextRequest, context: RouteContext) {
@@ -63,7 +63,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const { projectId, linkId } = await context.params
 
     // Authorization check
-    const authResult = await requireProjectAccess(projectId)
+    const authResult = await requireProjectOwnerAccess(projectId)
     if (!authResult.authorized) {
       return authResult.response
     }
@@ -114,14 +114,14 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
  * DELETE /api/projects/[projectId]/access-links/[linkId]
  * Delete an access link permanently
  *
- * Auth: Requires project membership
+ * Auth: Requires project owner
  */
 export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
     const { projectId, linkId } = await context.params
 
     // Authorization check
-    const authResult = await requireProjectAccess(projectId)
+    const authResult = await requireProjectOwnerAccess(projectId)
     if (!authResult.authorized) {
       return authResult.response
     }

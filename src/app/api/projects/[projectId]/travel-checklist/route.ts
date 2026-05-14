@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getTravelChecklist, createTravelChecklistItem } from '@/lib/services/checklist.service'
-import { requireProjectAccess, requireProjectAccessWithLink } from '@/lib/utils/auth'
+import { requireFullProjectAccess, requireProjectAccessWithLink } from '@/lib/utils/auth'
 import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const { projectId } = await context.params
 
-    const authResult = await requireProjectAccess(projectId)
+    const authResult = await requireFullProjectAccess(projectId)
     if (!authResult.authorized) {
       return authResult.response
     }

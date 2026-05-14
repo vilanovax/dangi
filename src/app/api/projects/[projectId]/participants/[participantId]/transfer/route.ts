@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
 import { calculateBalances } from '@/lib/domain/summaryCalculator'
+import { requireFullProjectAccess } from '@/lib/utils/auth'
 import { logApiError } from '@/lib/utils/logger'
 
 type RouteContext = {
@@ -14,6 +15,12 @@ type RouteContext = {
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const { projectId, participantId } = await context.params
+
+    const authResult = await requireFullProjectAccess(projectId)
+    if (!authResult.authorized) {
+      return authResult.response
+    }
+
     const body = await request.json()
     const { targetParticipantId, deleteAfterTransfer } = body
 
