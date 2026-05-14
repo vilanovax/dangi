@@ -30,7 +30,7 @@ export async function verifyPassword(
     if (isValid) {
       return { valid: true, needsMigration: false }
     }
-  } catch (error) {
+  } catch {
     // Not a bcrypt hash, might be old SHA-256 format
   }
 
@@ -82,7 +82,7 @@ export function verifyToken(token: string): string | null {
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as { userId: string }
     return decoded.userId
-  } catch (error) {
+  } catch {
     // Token is invalid, expired, or malformed
     return null
   }
@@ -305,7 +305,7 @@ export async function requireProjectAccessWithLink(
   const cookieStore = await cookies()
 
   // Check cookies first
-  let accessToken = cookieStore.get('access_token')?.value
+  const accessToken = cookieStore.get('access_token')?.value
 
   // If not in cookies, check Authorization header (for API requests)
   if (!accessToken) {

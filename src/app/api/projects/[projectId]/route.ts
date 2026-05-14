@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { getProjectById, updateProject, deleteProject } from '@/lib/services/project.service'
-import { prisma } from '@/lib/db/prisma'
 import { requireFullProjectAccess, requireProjectAccessWithLink } from '@/lib/utils/auth'
 import { logApiError } from '@/lib/utils/logger'
 

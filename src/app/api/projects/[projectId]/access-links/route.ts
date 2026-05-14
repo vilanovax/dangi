@@ -71,7 +71,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     const body = await request.json()
-    const { templateId, name, description, expiresAt, maxUses, scopes, role } = body
+    const { name, description, expiresAt, maxUses, scopes, role } = body
 
     // Validate required fields
     if (!scopes || !Array.isArray(scopes) || scopes.length === 0) {
