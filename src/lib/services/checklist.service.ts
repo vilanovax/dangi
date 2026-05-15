@@ -380,11 +380,21 @@ export async function createTravelChecklistItem(
  * Toggle travel checklist item status (active ↔ done)
  */
 export async function toggleTravelChecklistItem(
+  projectId: string,
   itemId: string,
   status: 'active' | 'done'
 ) {
+  const existingItem = await prisma.travelChecklistItem.findFirst({
+    where: { id: itemId, projectId },
+    select: { id: true },
+  })
+
+  if (!existingItem) {
+    return null
+  }
+
   return prisma.travelChecklistItem.update({
-    where: { id: itemId },
+    where: { id: existingItem.id },
     data: {
       status,
       completedAt: status === 'done' ? new Date() : null,
@@ -402,9 +412,18 @@ export async function toggleTravelChecklistItem(
 /**
  * Delete a travel checklist item
  */
-export async function deleteTravelChecklistItem(itemId: string) {
+export async function deleteTravelChecklistItem(projectId: string, itemId: string) {
+  const existingItem = await prisma.travelChecklistItem.findFirst({
+    where: { id: itemId, projectId },
+    select: { id: true },
+  })
+
+  if (!existingItem) {
+    return false
+  }
+
   return prisma.travelChecklistItem.delete({
-    where: { id: itemId },
+    where: { id: existingItem.id },
   })
 }
 
