@@ -48,7 +48,7 @@ export async function PATCH(
       )
     }
 
-    const item = await updateShoppingItem(itemId, {
+    const item = await updateShoppingItem(projectId, itemId, {
       text: text?.trim(),
       isChecked,
       quantity: quantity?.trim() || undefined,
@@ -56,6 +56,13 @@ export async function PATCH(
       assignedToId: assignedToId || undefined,
       checkedById: checkedById || undefined,
     })
+
+    if (!item) {
+      return NextResponse.json(
+        { error: 'آیتم پیدا نشد' },
+        { status: 404 }
+      )
+    }
 
     return NextResponse.json({ item })
   } catch (error) {
@@ -84,7 +91,13 @@ export async function DELETE(
       return authResult.response
     }
 
-    await deleteShoppingItem(itemId)
+    const deleted = await deleteShoppingItem(projectId, itemId)
+    if (!deleted) {
+      return NextResponse.json(
+        { error: 'آیتم پیدا نشد' },
+        { status: 404 }
+      )
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

@@ -76,6 +76,7 @@ export async function createShoppingItem(
  * When marking as checked, also records who checked it and when
  */
 export async function updateShoppingItem(
+  projectId: string,
   itemId: string,
   data: {
     text?: string
@@ -110,8 +111,17 @@ export async function updateShoppingItem(
     }
   }
 
+  const existingItem = await prisma.shoppingItem.findFirst({
+    where: { id: itemId, projectId },
+    select: { id: true },
+  })
+
+  if (!existingItem) {
+    return null
+  }
+
   return await prisma.shoppingItem.update({
-    where: { id: itemId },
+    where: { id: existingItem.id },
     data: updateData,
     include: {
       addedBy: { select: participantSelect },
@@ -124,8 +134,19 @@ export async function updateShoppingItem(
 /**
  * Delete a shopping item
  */
-export async function deleteShoppingItem(itemId: string) {
-  await prisma.shoppingItem.delete({
-    where: { id: itemId },
+export async function deleteShoppingItem(projectId: string, itemId: string) {
+  const existingItem = await prisma.shoppingItem.findFirst({
+    where: { id: itemId, projectId },
+    select: { id: true },
   })
+
+  if (!existingItem) {
+    return false
+  }
+
+  await prisma.shoppingItem.delete({
+    where: { id: existingItem.id },
+  })
+
+  return true
 }

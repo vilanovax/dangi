@@ -344,6 +344,7 @@ model Checklist {
   color       String?          // رنگ hex (مثلاً "#3b82f6")
   userId      String           // مالک چک‌لیست
   shareCode   String           @unique @default(cuid()) // کد اشتراک‌گذاری
+  isTemplate  Boolean          @default(false) // ذخیره‌شده به عنوان تمپلیت کاربر
   isPinned    Boolean          @default(false) // سنجاق شده بالای لیست
   pinnedAt    DateTime?        // تاریخ سنجاق کردن (برای مرتب‌سازی)
   isArchived  Boolean          @default(false) // آرشیو شده
